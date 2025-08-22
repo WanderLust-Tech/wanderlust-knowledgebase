@@ -14,6 +14,18 @@ const ArticleView: React.FC = () => {
       .catch(() => setContent('# Not Found'));
   }, [path]);
 
+  // Scroll to top when navigating to a new article
+  useEffect(() => {
+    // Find the main content area (the scrollable container)
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  }, [path]); // Trigger when path changes
+
   return (
     <article className="markdown-body">
       <ReactMarkdown>{content}</ReactMarkdown>
