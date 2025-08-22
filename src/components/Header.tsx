@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
+import { BookmarksPanel } from './BookmarksPanel';
+import { useBookmarks } from '../contexts/BookmarkContext';
 
 
 interface SearchResult {
@@ -14,8 +16,10 @@ const Header: React.FC = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showBookmarks, setShowBookmarks] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const { bookmarks } = useBookmarks();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -104,6 +108,20 @@ const Header: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-4 flex-shrink-0">
+          <button
+            onClick={() => setShowBookmarks(true)}
+            className="relative hover:text-blue-200 dark:hover:text-blue-300 transition-colors"
+            title="Bookmarks"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+            {bookmarks.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                {bookmarks.length > 9 ? '9+' : bookmarks.length}
+              </span>
+            )}
+          </button>
           <Link to="/" className="hover:underline">
             Home
           </Link>
@@ -119,6 +137,8 @@ const Header: React.FC = () => {
           <ThemeToggle />
         </div>
       </nav>
+      
+      <BookmarksPanel isOpen={showBookmarks} onClose={() => setShowBookmarks(false)} />
     </header>
   );
 };
