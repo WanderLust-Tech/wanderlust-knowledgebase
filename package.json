@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "node scripts/build-search-index.js && vite build",
     "preview": "vite preview",
-    "build-index": "node scripts/build-search-index.js"
+    "build-index": "node scripts/build-search-index.js",
+    "generate-icons": "node scripts/generate-icons.js"
   },
   "dependencies": {
     "glob": "^11.0.3",
@@ -21,6 +22,7 @@
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.13",
+    "canvas": "^3.2.0",
     "postcss": "^8.4.21",
     "tailwindcss": "^3.3.2",
     "typescript": "^5.1.6",
