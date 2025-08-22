@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ContentNode } from '../contentIndex';
 
 interface SidebarProps { nodes: ContentNode[]; }
@@ -15,6 +15,7 @@ const Sidebar: React.FC<SidebarProps> = ({ nodes }) => (
 const Node: React.FC<{ node: ContentNode; level: number }> = ({ node, level }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const hasChildren = !!node.children;
   
   // Check if current path matches this node or any of its children
@@ -33,6 +34,36 @@ const Node: React.FC<{ node: ContentNode; level: number }> = ({ node, level }) =
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
+  };
+
+  // Handle folder click: both expand and navigate to overview
+  const handleFolderClick = () => {
+    // Toggle expansion
+    setIsExpanded(!isExpanded);
+    
+    // Navigate to overview if we can determine the folder path
+    if (hasChildren && node.children && node.children.length > 0) {
+      // Try to find an overview.md in the children
+      const overviewChild = node.children.find(child => 
+        child.path && child.path.endsWith('/overview')
+      );
+      
+      if (overviewChild) {
+        navigate(`/${overviewChild.path}`);
+      } else {
+        // If no direct overview child, construct the overview path from the first child's path
+        const firstChild = node.children[0];
+        if (firstChild && firstChild.path) {
+          // Extract the folder path from the first child
+          const pathParts = firstChild.path.split('/');
+          if (pathParts.length > 1) {
+            // Remove the last part (filename) and add overview
+            const folderPath = pathParts.slice(0, -1).join('/');
+            navigate(`/${folderPath}/overview`);
+          }
+        }
+      }
+    }
   };
 
   // Chevron right/down icon component
@@ -87,7 +118,7 @@ const Node: React.FC<{ node: ContentNode; level: number }> = ({ node, level }) =
         {hasChildren ? (
           <>
             <button
-              onClick={toggleExpand}
+              onClick={handleFolderClick}
               className={`flex items-center w-full px-2 py-2 text-left transition-colors duration-150 ${
                 isCurrentPage ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
               }`}
