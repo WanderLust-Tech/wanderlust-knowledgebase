@@ -13,6 +13,7 @@ const Breadcrumb: React.FC = () => {
   // Generate breadcrumbs from current path
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
     const pathSegments = location.pathname.split('/').filter(segment => segment);
+    
     const breadcrumbs: BreadcrumbItem[] = [
       { title: 'Home', path: '/' }
     ];
@@ -62,10 +63,10 @@ const Breadcrumb: React.FC = () => {
   }
 
   return (
-    <nav className="breadcrumb-container bg-gray-50 dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
+    <nav key={location.pathname} className="breadcrumb-container bg-gray-50 dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
       <ol className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
         {breadcrumbs.map((item, index) => (
-          <li key={item.path} className="flex items-center">
+          <li key={`${location.pathname}-${item.path}-${index}`} className="flex items-center">
             {index > 0 && (
               <svg
                 className="w-4 h-4 mx-2 text-gray-400"
