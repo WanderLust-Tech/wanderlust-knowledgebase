@@ -60,14 +60,15 @@ const Header: React.FC = () => {
     <header className={`bg-blue-600 dark:bg-gray-800 text-white p-4 sticky top-0 z-50 transition-all duration-200 ${
       isScrolled ? 'shadow-lg' : 'shadow-md'
     }`}>
-      <nav className="flex justify-between items-center">
-        <div className="text-lg font-bold">Wanderlust Knowledgebase</div>
-        <div className="flex items-center gap-4">
-          <form onSubmit={handleSubmit} className="relative">
+      <nav className="flex items-center justify-between">
+        <div className="text-lg font-bold flex-shrink-0">Wanderlust Knowledgebase</div>
+        
+        <div className="flex-1 flex justify-center mx-8">
+          <form onSubmit={handleSubmit} className="relative w-full max-w-md">
             <input
               ref={inputRef}
               type="text"
-              className="rounded px-2 py-1 text-black w-64"
+              className="rounded px-3 py-2 text-black w-full"
               placeholder="Search..."
               value={query}
               onChange={e => setQuery(e.target.value)}
@@ -76,7 +77,7 @@ const Header: React.FC = () => {
               aria-label="Search"
             />
             {showDropdown && results.length > 0 && (
-              <ul className="absolute left-0 mt-1 w-64 bg-white text-black border rounded shadow-lg max-h-60 overflow-auto z-50">
+              <ul className="absolute left-0 mt-1 w-full bg-white text-black border rounded shadow-lg max-h-60 overflow-auto z-50">
                 {results.map(result => (
                   <li key={result.path}>
                     <Link
@@ -100,31 +101,22 @@ const Header: React.FC = () => {
               </ul>
             )}
           </form>
-          <ul className="flex items-center space-x-4">
-            <li>
-              <Link to="/" className="hover:underline">
-                Home
-              </Link>
-            </li>
-            {/* <li>
-              <Link to="/chromium" className="hover:underline">
-                Chromium
-              </Link>
-            </li>
-            <li>
-              <Link to="/frontend" className="hover:underline">
-                Frontend
-              </Link>
-            </li>
-            <li>
-              <Link to="/minecraft" className="hover:underline">
-                Minecraft
-              </Link>
-            </li> */}
-            <li>
-              <ThemeToggle />
-            </li>
-          </ul>
+        </div>
+        
+        <div className="flex items-center space-x-4 flex-shrink-0">
+          <Link to="/" className="hover:underline">
+            Home
+          </Link>
+          {/* <Link to="/chromium" className="hover:underline">
+            Chromium
+          </Link>
+          <Link to="/frontend" className="hover:underline">
+            Frontend
+          </Link>
+          <Link to="/minecraft" className="hover:underline">
+            Minecraft
+          </Link> */}
+          <ThemeToggle />
         </div>
       </nav>
     </header>
