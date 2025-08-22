@@ -33,7 +33,7 @@ const SearchResults: React.FC = () => {
   }, [window.location.search]);
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <h1 className="text-2xl font-bold mb-4">Search Results for "{query}"</h1>
       {results.length === 0 ? (
         <p>No results found.</p>
@@ -41,10 +41,10 @@ const SearchResults: React.FC = () => {
         <ul>
           {results.map(result => (
             <li key={result.path} className="mb-6">
-              <Link to={`/${result.path}`} className="text-blue-600 font-semibold hover:underline">
+              <Link to={`/${result.path}`} className="text-blue-600 dark:text-blue-400 font-semibold hover:underline">
                 {result.title || result.path}
               </Link>
-              <p className="text-gray-700 text-sm mt-1">
+              <p className="text-gray-700 dark:text-gray-300 text-sm mt-1">
                 {result.content.slice(0, 200).replace(/\n/g, ' ')}...
               </p>
             </li>

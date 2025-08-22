@@ -27,6 +27,23 @@
   background: #9ca3af;
 }
 
+/* Dark mode scrollbar */
+.dark .sidebar-scrollbar {
+  scrollbar-color: #4b5563 #374151;
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
 /* Optional: Hide scrollbar completely on webkit browsers when not hovering */
 .sidebar-scrollbar-hidden {
   scrollbar-width: none;
@@ -45,4 +62,52 @@
 
 .sidebar-scrollbar-hidden:hover::-webkit-scrollbar {
   width: 6px;
+}
+
+/* Dark mode support for markdown content */
+.dark .markdown-body {
+  color: #e5e7eb;
+  background-color: #111827;
+}
+
+.dark .markdown-body h1,
+.dark .markdown-body h2,
+.dark .markdown-body h3,
+.dark .markdown-body h4,
+.dark .markdown-body h5,
+.dark .markdown-body h6 {
+  color: #f9fafb;
+}
+
+.dark .markdown-body code {
+  background-color: rgba(55, 65, 81, 0.5);
+  color: #f3f4f6;
+}
+
+.dark .markdown-body pre {
+  background-color: #1f2937;
+  color: #f3f4f6;
+}
+
+.dark .markdown-body blockquote {
+  color: #9ca3af;
+  border-left-color: #4b5563;
+}
+
+.dark .markdown-body table th,
+.dark .markdown-body table td {
+  border-color: #4b5563;
+}
+
+.dark .markdown-body table th {
+  background-color: #374151;
+}
+
+.dark .markdown-body table tr {
+  background-color: #111827;
+  border-top-color: #4b5563;
+}
+
+.dark .markdown-body hr {
+  border-top-color: #4b5563;
 }

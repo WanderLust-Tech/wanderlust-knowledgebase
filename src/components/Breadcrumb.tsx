@@ -49,8 +49,8 @@ const Breadcrumb: React.FC = () => {
   }
 
   return (
-    <nav className="breadcrumb-container bg-gray-50 px-6 py-3 border-b border-gray-200">
-      <ol className="flex items-center space-x-2 text-sm text-gray-600">
+    <nav className="breadcrumb-container bg-gray-50 dark:bg-gray-800 px-6 py-3 border-b border-gray-200 dark:border-gray-700">
+      <ol className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
         {breadcrumbs.map((item, index) => (
           <li key={item.path} className="flex items-center">
             {index > 0 && (
@@ -68,11 +68,11 @@ const Breadcrumb: React.FC = () => {
               </svg>
             )}
             {index === breadcrumbs.length - 1 ? (
-              <span className="font-medium text-gray-900">{item.title}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{item.title}</span>
             ) : (
               <Link
                 to={item.path}
-                className="hover:text-blue-600 hover:underline transition-colors duration-200"
+                className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors duration-200"
               >
                 {item.title}
               </Link>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import ThemeToggle from './ThemeToggle';
 
 
 interface SearchResult {
@@ -56,70 +57,75 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className={`bg-blue-600 text-white p-4 sticky top-0 z-50 transition-shadow duration-200 ${
+    <header className={`bg-blue-600 dark:bg-gray-800 text-white p-4 sticky top-0 z-50 transition-all duration-200 ${
       isScrolled ? 'shadow-lg' : 'shadow-md'
     }`}>
       <nav className="flex justify-between items-center">
         <div className="text-lg font-bold">Wanderlust Knowledgebase</div>
-        <form onSubmit={handleSubmit} className="relative mr-4">
-          <input
-            ref={inputRef}
-            type="text"
-            className="rounded px-2 py-1 text-black w-64"
-            placeholder="Search..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onFocus={() => query.length > 1 && setShowDropdown(true)}
-            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-            aria-label="Search"
-          />
-          {showDropdown && results.length > 0 && (
-            <ul className="absolute left-0 mt-1 w-64 bg-white text-black border rounded shadow-lg max-h-60 overflow-auto z-50">
-              {results.map(result => (
-                <li key={result.path}>
-                  <Link
-                    to={`/${result.path}`}
-                    className="block px-3 py-2 hover:bg-blue-100"
-                    onMouseDown={e => e.preventDefault()}
+        <div className="flex items-center gap-4">
+          <form onSubmit={handleSubmit} className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              className="rounded px-2 py-1 text-black w-64"
+              placeholder="Search..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onFocus={() => query.length > 1 && setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+              aria-label="Search"
+            />
+            {showDropdown && results.length > 0 && (
+              <ul className="absolute left-0 mt-1 w-64 bg-white text-black border rounded shadow-lg max-h-60 overflow-auto z-50">
+                {results.map(result => (
+                  <li key={result.path}>
+                    <Link
+                      to={`/${result.path}`}
+                      className="block px-3 py-2 hover:bg-blue-100"
+                      onMouseDown={e => e.preventDefault()}
+                    >
+                      <span className="font-semibold">{result.title || result.path}</span>
+                      <div className="text-xs text-gray-600 truncate">{result.content.slice(0, 80).replace(/\n/g, ' ')}...</div>
+                    </Link>
+                  </li>
+                ))}
+                <li>
+                  <button
+                    type="submit"
+                    className="w-full text-left px-3 py-2 text-blue-600 hover:underline bg-gray-50"
                   >
-                    <span className="font-semibold">{result.title || result.path}</span>
-                    <div className="text-xs text-gray-600 truncate">{result.content.slice(0, 80).replace(/\n/g, ' ')}...</div>
-                  </Link>
+                    See all results for "{query}"
+                  </button>
                 </li>
-              ))}
-              <li>
-                <button
-                  type="submit"
-                  className="w-full text-left px-3 py-2 text-blue-600 hover:underline bg-gray-50"
-                >
-                  See all results for "{query}"
-                </button>
-              </li>
-            </ul>
-          )}
-        </form>
-        <ul className="flex space-x-4">
-          <li>
-            <Link to="/" className="hover:underline">
-              Home
-            </Link>
-          </li>
-          {/* <li>
-            <Link to="/chromium" className="hover:underline">
-              Chromium
-            </Link>
-          </li>
-          <li>
-            <Link to="/frontend" className="hover:underline">
-              Frontend
-            </Link>
-          </li>
-          <li>
-            <Link to="/minecraft" className="hover:underline">
-              Minecraft
-            </Link>
-          </li> */}
-        </ul>
+              </ul>
+            )}
+          </form>
+          <ul className="flex items-center space-x-4">
+            <li>
+              <Link to="/" className="hover:underline">
+                Home
+              </Link>
+            </li>
+            {/* <li>
+              <Link to="/chromium" className="hover:underline">
+                Chromium
+              </Link>
+            </li>
+            <li>
+              <Link to="/frontend" className="hover:underline">
+                Frontend
+              </Link>
+            </li>
+            <li>
+              <Link to="/minecraft" className="hover:underline">
+                Minecraft
+              </Link>
+            </li> */}
+            <li>
+              <ThemeToggle />
+            </li>
+          </ul>
+        </div>
       </nav>
     </header>
   );
