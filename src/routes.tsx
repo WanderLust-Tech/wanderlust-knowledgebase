@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import ArticleView from './components/ArticleView';
+import Breadcrumb from './components/Breadcrumb';
 
 import { contentIndex } from './contentIndex';
 import Header from './components/Header';
@@ -14,6 +15,7 @@ const App: React.FC = () => (
       <div className="flex flex-1 overflow-hidden">
         <Sidebar nodes={contentIndex} />
         <main className="flex-1 overflow-auto">
+          <Breadcrumb />
           <Routes>
             {/* Default route redirects to introduction/overview */}
             <Route path="/" element={<Navigate to="/introduction/overview" replace />} />
