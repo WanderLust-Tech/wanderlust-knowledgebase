@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 interface SearchResult {
   path: string;
@@ -10,11 +10,10 @@ interface SearchResult {
 const SearchResults: React.FC = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [query, setQuery] = useState('');
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get('q') || '';
+    const q = searchParams.get('q') || '';
     setQuery(q);
     if (q) {
       fetch('/search-index.json')
@@ -30,7 +29,7 @@ const SearchResults: React.FC = () => {
           );
         });
     }
-  }, [window.location.search]);
+  }, [searchParams]);
 
   return (
     <div className="p-6 max-w-3xl mx-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
