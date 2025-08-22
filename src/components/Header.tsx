@@ -12,8 +12,18 @@ const Header: React.FC = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (query.length > 1) {
@@ -46,7 +56,9 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-blue-600 text-white p-4 shadow-md relative z-10">
+    <header className={`bg-blue-600 text-white p-4 sticky top-0 z-50 transition-shadow duration-200 ${
+      isScrolled ? 'shadow-lg' : 'shadow-md'
+    }`}>
       <nav className="flex justify-between items-center">
         <div className="text-lg font-bold">Wanderlust Knowledgebase</div>
         <form onSubmit={handleSubmit} className="relative mr-4">
@@ -62,7 +74,7 @@ const Header: React.FC = () => {
             aria-label="Search"
           />
           {showDropdown && results.length > 0 && (
-            <ul className="absolute left-0 mt-1 w-64 bg-white text-black border rounded shadow-lg max-h-60 overflow-auto">
+            <ul className="absolute left-0 mt-1 w-64 bg-white text-black border rounded shadow-lg max-h-60 overflow-auto z-50">
               {results.map(result => (
                 <li key={result.path}>
                   <Link
