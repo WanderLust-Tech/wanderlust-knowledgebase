@@ -70,6 +70,65 @@
   background-color: #111827;
 }
 
+/* Ensure proper list styling in markdown content */
+.markdown-body ul {
+  list-style-type: disc !important;
+  padding-left: 2em !important;
+  margin-bottom: 16px !important;
+  margin-left: 0 !important;
+}
+
+.markdown-body ol {
+  list-style-type: decimal !important;
+  padding-left: 2em !important;
+  margin-bottom: 16px !important;
+  margin-left: 0 !important;
+}
+
+.markdown-body li {
+  margin-bottom: 0.25em !important;
+  display: list-item !important;
+  list-style-position: outside !important;
+}
+
+.markdown-body ul ul {
+  list-style-type: circle !important;
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+}
+
+.markdown-body ul ul ul {
+  list-style-type: square !important;
+}
+
+.markdown-body ol ol {
+  list-style-type: lower-alpha !important;
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+}
+
+.markdown-body ol ol ol {
+  list-style-type: lower-roman !important;
+}
+
+/* Ensure nested lists work properly */
+.markdown-body li > ul,
+.markdown-body li > ol {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+}
+
+/* Task lists (checkboxes) */
+.markdown-body .task-list-item {
+  list-style-type: none !important;
+  margin-left: -1.5em !important;
+}
+
+.markdown-body .task-list-item input[type="checkbox"] {
+  margin-right: 0.5em !important;
+  margin-left: 0 !important;
+}
+
 .dark .markdown-body h1,
 .dark .markdown-body h2,
 .dark .markdown-body h3,
