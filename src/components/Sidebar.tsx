@@ -5,7 +5,7 @@ import { ContentNode } from '../contentIndex';
 interface SidebarProps { nodes: ContentNode[]; }
 
 const Sidebar: React.FC<SidebarProps> = ({ nodes }) => (
-  <aside className="w-64 bg-gray-100 p-4 overflow-y-auto h-full flex-shrink-0">
+  <aside className="w-64 bg-gray-100 p-4 overflow-y-auto h-full flex-shrink-0 sidebar-scrollbar">
     <ul>
       {nodes.map(node => <Node key={node.title} node={node} />)}
     </ul>

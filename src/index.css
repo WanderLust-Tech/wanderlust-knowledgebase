@@ -1,3 +1,48 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom scrollbar styles for sidebar */
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-radius: 3px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Optional: Hide scrollbar completely on webkit browsers when not hovering */
+.sidebar-scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-scrollbar-hidden::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+.sidebar-scrollbar-hidden:hover {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+.sidebar-scrollbar-hidden:hover::-webkit-scrollbar {
+  width: 6px;
+}
