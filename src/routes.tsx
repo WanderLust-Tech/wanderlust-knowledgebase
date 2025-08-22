@@ -16,14 +16,16 @@ const App: React.FC = () => (
         <Header /> {/* Add the Header component */}
         <div className="flex flex-1 overflow-hidden">
           <Sidebar nodes={contentIndex} />
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 flex flex-col overflow-hidden">
             <Breadcrumb />
-            <Routes>
-              {/* Default route redirects to introduction/overview */}
-              <Route path="/" element={<Navigate to="/introduction/overview" replace />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/*" element={<ArticleView />} />
-            </Routes>
+            <div className="flex-1 overflow-auto">
+              <Routes>
+                {/* Default route redirects to introduction/overview */}
+                <Route path="/" element={<Navigate to="/introduction/overview" replace />} />
+                <Route path="/search" element={<SearchResults />} />
+                <Route path="/*" element={<ArticleView />} />
+              </Routes>
+            </div>
           </main>
         </div>
       </div>

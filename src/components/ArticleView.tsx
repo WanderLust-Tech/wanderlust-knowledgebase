@@ -16,10 +16,10 @@ const ArticleView: React.FC = () => {
 
   // Scroll to top when navigating to a new article
   useEffect(() => {
-    // Find the main content area (the scrollable container)
-    const mainElement = document.querySelector('main');
-    if (mainElement) {
-      mainElement.scrollTo({
+    // Find the scrollable content area (the div that contains Routes)
+    const scrollableElement = document.querySelector('main > div');
+    if (scrollableElement) {
+      scrollableElement.scrollTo({
         top: 0,
         behavior: 'smooth'
       });

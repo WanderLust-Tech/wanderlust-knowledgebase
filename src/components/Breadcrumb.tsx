@@ -17,6 +17,12 @@ const Breadcrumb: React.FC = () => {
       { title: 'Home', path: '/' }
     ];
 
+    // Known section folders that should link to their overview
+    const sectionFolders = [
+      'architecture', 'getting-started', 'modules', 'contributing', 
+      'debugging', 'introduction', 'security'
+    ];
+
     // Build breadcrumbs from path segments
     let currentPath = '';
     pathSegments.forEach((segment, index) => {
@@ -31,9 +37,16 @@ const Breadcrumb: React.FC = () => {
       // Determine context based on first segment
       const context = index === 0 ? segment as BreadcrumbItem['context'] : undefined;
 
+      // For section folders (first level), append /overview to the path for navigation
+      // For deeper paths, use the current path as-is
+      let navigationPath = currentPath;
+      if (index === 0 && sectionFolders.includes(segment)) {
+        navigationPath = `${currentPath}/overview`;
+      }
+
       breadcrumbs.push({
         title,
-        path: currentPath,
+        path: navigationPath,
         context
       });
     });
