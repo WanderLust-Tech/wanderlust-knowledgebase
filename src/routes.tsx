@@ -11,7 +11,7 @@ const App: React.FC = () => (
   <Router>
     <div className="flex flex-col h-screen">
       <Header /> {/* Add the Header component */}
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar nodes={contentIndex} />
         <main className="flex-1 overflow-auto">
           <Routes>

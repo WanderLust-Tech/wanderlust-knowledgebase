@@ -104,7 +104,7 @@ const Header: React.FC = () => {
               Home
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link to="/chromium" className="hover:underline">
               Chromium
             </Link>
@@ -118,7 +118,7 @@ const Header: React.FC = () => {
             <Link to="/minecraft" className="hover:underline">
               Minecraft
             </Link>
-          </li>
+          </li> */}
         </ul>
       </nav>
     </header>
