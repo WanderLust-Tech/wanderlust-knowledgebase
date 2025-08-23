@@ -187,7 +187,7 @@ const ArticleView: React.FC = () => {
       
       {/* Page Bookmark Button */}
       {title && path && (
-        <div className="sticky top-16 float-right z-10 mb-4 ml-4 mr-4">
+        <div className="sticky top-28 float-right z-10 mb-4 ml-4 mr-4">
           <BookmarkButton
             title={title}
             path={path}
@@ -200,7 +200,7 @@ const ArticleView: React.FC = () => {
         </div>
       )}
       
-      <article className="markdown-body pt-16">
+      <article className="markdown-body pt-28">
         <ReactMarkdown components={components}>{content}</ReactMarkdown>
       </article>
     </div>

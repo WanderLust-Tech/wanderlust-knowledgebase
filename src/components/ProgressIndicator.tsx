@@ -89,7 +89,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-50 ${className}`}>
+    <div className={`fixed top-16 left-0 right-0 z-40 ${className}`}>
       {/* Progress Bar */}
       <div className="w-full bg-gray-200 dark:bg-gray-700 h-1">
         <div 
@@ -99,16 +99,16 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       </div>
       
       {/* Progress Info */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2">
+      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 px-4 py-1.5 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <span className={`text-lg ${
+              <span className={`text-sm ${
                 articleProgress?.completed ? '✅' : displayProgress > 50 ? '📖' : '📄'
               }`}>
                 {articleProgress?.completed ? '✅' : displayProgress > 50 ? '📖' : '📄'}
               </span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
+              <span className="text-xs font-medium text-gray-900 dark:text-white">
                 {isNaN(displayProgress) ? 0 : Math.round(displayProgress)}% complete
               </span>
             </div>
@@ -128,10 +128,10 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
           
           <button
             onClick={() => setIsVisible(false)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1"
             aria-label="Hide progress indicator"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
