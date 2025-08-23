@@ -120,7 +120,7 @@ const ArticleView: React.FC = () => {
     <div className="relative">
       {/* Page Bookmark Button */}
       {title && path && (
-        <div className="sticky top-4 float-right z-10 mb-4 ml-4">
+        <div className="sticky top-4 float-right z-10 mb-4 ml-4 mr-4">
           <BookmarkButton
             title={title}
             path={path}
