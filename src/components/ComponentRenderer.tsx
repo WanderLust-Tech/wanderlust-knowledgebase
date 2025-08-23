@@ -8,6 +8,7 @@ const VideoRenderer = lazy(() => import('./renderers/VideoRenderer'));
 const DiagramRenderer = lazy(() => import('./renderers/DiagramRenderer'));
 const CalloutRenderer = lazy(() => import('./renderers/CalloutRenderer'));
 const QuizRenderer = lazy(() => import('./renderers/QuizRenderer'));
+const CodePlaygroundRenderer = lazy(() => import('./renderers/CodePlaygroundRenderer'));
 
 interface ComponentRendererProps {
   component: ArticleComponent;
@@ -92,6 +93,13 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           return (
             <Suspense fallback={<LoadingFallback />}>
               <QuizRenderer component={component} onInteraction={handleInteraction} />
+            </Suspense>
+          );
+
+        case 'code-playground':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <CodePlaygroundRenderer component={component} onInteraction={handleInteraction} />
             </Suspense>
           );
 

@@ -96,3 +96,27 @@ export interface QuizContent {
   showResults?: boolean;
   allowRetry?: boolean;
 }
+
+export interface CodePlaygroundContent {
+  language: 'javascript' | 'typescript' | 'cpp' | 'python' | 'html' | 'css';
+  initialCode: string;
+  expectedOutput?: string;
+  solution?: string;
+  instructions?: string;
+  files?: Array<{
+    name: string;
+    content: string;
+    language: string;
+    readOnly?: boolean;
+  }>;
+  runnable?: boolean;
+  showOutput?: boolean;
+  showConsole?: boolean;
+  theme?: 'vs-dark' | 'vs-light';
+  features?: {
+    intellisense?: boolean;
+    minimap?: boolean;
+    lineNumbers?: boolean;
+    wordWrap?: boolean;
+  };
+}

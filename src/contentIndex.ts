@@ -75,5 +75,13 @@ export const contentIndex: ContentNode[] = [
             { title: "Overview", path: "contributing/overview" },
             { title: "Contributing Guide", path: "contributing/contributing" }
         ]
+    },
+    {
+        title: "Demo", children: [
+            { title: "Syntax Highlighting", path: "demo/syntax-highlighting" },
+            { title: "Enhanced Component Architecture", path: "demo/enhanced-component-architecture" },
+            { title: "Code Playground", path: "demo/code-playground" },
+            { title: "C++ & Chromium Development", path: "demo/cpp-chromium-playground" }
+        ]
     }
 ];
