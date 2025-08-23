@@ -19,17 +19,28 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Get theme from localStorage or default to system
-    const stored = localStorage.getItem('theme') as Theme;
-    return stored || 'system';
-  });
+  // Get initial theme from localStorage safely
+  const getInitialTheme = (): Theme => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem('theme') as Theme;
+        return stored || 'system';
+      }
+      return 'system';
+    } catch {
+      return 'system';
+    }
+  };
 
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [isDark, setIsDark] = useState(false);
 
   // Function to get system preference
   const getSystemTheme = () => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light'; // Default fallback
   };
 
   // Update isDark based on current theme
@@ -46,30 +57,40 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsDark(shouldBeDark);
       
       // Apply theme to document
-      if (shouldBeDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      if (typeof document !== 'undefined') {
+        if (shouldBeDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       }
     };
 
     updateTheme();
 
     // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (theme === 'system') {
-        updateTheme();
-      }
-    };
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => {
+        if (theme === 'system') {
+          updateTheme();
+        }
+      };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
   }, [theme]);
 
   // Save theme to localStorage
   useEffect(() => {
-    localStorage.setItem('theme', theme);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('theme', theme);
+      }
+    } catch (error) {
+      console.warn('Failed to save theme to localStorage:', error);
+    }
   }, [theme]);
 
   return (
