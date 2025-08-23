@@ -1,5 +1,12 @@
 # Changelog
 
+### 🔧 Changed
+- **GitHub Actions Workflow**: Updated to trigger only on version changes, not all package.json modifications
+- **Deployment Strategy**: Enhanced workflow to detect package version changes for more precise deployment control
+- **Build Step Messaging**: Added version change detection and logging in CI/CD pipeline
+- **Sidebar Navigation**: Implemented accordion-style behavior where only one parent folder can be open at a time for better focus
+- **Progress Indicator Integration**: Moved progress tracking into breadcrumb bar to prevent UI overlap issues
+
 ## [Unreleased]
 
 ### � Added

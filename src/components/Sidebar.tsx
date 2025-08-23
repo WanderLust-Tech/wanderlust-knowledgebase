@@ -7,6 +7,41 @@ interface SidebarProps { nodes: ContentNode[]; }
 
 const Sidebar: React.FC<SidebarProps> = ({ nodes }) => {
   const { isOpen, isMobile, isInitialized } = useSidebar();
+  const [expandedNode, setExpandedNode] = useState<string | null>(null);
+  const location = useLocation();
+
+  // Auto-expand the node that contains the current page on mount and route changes
+  useEffect(() => {
+    const findNodeContainingPath = (nodes: ContentNode[], targetPath: string): string | null => {
+      for (const node of nodes) {
+        if (node.children) {
+          // Check if any child or grandchild matches the current path
+          const hasMatchingChild = node.children.some(child => 
+            (child.path && targetPath.startsWith(`/${child.path}`)) ||
+            (child.children?.some(grandchild => 
+              grandchild.path && targetPath.startsWith(`/${grandchild.path}`)
+            ))
+          );
+          
+          if (hasMatchingChild) {
+            return node.title;
+          }
+          
+          // Recursively check children
+          const childResult = findNodeContainingPath(node.children, targetPath);
+          if (childResult) {
+            return childResult;
+          }
+        }
+      }
+      return null;
+    };
+
+    const nodeToExpand = findNodeContainingPath(nodes, location.pathname);
+    if (nodeToExpand) {
+      setExpandedNode(nodeToExpand);
+    }
+  }, [location.pathname, nodes]);
 
   // Don't render until initialized to prevent hydration issues
   if (!isInitialized) {
@@ -35,7 +70,15 @@ const Sidebar: React.FC<SidebarProps> = ({ nodes }) => {
       >
         <div className="w-64 p-4 overflow-y-auto h-full sidebar-scrollbar">
           <ul>
-            {nodes.map(node => <Node key={node.title} node={node} level={0} />)}
+            {nodes.map(node => (
+              <Node 
+                key={node.title} 
+                node={node} 
+                level={0} 
+                expandedNode={expandedNode}
+                setExpandedNode={setExpandedNode}
+              />
+            ))}
           </ul>
         </div>
       </aside>
@@ -43,7 +86,12 @@ const Sidebar: React.FC<SidebarProps> = ({ nodes }) => {
   );
 };
 
-const Node: React.FC<{ node: ContentNode; level: number }> = ({ node, level }) => {
+const Node: React.FC<{ 
+  node: ContentNode; 
+  level: number; 
+  expandedNode: string | null; 
+  setExpandedNode: React.Dispatch<React.SetStateAction<string | null>>;
+}> = ({ node, level, expandedNode, setExpandedNode }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,22 +103,36 @@ const Node: React.FC<{ node: ContentNode; level: number }> = ({ node, level }) =
     location.pathname.startsWith(`/${child.path}`) || 
     child.children?.some(grandchild => location.pathname.startsWith(`/${grandchild.path}`))
   );
-
-  // Auto-expand if this node contains the current page
+  
+  // Update local state when parent state changes (for top-level) or when needed (for nested)
   useEffect(() => {
-    if (isParentOfCurrentPage) {
+    if (level === 0) {
+      setIsExpanded(expandedNode === node.title);
+    } else if (isParentOfCurrentPage) {
       setIsExpanded(true);
     }
-  }, [isParentOfCurrentPage]);
+  }, [expandedNode, isParentOfCurrentPage, level, node.title]);
 
   const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
+    // For accordion behavior: only apply to top-level nodes (level 0)
+    if (level === 0) {
+      // If this node is already expanded, close it
+      // Otherwise, set this node as the only expanded one
+      if (expandedNode === node.title) {
+        setExpandedNode(null);
+      } else {
+        setExpandedNode(node.title);
+      }
+    } else {
+      // For nested nodes, use normal toggle behavior
+      setIsExpanded(!isExpanded);
+    }
   };
 
   // Handle folder click: both expand and navigate to overview
   const handleFolderClick = () => {
-    // Toggle expansion
-    setIsExpanded(!isExpanded);
+    // Toggle expansion with accordion behavior for top-level, normal for nested
+    toggleExpand();
     
     // Navigate to overview if we can determine the folder path
     if (hasChildren && node.children && node.children.length > 0) {
@@ -185,7 +247,15 @@ const Node: React.FC<{ node: ContentNode; level: number }> = ({ node, level }) =
       </div>
       {hasChildren && isExpanded && (
         <ul className="ml-4 mt-1">
-          {node.children!.map(child => <Node key={child.title} node={child} level={level + 1} />)}
+          {node.children!.map(child => (
+            <Node 
+              key={child.title} 
+              node={child} 
+              level={level + 1} 
+              expandedNode={expandedNode}
+              setExpandedNode={setExpandedNode}
+            />
+          ))}
         </ul>
       )}
     </li>
