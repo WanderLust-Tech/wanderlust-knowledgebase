@@ -4,6 +4,8 @@ import ReactMarkdown from 'react-markdown';
 import { BookmarkButton } from './BookmarkButton';
 import { SectionBookmark } from './SectionBookmark';
 import CodeBlock from './CodeBlock';
+import ComponentRenderer from './ComponentRenderer';
+import { ArticleComponent, InteractiveDiagramContent } from '../types/ComponentTypes';
 import '../github-markdown.css';
 
 const ArticleView: React.FC = () => {
@@ -57,10 +59,42 @@ const ArticleView: React.FC = () => {
   // Custom renderer for code blocks to add bookmark functionality
   const components = {
     code: ({ node, inline, className, children, ...props }: any) => {
-      // Handle both inline and block code
+      const codeContent = String(children).replace(/\n$/, '');
+      
+      // Check if this is a special component type
+      if (className === 'language-interactive-diagram' && !inline) {
+        try {
+          const diagramData: InteractiveDiagramContent = JSON.parse(codeContent);
+          const component: ArticleComponent = {
+            id: `diagram-${Math.random().toString(36).substr(2, 9)}`,
+            type: 'interactive-diagram',
+            content: diagramData,
+            metadata: {
+              id: `diagram-${Math.random().toString(36).substr(2, 9)}`,
+              title: diagramData.title,
+              description: diagramData.description,
+            }
+          };
+          
+          return <ComponentRenderer component={component} />;
+        } catch (error) {
+          console.error('Failed to parse interactive diagram:', error);
+          return (
+            <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+              <strong>Error:</strong> Invalid interactive diagram configuration
+              <details className="mt-2">
+                <summary className="cursor-pointer">Show details</summary>
+                <pre className="mt-2 text-sm">{error instanceof Error ? error.message : 'Unknown error'}</pre>
+              </details>
+            </div>
+          );
+        }
+      }
+      
+      // Handle regular code blocks
       return (
         <CodeBlock className={className} inline={inline}>
-          {String(children).replace(/\n$/, '')}
+          {codeContent}
         </CodeBlock>
       );
     },

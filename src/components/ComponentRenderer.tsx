@@ -9,6 +9,7 @@ const DiagramRenderer = lazy(() => import('./renderers/DiagramRenderer'));
 const CalloutRenderer = lazy(() => import('./renderers/CalloutRenderer'));
 const QuizRenderer = lazy(() => import('./renderers/QuizRenderer'));
 const CodePlaygroundRenderer = lazy(() => import('./renderers/CodePlaygroundRenderer'));
+const InteractiveDiagramRenderer = lazy(() => import('./renderers/InteractiveDiagramRenderer'));
 
 interface ComponentRendererProps {
   component: ArticleComponent;
@@ -100,6 +101,13 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           return (
             <Suspense fallback={<LoadingFallback />}>
               <CodePlaygroundRenderer component={component} onInteraction={handleInteraction} />
+            </Suspense>
+          );
+
+        case 'interactive-diagram':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <InteractiveDiagramRenderer content={component.content} />
             </Suspense>
           );
 

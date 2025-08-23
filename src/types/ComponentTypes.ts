@@ -14,7 +14,7 @@ export interface ComponentMetadata {
 
 export interface ArticleComponent {
   id: string;
-  type: 'markdown' | 'interactive' | 'video' | 'diagram' | 'code-playground' | 'quiz' | 'callout';
+  type: 'markdown' | 'interactive' | 'video' | 'diagram' | 'code-playground' | 'interactive-diagram' | 'quiz' | 'callout';
   content: any;
   metadata: ComponentMetadata;
   props?: Record<string, any>;
@@ -65,7 +65,7 @@ export interface VideoContent {
 }
 
 export interface DiagramContent {
-  type: 'mermaid' | 'plantuml' | 'flowchart' | 'architecture';
+  type: 'mermaid' | 'plantuml' | 'flowchart' | 'architecture' | 'interactive';
   source: string;
   title?: string;
   interactive?: boolean;
@@ -74,6 +74,54 @@ export interface DiagramContent {
     action: 'navigate' | 'tooltip' | 'modal';
     target: string;
   }>;
+}
+
+export interface InteractiveDiagramContent {
+  title: string;
+  description?: string;
+  nodes: DiagramNode[];
+  edges: DiagramEdge[];
+  layout?: 'horizontal' | 'vertical' | 'radial' | 'free';
+  height?: number;
+  interactive?: boolean;
+  miniMap?: boolean;
+  controls?: boolean;
+  background?: boolean;
+  nodeTypes?: Record<string, any>;
+}
+
+export interface DiagramNode {
+  id: string;
+  type?: 'default' | 'process' | 'component' | 'decision' | 'data' | 'chromium-process' | 'chromium-component';
+  position: { x: number; y: number };
+  data: {
+    label: string;
+    description?: string;
+    details?: string;
+    icon?: string;
+    color?: string;
+    links?: { title: string; url: string }[];
+    processType?: 'browser' | 'renderer' | 'gpu' | 'network' | 'utility';
+    componentType?: 'ui' | 'content' | 'blink' | 'v8' | 'network' | 'storage';
+  };
+  style?: Record<string, any>;
+  draggable?: boolean;
+  selectable?: boolean;
+}
+
+export interface DiagramEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+  description?: string;
+  type?: 'default' | 'straight' | 'step' | 'smoothstep' | 'bezier';
+  animated?: boolean;
+  style?: Record<string, any>;
+  markerEnd?: {
+    type: 'arrow' | 'arrowclosed';
+    color?: string;
+  };
 }
 
 export interface CalloutContent {
