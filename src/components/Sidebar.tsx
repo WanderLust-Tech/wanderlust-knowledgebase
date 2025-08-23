@@ -1,16 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ContentNode } from '../contentIndex';
+import { useSidebar } from '../contexts/SidebarContext';
 
 interface SidebarProps { nodes: ContentNode[]; }
 
-const Sidebar: React.FC<SidebarProps> = ({ nodes }) => (
-  <aside className="w-64 bg-gray-100 dark:bg-gray-800 p-4 overflow-y-auto h-full flex-shrink-0 sidebar-scrollbar border-r border-gray-200 dark:border-gray-700">
-    <ul>
-      {nodes.map(node => <Node key={node.title} node={node} level={0} />)}
-    </ul>
-  </aside>
-);
+const Sidebar: React.FC<SidebarProps> = ({ nodes }) => {
+  const { isOpen, isMobile, isInitialized } = useSidebar();
+
+  // Don't render until initialized to prevent hydration issues
+  if (!isInitialized) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isMobile && isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" />
+      )}
+      
+      {/* Sidebar */}
+      <aside 
+        data-sidebar
+        className={`
+          ${isMobile 
+            ? `fixed left-0 top-0 h-full z-50 transform transition-transform duration-300 ease-in-out ${
+                isOpen ? 'translate-x-0' : '-translate-x-full'
+              }`
+            : `${isOpen ? 'w-64' : 'w-0'} transition-all duration-300 ease-in-out overflow-hidden`
+          }
+          bg-gray-100 dark:bg-gray-800 flex-shrink-0 border-r border-gray-200 dark:border-gray-700
+        `}
+      >
+        <div className="w-64 p-4 overflow-y-auto h-full sidebar-scrollbar">
+          <ul>
+            {nodes.map(node => <Node key={node.title} node={node} level={0} />)}
+          </ul>
+        </div>
+      </aside>
+    </>
+  );
+};
 
 const Node: React.FC<{ node: ContentNode; level: number }> = ({ node, level }) => {
   const [isExpanded, setIsExpanded] = useState(false);

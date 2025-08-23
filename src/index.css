@@ -233,4 +233,53 @@ html {
   .group .absolute.-left-8 {
     left: -1.5rem;
   }
+  
+  /* Ensure mobile sidebar is above all content */
+  .sidebar-mobile {
+    z-index: 1000;
+  }
+  
+  /* Hide sidebar toggle animation on very small screens */
+  @media (max-width: 480px) {
+    .sidebar-mobile {
+      width: 100vw !important;
+    }
+  }
+}
+
+/* Responsive sidebar animations */
+.sidebar-enter {
+  transform: translateX(-100%);
+}
+
+.sidebar-enter-active {
+  transform: translateX(0);
+  transition: transform 300ms ease-in-out;
+}
+
+.sidebar-exit {
+  transform: translateX(0);
+}
+
+.sidebar-exit-active {
+  transform: translateX(-100%);
+  transition: transform 300ms ease-in-out;
+}
+
+/* Burger menu animation */
+.burger-line {
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+.burger-active .burger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.burger-active .burger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.burger-active .burger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
 }

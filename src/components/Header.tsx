@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import { BookmarksPanel } from './BookmarksPanel';
 import { useBookmarks } from '../contexts/BookmarkContext';
+import { useSidebar } from '../contexts/SidebarContext';
 
 
 interface SearchResult {
@@ -20,6 +21,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const { bookmarks } = useBookmarks();
+  const { toggleSidebar, isMobile, isInitialized } = useSidebar();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,7 +67,24 @@ const Header: React.FC = () => {
       isScrolled ? 'shadow-lg' : 'shadow-md'
     }`}>
       <nav className="flex items-center justify-between">
-        <div className="text-base font-bold flex-shrink-0">Wanderlust Knowledgebase</div>
+        <div className="flex items-center space-x-3">
+          {/* Burger Menu Button - Mobile Only */}
+          {isInitialized && isMobile && (
+            <button
+              data-burger-menu
+              onClick={toggleSidebar}
+              className="p-1 hover:text-blue-200 dark:hover:text-blue-300 transition-colors md:hidden"
+              title="Toggle menu"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          )}
+          
+          <div className="text-base font-bold flex-shrink-0">Wanderlust Knowledgebase</div>
+        </div>
         
         <div className="flex-1 flex justify-center mx-6">
           <form onSubmit={handleSubmit} className="relative w-full max-w-md">
