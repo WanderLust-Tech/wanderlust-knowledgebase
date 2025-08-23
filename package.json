@@ -8,7 +8,13 @@
     "build": "node scripts/build-search-index.js && vite build",
     "preview": "vite preview",
     "build-index": "node scripts/build-search-index.js",
-    "generate-icons": "node scripts/generate-icons.js"
+    "generate-icons": "node scripts/generate-icons.js",
+    "deploy": "npm run build && node scripts/deploy.js deploy",
+    "deploy:backup": "node scripts/deploy.js backup",
+    "deploy:test": "node scripts/deploy.js test-connection",
+    "deploy:staging": "cross-env NODE_ENV=staging npm run deploy",
+    "deploy:production": "cross-env NODE_ENV=production npm run deploy",
+    "deploy:setup": "node scripts/test-deployment.js"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -27,7 +33,10 @@
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.13",
+    "basic-ftp": "^5.0.5",
     "canvas": "^3.2.0",
+    "cross-env": "^10.0.0",
+    "dotenv": "^17.2.1",
     "postcss": "^8.4.21",
     "tailwindcss": "^3.3.2",
     "typescript": "^5.1.6",

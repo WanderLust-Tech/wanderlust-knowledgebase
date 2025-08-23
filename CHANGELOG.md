@@ -1,5 +1,19 @@
-# Changelog
+# Changel### 🚀 Added### 🔧 Changed
+- **GitHub Actions Workflow**: Split into package-triggered and content-triggered deployments
+- **Deployment Script Logic**: Enhanced with package change detection and conditional remote clearing
+- **Workflow Conditions**: Added intelligent triggering based on file changes and dependencies
+- **Package.json Scripts**: Added deployment commands for build, deploy, backup, and testing
+- **Environment Configuration**: Enhanced .gitignore and added .env.example template
+- **README Documentation**: Comprehensive project documentation with deployment instructions
 
+### 🐛 Fixedackage-Triggered Deployments**: Automatic deployment when package.json or package-lock.json are updated
+- **Smart Deployment Detection**: Different deployment strategies for package vs content changes
+- **Dual Workflow System**: Separate workflows for package changes and content updates
+- **Enhanced Deployment Logging**: Clear indication of deployment triggers and package change detection
+- **FTP Deployment Script**: Comprehensive deployment system with backup and restore capabilities
+- **GitHub Actions CI/CD**: Automated deployment pipeline with staging and production environments
+- **Multi-Environment Support**: Separate configurations for staging and production deployments
+- **Deployment Documentation**: Complete guide for local and automated deployments
 All notable changes to the Wanderlust Knowledge Base project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -7,8 +21,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### 🐛 Fixed
-- **ProgressIndicator NaN Display**: Fixed "NaN% complete" showing in progress indicator by adding comprehensive NaN protection to scroll calculations and display formatting
+### � Added
+- **FTP Deployment Script**: Comprehensive deployment system with backup and restore capabilities
+- **GitHub Actions CI/CD**: Automated deployment pipeline with staging and production environments
+- **Multi-Environment Support**: Separate configurations for staging and production deployments
+- **Deployment Documentation**: Complete guide for local and automated deployments
+
+### 🔧 Changed
+- **Package.json Scripts**: Added deployment commands for build, deploy, backup, and testing
+- **Environment Configuration**: Enhanced .gitignore and added .env.example template
+- **README Documentation**: Comprehensive project documentation with deployment instructions
+
+### �🐛 Fixed
+- **ProgressIndicator NaN Display**: Fixed "NaN% complete" showing in progress indicator by adding comprehensive NaN protection
+- **Safe Scroll Calculation**: Added division-by-zero protection and bounds checking
+- **Auto-repair System**: Implemented automatic recovery for corrupt localStorage data
 
 ## [2.0.0] - 2025-08-23
 
