@@ -3,6 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { BookmarkButton } from './BookmarkButton';
 import { SectionBookmark } from './SectionBookmark';
+import CodeBlock from './CodeBlock';
 import '../github-markdown.css';
 
 const ArticleView: React.FC = () => {
@@ -55,24 +56,39 @@ const ArticleView: React.FC = () => {
 
   // Custom renderer for code blocks to add bookmark functionality
   const components = {
+    code: ({ node, inline, className, children, ...props }: any) => {
+      // Handle both inline and block code
+      return (
+        <CodeBlock className={className} inline={inline}>
+          {String(children).replace(/\n$/, '')}
+        </CodeBlock>
+      );
+    },
     pre: ({ children, ...props }: any) => {
-      const codeElement = children?.props?.children;
-      if (typeof codeElement === 'string' && codeElement.length > 100) {
-        // Only add bookmark for substantial code blocks
-        const sectionId = `code-${Math.random().toString(36).substr(2, 9)}`;
-        return (
-          <SectionBookmark
-            title={title}
-            path={path || ''}
-            url={location.pathname}
-            sectionId={sectionId}
-            sectionTitle="Code Block"
-            description="Code snippet from this page"
-            category={getCategory()}
-          >
-            <pre {...props}>{children}</pre>
-          </SectionBookmark>
-        );
+      // Check if this is a code block (has code element as child)
+      const codeChild = React.Children.toArray(children).find(
+        (child: any) => child?.props?.className?.startsWith('language-')
+      );
+      
+      if (codeChild && typeof codeChild === 'object' && 'props' in codeChild) {
+        const codeContent = codeChild.props.children;
+        if (typeof codeContent === 'string' && codeContent.length > 100) {
+          // Only add bookmark for substantial code blocks
+          const sectionId = `code-${Math.random().toString(36).substr(2, 9)}`;
+          return (
+            <SectionBookmark
+              title={title}
+              path={path || ''}
+              url={location.pathname}
+              sectionId={sectionId}
+              sectionTitle="Code Block"
+              description="Code snippet from this page"
+              category={getCategory()}
+            >
+              {children}
+            </SectionBookmark>
+          );
+        }
       }
       return <pre {...props}>{children}</pre>;
     },
