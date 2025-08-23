@@ -23,13 +23,23 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   // Calculate scroll progress
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop = window.pageYOffset;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      // Find the scrollable container (main content area)
+      const scrollContainer = document.querySelector('main > div:last-child');
+      
+      if (!scrollContainer) {
+        console.warn('Scroll container not found');
+        return;
+      }
+      
+      const scrollTop = scrollContainer.scrollTop;
+      const scrollHeight = scrollContainer.scrollHeight;
+      const clientHeight = scrollContainer.clientHeight;
+      const scrollableHeight = scrollHeight - clientHeight;
       
       // Prevent division by zero and ensure valid calculation
       let scrollPercent = 0;
-      if (docHeight > 0) {
-        scrollPercent = (scrollTop / docHeight) * 100;
+      if (scrollableHeight > 0) {
+        scrollPercent = (scrollTop / scrollableHeight) * 100;
       }
       
       // Ensure the result is a valid number
@@ -47,10 +57,16 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial calculation
-    
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Find the scrollable container and add event listener
+    const scrollContainer = document.querySelector('main > div:last-child');
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+      handleScroll(); // Initial calculation
+      
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    } else {
+      console.warn('Could not find scroll container for progress tracking');
+    }
   }, [path, articleProgress?.completed, updateReadingProgress, markArticleCompleted]);
 
   // Track time spent on page

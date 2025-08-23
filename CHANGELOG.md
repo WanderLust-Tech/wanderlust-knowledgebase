@@ -1,4 +1,22 @@
-# Changel### 🚀 Added### 🔧 Changed
+# Changelog
+
+## [Unreleased]
+
+### � Added
+- **FTP Deployment Script**: Comprehensive deployment system with backup and restore capabilities
+- **GitHub Actions CI/CD**: Automated deployment pipeline with staging and production environments
+- **Multi-Environment Support**: Separate configurations for staging and production deployments
+- **Deployment Documentation**: Complete guide for local and automated deployments
+- **Version-Based Deployment Triggers**: Deployments now only trigger on version field changes in package.json
+
+### �🔧 Changed
+- **GitHub Actions Workflow**: Updated to trigger only on version changes, not all package.json modifications
+- **Deployment Strategy**: Enhanced workflow to detect package version changes for more precise deployment control
+- **Build Step Messaging**: Added version change detection and logging in CI/CD pipeline
+
+### 🐛 Fixed
+- **Progress Indicator Scroll Tracking**: Fixed scroll progress calculation to work with the correct scrollable container instead of window scroll
+- **NaN Progress Display**: Resolved issue where progress indicator showed "NaN% Complete" due to invalid calculationsanged
 - **GitHub Actions Workflow**: Split into package-triggered and content-triggered deployments
 - **Deployment Script Logic**: Enhanced with package change detection and conditional remote clearing
 - **Workflow Conditions**: Added intelligent triggering based on file changes and dependencies
