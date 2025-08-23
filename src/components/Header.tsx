@@ -4,6 +4,7 @@ import ThemeToggle from './ThemeToggle';
 import { BookmarksPanel } from './BookmarksPanel';
 import { useBookmarks } from '../contexts/BookmarkContext';
 import { useSidebar } from '../contexts/SidebarContext';
+import { useAdvancedSearch } from '../contexts/AdvancedSearchContext';
 
 
 interface SearchResult {
@@ -14,7 +15,6 @@ interface SearchResult {
 
 const Header: React.FC = () => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
@@ -22,6 +22,7 @@ const Header: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { bookmarks } = useBookmarks();
   const { toggleSidebar, isMobile, isInitialized } = useSidebar();
+  const { getSuggestions, search: performSearch } = useAdvancedSearch();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,23 +33,12 @@ const Header: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const quickSuggestions = query.length > 1 ? getSuggestions(query).slice(0, 5) : [];
+
   useEffect(() => {
     if (query.length > 1) {
-      fetch('/search-index.json')
-        .then(res => res.json())
-        .then((data: SearchResult[]) => {
-          const lower = query.toLowerCase();
-          setResults(
-            data.filter(
-              item =>
-                item.title.toLowerCase().includes(lower) ||
-                item.content.toLowerCase().includes(lower)
-            ).slice(0, 5)
-          );
-        });
       setShowDropdown(true);
     } else {
-      setResults([]);
       setShowDropdown(false);
     }
   }, [query]);
@@ -99,18 +89,31 @@ const Header: React.FC = () => {
               onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
               aria-label="Search"
             />
-            {showDropdown && results.length > 0 && (
+            {showDropdown && quickSuggestions.length > 0 && (
               <ul className="absolute left-0 mt-1 w-full bg-white text-black border rounded shadow-lg max-h-60 overflow-auto z-50">
-                {results.map(result => (
-                  <li key={result.path}>
-                    <Link
-                      to={`/${result.path}`}
-                      className="block px-3 py-2 hover:bg-blue-100"
+                {quickSuggestions.map((suggestion, index) => (
+                  <li key={`${suggestion.type}-${suggestion.text}-${index}`}>
+                    <button
+                      onClick={() => {
+                        setQuery(suggestion.text);
+                        navigate(`/search?q=${encodeURIComponent(suggestion.text)}`);
+                        setShowDropdown(false);
+                        inputRef.current?.blur();
+                      }}
+                      className="block w-full text-left px-3 py-2 hover:bg-blue-100"
                       onMouseDown={e => e.preventDefault()}
                     >
-                      <span className="font-semibold">{result.title || result.path}</span>
-                      <div className="text-xs text-gray-600 truncate">{result.content.slice(0, 80).replace(/\n/g, ' ')}...</div>
-                    </Link>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">
+                          {suggestion.type === 'article' ? '📄' : 
+                           suggestion.type === 'category' ? '📁' : '🏷️'}
+                        </span>
+                        <span className="font-semibold">{suggestion.text}</span>
+                        <span className="text-xs text-gray-500 capitalize">
+                          {suggestion.type}
+                        </span>
+                      </div>
+                    </button>
                   </li>
                 ))}
                 <li>
@@ -118,7 +121,7 @@ const Header: React.FC = () => {
                     type="submit"
                     className="w-full text-left px-3 py-2 text-blue-600 hover:underline bg-gray-50"
                   >
-                    See all results for "{query}"
+                    Advanced search for "{query}"
                   </button>
                 </li>
               </ul>
@@ -130,15 +133,15 @@ const Header: React.FC = () => {
           <Link to="/" className="hover:underline text-sm">
             Home
           </Link>
-          {/* <Link to="/chromium" className="hover:underline">
-            Chromium
+          <Link
+            to="/search"
+            className="hover:text-blue-200 dark:hover:text-blue-300 transition-colors p-1"
+            title="Advanced Search"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </Link>
-          <Link to="/frontend" className="hover:underline">
-            Frontend
-          </Link>
-          <Link to="/minecraft" className="hover:underline">
-            Minecraft
-          </Link> */}
           <button
             onClick={() => setShowBookmarks(true)}
             className="relative hover:text-blue-200 dark:hover:text-blue-300 transition-colors p-1"

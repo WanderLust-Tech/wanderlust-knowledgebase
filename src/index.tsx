@@ -5,15 +5,18 @@ import './index.css';
 import { pwaManager } from './utils/pwa';
 import { BookmarkProvider } from './contexts/BookmarkContext';
 import { ProgressProvider } from './contexts/ProgressContext';
+import { AdvancedSearchProvider } from './contexts/AdvancedSearchContext';
 
 // Initialize PWA functionality
 pwaManager.setupOfflineHandling();
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 root.render(
-  <ProgressProvider>
-    <BookmarkProvider>
-      <App />
-    </BookmarkProvider>
-  </ProgressProvider>
+  <AdvancedSearchProvider>
+    <ProgressProvider>
+      <BookmarkProvider>
+        <App />
+      </BookmarkProvider>
+    </ProgressProvider>
+  </AdvancedSearchProvider>
 );
