@@ -147,6 +147,8 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setStats({
           ...statsData,
           lastReadDate: new Date(statsData.lastReadDate),
+          // Ensure totalProgress is never NaN
+          totalProgress: isNaN(statsData.totalProgress) ? 0 : statsData.totalProgress,
         });
       }
     } catch (error) {
@@ -337,16 +339,20 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         currentStreak = 1;
       }
 
+      const longestStreak = Math.max(prev.longestStreak, currentStreak);
+      const completedPaths = learningPaths.filter(p => p.progress >= 100).length;
+      const overallProgress = calculateOverallProgress();
+
       return {
         ...prev,
-        totalArticlesRead,
-        totalTimeSpent,
+        totalArticlesRead: isNaN(totalArticlesRead) ? 0 : totalArticlesRead,
+        totalTimeSpent: isNaN(totalTimeSpent) ? 0 : totalTimeSpent,
         categoriesExplored,
-        currentStreak,
-        longestStreak: Math.max(prev.longestStreak, currentStreak),
+        currentStreak: isNaN(currentStreak) ? 0 : currentStreak,
+        longestStreak: isNaN(longestStreak) ? 0 : longestStreak,
         lastReadDate: today,
-        completedPaths: learningPaths.filter(p => p.progress >= 100).length,
-        totalProgress: calculateOverallProgress(),
+        completedPaths: isNaN(completedPaths) ? 0 : completedPaths,
+        totalProgress: isNaN(overallProgress) ? 0 : overallProgress,
       };
     });
   };
@@ -356,7 +362,10 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // For now, we'll estimate based on categories explored and articles read
     const totalEstimatedArticles = 50; // Estimate based on your content
     const completedArticles = readingProgress.filter(p => p.completed).length;
-    return Math.min(100, (completedArticles / totalEstimatedArticles) * 100);
+    const progress = Math.min(100, (completedArticles / totalEstimatedArticles) * 100);
+    
+    // Ensure we never return NaN
+    return isNaN(progress) ? 0 : progress;
   };
 
   const getWeeklyProgress = () => {
@@ -472,6 +481,25 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       localStorage.removeItem(key);
     });
   };
+
+  // Function to repair any corrupt data
+  const repairCorruptData = () => {
+    setStats(prev => ({
+      ...prev,
+      totalArticlesRead: isNaN(prev.totalArticlesRead) ? 0 : prev.totalArticlesRead,
+      totalTimeSpent: isNaN(prev.totalTimeSpent) ? 0 : prev.totalTimeSpent,
+      currentStreak: isNaN(prev.currentStreak) ? 0 : prev.currentStreak,
+      longestStreak: isNaN(prev.longestStreak) ? 0 : prev.longestStreak,
+      averageReadingSpeed: isNaN(prev.averageReadingSpeed) ? 200 : prev.averageReadingSpeed,
+      completedPaths: isNaN(prev.completedPaths) ? 0 : prev.completedPaths,
+      totalProgress: isNaN(prev.totalProgress) ? 0 : prev.totalProgress,
+    }));
+  };
+
+  // Auto-repair corrupt data on load
+  useEffect(() => {
+    repairCorruptData();
+  }, [readingProgress, learningPaths]);
 
   const value: ProgressContextType = {
     readingProgress,

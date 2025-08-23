@@ -40,10 +40,19 @@ export const ProgressDashboard: React.FC = () => {
   };
 
   const formatTime = (minutes: number): string => {
-    if (minutes < 60) return `${minutes}m`;
+    if (isNaN(minutes) || minutes < 0) return '0m';
+    if (minutes < 60) return `${Math.round(minutes)}m`;
     const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    const mins = Math.round(minutes % 60);
     return `${hours}h ${mins}m`;
+  };
+
+  const formatNumber = (num: number): string => {
+    return isNaN(num) ? '0' : num.toString();
+  };
+
+  const formatPercentage = (num: number): string => {
+    return isNaN(num) ? '0' : Math.round(num).toString();
   };
 
   const formatDate = (date: Date): string => {
@@ -122,7 +131,7 @@ export const ProgressDashboard: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Articles Read</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalArticlesRead}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.totalArticlesRead)}</p>
                 </div>
               </div>
             </div>
@@ -146,7 +155,7 @@ export const ProgressDashboard: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Streak</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.currentStreak} days</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(stats.currentStreak)} days</p>
                 </div>
               </div>
             </div>
@@ -158,7 +167,9 @@ export const ProgressDashboard: React.FC = () => {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Overall Progress</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(stats.totalProgress)}%</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {formatPercentage(stats.totalProgress)}%
+                  </p>
                 </div>
               </div>
             </div>
@@ -170,11 +181,11 @@ export const ProgressDashboard: React.FC = () => {
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
               <div 
                 className="bg-gradient-to-r from-blue-500 to-purple-600 h-4 rounded-full transition-all duration-500"
-                style={{ width: `${stats.totalProgress}%` }}
+                style={{ width: `${formatPercentage(stats.totalProgress)}%` }}
               ></div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {stats.totalArticlesRead} articles completed • {stats.categoriesExplored.length} categories explored
+              {formatNumber(stats.totalArticlesRead)} articles completed • {formatNumber(stats.categoriesExplored.length)} categories explored
             </p>
           </div>
 
