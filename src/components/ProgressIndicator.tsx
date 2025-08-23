@@ -25,9 +25,16 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
     const handleScroll = () => {
       const scrollTop = window.pageYOffset;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrollPercent = (scrollTop / docHeight) * 100;
       
-      setScrollProgress(Math.min(100, Math.max(0, scrollPercent)));
+      // Prevent division by zero and ensure valid calculation
+      let scrollPercent = 0;
+      if (docHeight > 0) {
+        scrollPercent = (scrollTop / docHeight) * 100;
+      }
+      
+      // Ensure the result is a valid number
+      scrollPercent = isNaN(scrollPercent) ? 0 : Math.min(100, Math.max(0, scrollPercent));
+      setScrollProgress(scrollPercent);
       
       // Update reading progress based on scroll
       if (scrollPercent > 5) { // Only start tracking after 5% scroll
@@ -58,7 +65,10 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
     };
   }, [path, updateReadingProgress]);
 
-  const displayProgress = Math.max(scrollProgress, articleProgress?.progress || 0);
+  const displayProgress = Math.max(
+    isNaN(scrollProgress) ? 0 : scrollProgress, 
+    articleProgress?.progress && !isNaN(articleProgress.progress) ? articleProgress.progress : 0
+  );
 
   if (!isVisible) return null;
 
@@ -68,7 +78,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
       <div className="w-full bg-gray-200 dark:bg-gray-700 h-1">
         <div 
           className="bg-gradient-to-r from-blue-500 to-purple-600 h-1 transition-all duration-300 ease-out"
-          style={{ width: `${displayProgress}%` }}
+          style={{ width: `${isNaN(displayProgress) ? 0 : displayProgress}%` }}
         />
       </div>
       
@@ -83,7 +93,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
                 {articleProgress?.completed ? '✅' : displayProgress > 50 ? '📖' : '📄'}
               </span>
               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {Math.round(displayProgress)}% complete
+                {isNaN(displayProgress) ? 0 : Math.round(displayProgress)}% complete
               </span>
             </div>
             

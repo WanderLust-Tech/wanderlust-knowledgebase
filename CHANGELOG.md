@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🐛 Fixed
+- **ProgressIndicator NaN Display**: Fixed "NaN% complete" showing in progress indicator by adding comprehensive NaN protection to scroll calculations and display formatting
+
 ## [2.0.0] - 2025-08-23
 
 ### 🚀 Major Features Added
