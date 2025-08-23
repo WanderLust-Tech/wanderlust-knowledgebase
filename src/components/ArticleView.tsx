@@ -3,6 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { BookmarkButton } from './BookmarkButton';
 import { SectionBookmark } from './SectionBookmark';
+import { ProgressIndicator } from './ProgressIndicator';
 import CodeBlock from './CodeBlock';
 import ComponentRenderer from './ComponentRenderer';
 import { ArticleComponent, InteractiveDiagramContent } from '../types/ComponentTypes';
@@ -13,6 +14,13 @@ const ArticleView: React.FC = () => {
   const location = useLocation();
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
+
+  // Helper function to estimate reading time
+  const estimateReadingTime = (text: string): number => {
+    const wordsPerMinute = 200; // Average reading speed
+    const wordCount = text.split(/\s+/).length;
+    return Math.ceil(wordCount / wordsPerMinute);
+  };
 
   useEffect(() => {
     fetch(`/content/${path}.md`)
@@ -168,9 +176,18 @@ const ArticleView: React.FC = () => {
 
   return (
     <div className="relative">
+      {/* Progress Indicator */}
+      {title && path && (
+        <ProgressIndicator 
+          path={path} 
+          title={title}
+          estimatedReadTime={estimateReadingTime(content)}
+        />
+      )}
+      
       {/* Page Bookmark Button */}
       {title && path && (
-        <div className="sticky top-4 float-right z-10 mb-4 ml-4 mr-4">
+        <div className="sticky top-16 float-right z-10 mb-4 ml-4 mr-4">
           <BookmarkButton
             title={title}
             path={path}
@@ -183,7 +200,7 @@ const ArticleView: React.FC = () => {
         </div>
       )}
       
-      <article className="markdown-body">
+      <article className="markdown-body pt-16">
         <ReactMarkdown components={components}>{content}</ReactMarkdown>
       </article>
     </div>

@@ -82,7 +82,8 @@ export const contentIndex: ContentNode[] = [
             { title: "Enhanced Component Architecture", path: "demo/enhanced-component-architecture" },
             { title: "Code Playground", path: "demo/code-playground" },
             { title: "C++ & Chromium Development", path: "demo/cpp-chromium-playground" },
-            { title: "Interactive Diagrams", path: "demo/interactive-diagrams" }
+            { title: "Interactive Diagrams", path: "demo/interactive-diagrams" },
+            { title: "Progress Tracking", path: "demo/progress-tracking" }
         ]
     }
 ];

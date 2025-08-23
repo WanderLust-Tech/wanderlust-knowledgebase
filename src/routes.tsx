@@ -3,6 +3,7 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar';
 import ArticleView from './components/ArticleView';
 import Breadcrumb from './components/Breadcrumb';
+import { ProgressDashboard } from './components/ProgressDashboard';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 
@@ -25,6 +26,7 @@ const App: React.FC = () => (
                   {/* Default route redirects to introduction/overview */}
                   <Route path="/" element={<Navigate to="/introduction/overview" replace />} />
                   <Route path="/search" element={<SearchResults />} />
+                  <Route path="/progress" element={<ProgressDashboard />} />
                   <Route path="/*" element={<ArticleView />} />
                 </Routes>
               </div>
