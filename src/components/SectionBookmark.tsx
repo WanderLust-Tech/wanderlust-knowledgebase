@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BookmarkButton } from './BookmarkButton';
+import { useBookmarks } from '../contexts/BookmarkContext';
 
 interface SectionBookmarkProps {
   title: string;
@@ -24,6 +25,9 @@ export const SectionBookmark: React.FC<SectionBookmarkProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const { isBookmarked } = useBookmarks();
+  
+  const bookmarked = isBookmarked(path, sectionTitle);
 
   // Add section ID to the element for anchor linking
   useEffect(() => {
@@ -39,11 +43,12 @@ export const SectionBookmark: React.FC<SectionBookmarkProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Bookmark button - appears on hover */}
+      {/* Bookmark button - always visible when bookmarked, appears on hover when not */}
       <div
         className={`
-          absolute -left-8 top-0 z-10 transition-opacity duration-200
-          ${isHovered ? 'opacity-100' : 'opacity-0'}
+          absolute -left-8 top-0 z-10 transition-all duration-200
+          ${bookmarked ? 'opacity-100' : isHovered ? 'opacity-100' : 'opacity-0'}
+          ${bookmarked ? 'scale-100' : 'scale-95'}
         `}
       >
         <BookmarkButton
@@ -55,7 +60,13 @@ export const SectionBookmark: React.FC<SectionBookmarkProps> = ({
           anchor={sectionId}
           category={category}
           size="sm"
-          className="bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-200 dark:border-gray-700"
+          className={`
+            rounded-full shadow-md border transition-all duration-200
+            ${bookmarked 
+              ? 'bg-blue-50 dark:bg-blue-900 border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400' 
+              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+            }
+          `}
         />
       </div>
       

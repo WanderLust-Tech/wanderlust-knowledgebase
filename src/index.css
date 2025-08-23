@@ -208,11 +208,29 @@ html {
   margin-left: 2rem;
 }
 
+/* Ensure bookmark indicators don't interfere with content */
+.markdown-body h2:has(+ .relative),
+.markdown-body h3:has(+ .relative),
+.markdown-body pre:has(+ .relative) {
+  padding-left: 0.5rem;
+}
+
+/* Add subtle hover effect for bookmarked sections */
+.group:hover .markdown-body h2,
+.group:hover .markdown-body h3 {
+  transition: padding-left 0.2s ease;
+}
+
 @media (max-width: 768px) {
   /* On mobile, reduce left margin for better readability */
   .markdown-body pre,
   .markdown-body h2,
   .markdown-body h3 {
     margin-left: 1rem;
+  }
+  
+  /* Adjust bookmark button positioning on mobile */
+  .group .absolute.-left-8 {
+    left: -1.5rem;
   }
 }

@@ -96,14 +96,14 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
   const isBookmarked = (path: string, section?: string): boolean => {
     return bookmarks.some(b => 
       b.path === path && 
-      (!section || b.section === section)
+      b.section === section
     );
   };
 
   const getBookmarkByPath = (path: string, section?: string): Bookmark | undefined => {
     return bookmarks.find(b => 
       b.path === path && 
-      (!section || b.section === section)
+      b.section === section
     );
   };
 

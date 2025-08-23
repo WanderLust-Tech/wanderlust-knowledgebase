@@ -61,18 +61,18 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className={`bg-blue-600 dark:bg-gray-800 text-white p-4 sticky top-0 z-50 transition-all duration-200 ${
+    <header className={`bg-blue-600 dark:bg-gray-800 text-white px-4 py-2 sticky top-0 z-50 transition-all duration-200 ${
       isScrolled ? 'shadow-lg' : 'shadow-md'
     }`}>
       <nav className="flex items-center justify-between">
-        <div className="text-lg font-bold flex-shrink-0">Wanderlust Knowledgebase</div>
+        <div className="text-base font-bold flex-shrink-0">Wanderlust Knowledgebase</div>
         
-        <div className="flex-1 flex justify-center mx-8">
+        <div className="flex-1 flex justify-center mx-6">
           <form onSubmit={handleSubmit} className="relative w-full max-w-md">
             <input
               ref={inputRef}
               type="text"
-              className="rounded px-3 py-2 text-black w-full"
+              className="rounded px-3 py-1.5 text-black w-full text-sm"
               placeholder="Search..."
               value={query}
               onChange={e => setQuery(e.target.value)}
@@ -107,22 +107,8 @@ const Header: React.FC = () => {
           </form>
         </div>
         
-        <div className="flex items-center space-x-4 flex-shrink-0">
-          <button
-            onClick={() => setShowBookmarks(true)}
-            className="relative hover:text-blue-200 dark:hover:text-blue-300 transition-colors"
-            title="Bookmarks"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
-            {bookmarks.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                {bookmarks.length > 9 ? '9+' : bookmarks.length}
-              </span>
-            )}
-          </button>
-          <Link to="/" className="hover:underline">
+        <div className="flex items-center space-x-3 flex-shrink-0">
+          <Link to="/" className="hover:underline text-sm">
             Home
           </Link>
           {/* <Link to="/chromium" className="hover:underline">
@@ -134,6 +120,20 @@ const Header: React.FC = () => {
           <Link to="/minecraft" className="hover:underline">
             Minecraft
           </Link> */}
+          <button
+            onClick={() => setShowBookmarks(true)}
+            className="relative hover:text-blue-200 dark:hover:text-blue-300 transition-colors p-1"
+            title="Bookmarks"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+            {bookmarks.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-xs rounded-full h-3.5 w-3.5 flex items-center justify-center leading-none">
+                {bookmarks.length > 9 ? '9+' : bookmarks.length}
+              </span>
+            )}
+          </button>
           <ThemeToggle />
         </div>
       </nav>
