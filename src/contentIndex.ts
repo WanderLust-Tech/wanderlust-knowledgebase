@@ -8,14 +8,14 @@ export interface ContentNode {
 export const contentIndex: ContentNode[] = [
     // LEARNING PATH GUIDE
     {
-        title: "📚 Learning Path Guide",
+        title: "Learning Path Guide",
         description: "Your complete roadmap to mastering Chromium development",
         path: "learning-path-guide"
     },
 
     // PHASE 1: INTRODUCTION & OVERVIEW
     {
-        title: "🌟 Introduction",
+        title: "Introduction",
         description: "Start here to understand what Chromium is and why it matters",
         children: [
             { title: "What is Chromium?", path: "introduction/overview" },
@@ -25,7 +25,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 2: GETTING STARTED & SETUP
     {
-        title: "🚀 Getting Started",
+        title: "Getting Started",
         description: "Essential setup and orientation for new developers",
         children: [
             { title: "Setup & Build Overview", path: "getting-started/setup-build" },
@@ -47,7 +47,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 3: FUNDAMENTAL ARCHITECTURE
     {
-        title: "🏗️ Core Architecture",
+        title: "Core Architecture",
         description: "Understanding Chromium's fundamental design and structure",
         children: [
             { title: "Architecture Overview", path: "architecture/overview" },
@@ -61,7 +61,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 4: DESIGN PATTERNS & BEST PRACTICES
     {
-        title: "🎯 Design Patterns",
+        title: "Design Patterns",
         description: "Common patterns and practices used throughout Chromium",
         children: [
             { title: "Delegate Pattern", path: "architecture/design-patterns/delegate-pattern" },
@@ -74,7 +74,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 5: SECURITY FUNDAMENTALS
     {
-        title: "🔒 Security Architecture",
+        title: "Security Architecture",
         description: "Understanding Chromium's security model and sandbox architecture",
         children: [
             { title: "Security Model Overview", path: "security/security-model" },
@@ -84,7 +84,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 6: CORE MODULES & SYSTEMS
     {
-        title: "⚙️ Core Modules",
+        title: "Core Modules",
         description: "Deep dive into key Chromium subsystems",
         children: [
             { title: "JavaScript Engine (V8)", path: "modules/javascript-v8" },
@@ -101,7 +101,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 7: APIs & SERVICES
     {
-        title: "🔌 APIs & Services",
+        title: "APIs & Services",
         description: "Modern Chromium APIs and service architecture",
         children: [
             { title: "APIs & Services Overview", path: "apis/overview" },
@@ -114,7 +114,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 8: DEVELOPMENT WORKFLOW
     {
-        title: "🛠️ Development Workflow",
+        title: "Development Workflow",
         description: "Tools, processes, and best practices for Chromium development",
         children: [
             { title: "Development Overview", path: "development/overview" },
@@ -153,7 +153,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 9: TESTING & QUALITY ASSURANCE
     {
-        title: "🧪 Testing & QA",
+        title: "Testing & QA",
         description: "Comprehensive testing strategies and tools",
         children: [
             { title: "Testing in Chromium", path: "development/testing/testing_in_chromium" },
@@ -228,7 +228,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 10: PERFORMANCE & OPTIMIZATION
     {
-        title: "⚡ Performance & Optimization",
+        title: "Performance & Optimization",
         description: "Performance analysis and optimization techniques",
         children: [
             { title: "Performance Overview", path: "performance/overview" },
@@ -241,7 +241,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 11: PLATFORM-SPECIFIC DEVELOPMENT
     {
-        title: "🖥️ Platform-Specific Development",
+        title: "Platform-Specific Development",
         description: "Platform-specific considerations and implementations",
         children: [
             { title: "Platforms Overview", path: "platforms/overview" },
@@ -280,7 +280,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 12: DEBUGGING & TROUBLESHOOTING
     {
-        title: "🐛 Debugging & Troubleshooting",
+        title: "Debugging & Troubleshooting",
         description: "Tools and techniques for debugging Chromium issues",
         children: [
             { title: "Debugging Tools Overview", path: "debugging/debugging-tools" },
@@ -291,7 +291,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 13: CONTRIBUTING TO CHROMIUM
     {
-        title: "🤝 Contributing to Chromium",
+        title: "Contributing to Chromium",
         description: "Guidelines and processes for contributing to the Chromium project",
         children: [
             { title: "Contributing Guide", path: "contributing/contributing" }
@@ -300,7 +300,7 @@ export const contentIndex: ContentNode[] = [
 
     // PHASE 14: INTERACTIVE DEMOS & EXAMPLES
     {
-        title: "🎮 Interactive Demos & Examples",
+        title: "Interactive Demos & Examples",
         description: "Hands-on examples and interactive learning tools",
         children: [
             { title: "Syntax Highlighting Demo", path: "demo/syntax-highlighting" },
