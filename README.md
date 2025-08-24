@@ -2,19 +2,19 @@
 
 A comprehensive, interactive knowledge base for Chromium development built with React, TypeScript, and modern web technologies.
 
-## 🚀 Features
+## Features
 
-- **📚 Comprehensive Content**: Structured learning paths for Chromium development
-- **🔍 Advanced Search**: Fuzzy search with content preview and highlighting
-- **📱 Progressive Web App**: Offline support and installable app
-- **🎯 Progress Tracking**: Reading analytics, streaks, and learning paths
-- **🌙 Dark/Light Theme**: System-aware theme switching
-- **📊 Interactive Diagrams**: Clickable architecture visualizations
-- **💻 Code Playground**: Live code execution with Monaco Editor
-- **📱 Responsive Design**: Mobile-optimized navigation and layout
-- **🔖 Bookmarking**: Save favorite articles and code snippets
+- ** Comprehensive Content**: Structured learning paths for Chromium development
+- ** Advanced Search**: Fuzzy search with content preview and highlighting
+- ** Progressive Web App**: Offline support and installable app
+- ** Progress Tracking**: Reading analytics, streaks, and learning paths
+- ** Dark/Light Theme**: System-aware theme switching
+- ** Interactive Diagrams**: Clickable architecture visualizations
+- ** Code Playground**: Live code execution with Monaco Editor
+- ** Responsive Design**: Mobile-optimized navigation and layout
+- ** Bookmarking**: Save favorite articles and code snippets
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Frontend**: React 18, TypeScript, Vite
 - **Styling**: Tailwind CSS
@@ -24,7 +24,7 @@ A comprehensive, interactive knowledge base for Chromium development built with 
 - **Icons**: Custom PWA icons with Canvas API
 - **Deployment**: FTP deployment + GitHub Actions CI/CD
 
-## 📦 Installation
+## Installation
 
 ```bash
 # Clone the repository
@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-## 🔧 Development
+## Development
 
 ### Available Scripts
 
@@ -67,7 +67,7 @@ npm run deploy:backup    # Backup current remote files
 └── .github/workflows/  # GitHub Actions
 ```
 
-## 🚀 Deployment
+## Deployment
 
 We support multiple deployment methods:
 
@@ -92,7 +92,7 @@ We support multiple deployment methods:
 
 For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-## 📖 Content Structure
+## Content Structure
 
 Content is organized in `/public/content/` with the following structure:
 
@@ -106,15 +106,15 @@ debugging/             # Debugging tools and techniques
 contributing/          # Contribution guidelines
 ```
 
-## 🔍 Search System
+## Search System
 
 The knowledge base includes a powerful search system with full-text search, smart suggestions, content preview, and category filtering.
 
-## 📊 Progress Tracking
+## Progress Tracking
 
 Track your learning journey with reading progress, learning streaks, completion analytics, and bookmark management.
 
-## 🎮 Interactive Features
+## Interactive Features
 
 ### Code Playground
 Live code execution with Monaco Editor, multi-language support, and syntax highlighting.
@@ -122,23 +122,23 @@ Live code execution with Monaco Editor, multi-language support, and syntax highl
 ### Interactive Diagrams
 Clickable architecture components with tooltip explanations and mobile-responsive controls.
 
-## 🌙 Theming
+## Theming
 
 Automatic theme detection with manual override, persistent user choice, and smooth transitions.
 
-## 📱 PWA Features
+## PWA Features
 
 Offline access, installable app, background updates, and intelligent caching for fast loading.
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](./public/content/contributing/contributing.md) for details.
 
-## 📄 License
+## License
 
 This project is licensed under the ISC License.
 
-## 🆕 Changelog
+## Changelog
 
 See [CHANGELOG.md](./CHANGELOG.md) for detailed release notes and version history.
 
