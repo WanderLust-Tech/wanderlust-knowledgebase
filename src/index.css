@@ -73,14 +73,14 @@
 /* Ensure proper list styling in markdown content */
 .markdown-body ul {
   list-style-type: disc !important;
-  padding-left: 2em !important;
+  padding-left: 1.2em !important;
   margin-bottom: 16px !important;
   margin-left: 0 !important;
 }
 
 .markdown-body ol {
   list-style-type: decimal !important;
-  padding-left: 2em !important;
+  padding-left: 1.2em !important;
   margin-bottom: 16px !important;
   margin-left: 0 !important;
 }
