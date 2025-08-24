@@ -298,7 +298,18 @@ export const contentIndex: ContentNode[] = [
         ]
     },
 
-    // PHASE 14: INTERACTIVE DEMOS & EXAMPLES
+    // PHASE 14: INTERACTIVE TUTORIALS
+    {
+        title: "Interactive Tutorials",
+        description: "Hands-on, guided learning experiences for mastering Chromium development",
+        children: [
+            { title: "Learning Hub", path: "tutorials/overview" },
+            { title: "Tutorial System Demo", path: "tutorials/tutorial-system-demo" },
+            { title: "Chromium Development Tutorials", path: "tutorials/interactive-chromium-tutorials" }
+        ]
+    },
+
+    // PHASE 15: INTERACTIVE DEMOS & EXAMPLES
     {
         title: "Interactive Demos & Examples",
         description: "Hands-on examples and interactive learning tools",

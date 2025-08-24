@@ -14,7 +14,7 @@ export interface ComponentMetadata {
 
 export interface ArticleComponent {
   id: string;
-  type: 'markdown' | 'interactive' | 'video' | 'diagram' | 'code-playground' | 'interactive-diagram' | 'quiz' | 'callout';
+  type: 'markdown' | 'interactive' | 'video' | 'diagram' | 'code-playground' | 'interactive-diagram' | 'quiz' | 'callout' | 'tutorial';
   content: any;
   metadata: ComponentMetadata;
   props?: Record<string, any>;

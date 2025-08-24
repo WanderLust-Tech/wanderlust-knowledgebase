@@ -10,6 +10,7 @@ const CalloutRenderer = lazy(() => import('./renderers/CalloutRenderer'));
 const QuizRenderer = lazy(() => import('./renderers/QuizRenderer'));
 const CodePlaygroundRenderer = lazy(() => import('./renderers/CodePlaygroundRenderer'));
 const InteractiveDiagramRenderer = lazy(() => import('./renderers/InteractiveDiagramRenderer'));
+const TutorialRenderer = lazy(() => import('./renderers/TutorialRenderer'));
 
 interface ComponentRendererProps {
   component: ArticleComponent;
@@ -108,6 +109,16 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           return (
             <Suspense fallback={<LoadingFallback />}>
               <InteractiveDiagramRenderer content={component.content} />
+            </Suspense>
+          );
+
+        case 'tutorial':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <TutorialRenderer 
+                tutorial={component.content} 
+                onComplete={(tutorialId) => handleInteraction('tutorial_completed', { tutorialId })}
+              />
             </Suspense>
           );
 
