@@ -1,92 +1,92 @@
-# Chromium Learning Path Guide 📚
+# Chromium Learning Path Guide
 
-## 🎯 Recommended Learning Journey
+## Recommended Learning Journey
 
 The Wanderlust Chromium Knowledge Base is organized into **14 progressive phases** designed to take you from complete beginner to advanced Chromium developer. Each phase builds upon the previous ones, creating a logical learning progression.
 
 ---
 
-## 📋 Phase Overview
+## Phase Overview
 
-### **Phase 1: 🌟 Introduction**
+### **Phase 1: Introduction**
 **Start Here!** Get oriented with what Chromium is and why it matters.
 - Perfect for: Complete beginners
 - Time Investment: 30-60 minutes
 - Prerequisites: None
 
-### **Phase 2: 🚀 Getting Started**
+### **Phase 2: Getting Started**
 Set up your development environment and understand the project structure.
 - Perfect for: Developers ready to dive in
 - Time Investment: 2-4 hours
 - Prerequisites: Phase 1 completed
 
-### **Phase 3: 🏗️ Core Architecture**
+### **Phase 3: Core Architecture**
 Understand Chromium's fundamental design and multi-process architecture.
 - Perfect for: Developers who want to understand how Chromium works
 - Time Investment: 4-6 hours
 - Prerequisites: Basic understanding of web browsers
 
-### **Phase 4: 🎯 Design Patterns**
+### **Phase 4: Design Patterns**
 Learn the common patterns used throughout the Chromium codebase.
 - Perfect for: Developers familiar with software design patterns
 - Time Investment: 2-3 hours
 - Prerequisites: Object-oriented programming experience
 
-### **Phase 5: 🔒 Security Architecture**
+### **Phase 5: Security Architecture**
 Deep dive into Chromium's security model and sandbox architecture.
 - Perfect for: Security-conscious developers
 - Time Investment: 3-4 hours
 - Prerequisites: Understanding of OS security concepts
 
-### **Phase 6: ⚙️ Core Modules**
+### **Phase 6: Core Modules**
 Explore key Chromium subsystems like V8, networking, and storage.
 - Perfect for: Developers working on specific features
 - Time Investment: 6-8 hours
 - Prerequisites: Phases 1-3 completed
 
-### **Phase 7: 🔌 APIs & Services**
+### **Phase 7: APIs & Services**
 Learn about modern Chromium APIs and the Mojo service architecture.
 - Perfect for: Developers building Chrome extensions or integrations
 - Time Investment: 4-5 hours
 - Prerequisites: Understanding of IPC concepts
 
-### **Phase 8: 🛠️ Development Workflow**
+### **Phase 8: Development Workflow**
 Master the tools and processes for effective Chromium development.
 - Perfect for: Developers ready to contribute code
 - Time Investment: 6-10 hours
 - Prerequisites: Git experience, C++ knowledge
 
-### **Phase 9: 🧪 Testing & QA**
+### **Phase 9: Testing & QA**
 Comprehensive testing strategies and quality assurance practices.
 - Perfect for: Developers focused on code quality
 - Time Investment: 8-12 hours
 - Prerequisites: Testing framework experience
 
-### **Phase 10: ⚡ Performance & Optimization**
+### **Phase 10: Performance & Optimization**
 Learn performance analysis and optimization techniques.
 - Perfect for: Performance-focused developers
 - Time Investment: 4-6 hours
 - Prerequisites: Understanding of system performance
 
-### **Phase 11: 🖥️ Platform-Specific Development**
+### **Phase 11: Platform-Specific Development**
 Platform-specific considerations for different operating systems.
 - Perfect for: Developers targeting specific platforms
 - Time Investment: Varies by platform (2-4 hours each)
 - Prerequisites: Platform-specific development experience
 
-### **Phase 12: 🐛 Debugging & Troubleshooting**
+### **Phase 12: Debugging & Troubleshooting**
 Tools and techniques for debugging complex Chromium issues.
 - Perfect for: Developers maintaining or fixing bugs
 - Time Investment: 3-4 hours
 - Prerequisites: Debugging experience
 
-### **Phase 13: 🤝 Contributing to Chromium**
+### **Phase 13: Contributing to Chromium**
 Guidelines for contributing to the open-source Chromium project.
 - Perfect for: Developers ready to contribute upstream
 - Time Investment: 2-3 hours
 - Prerequisites: Phases 1-8 completed
 
-### **Phase 14: 🎮 Interactive Demos & Examples**
+### **Phase 14: Interactive Demos & Examples**
 Hands-on examples and interactive learning tools.
 - Perfect for: All skill levels, anytime
 - Time Investment: Varies (30 minutes - 2 hours per demo)
@@ -94,20 +94,20 @@ Hands-on examples and interactive learning tools.
 
 ---
 
-## 🗺️ Learning Paths by Role
+## Learning Paths by Role
 
 ### **For New Chromium Contributors**
-1. 🌟 Introduction
-2. 🚀 Getting Started  
-3. 🏗️ Core Architecture
-4. 🛠️ Development Workflow
-5. 🧪 Testing & QA
-6. 🤝 Contributing to Chromium
+1. Introduction
+2. Getting Started  
+3. Core Architecture
+4. Development Workflow
+5. Testing & QA
+6. Contributing to Chromium
 
 ### **For Chromium Extension Developers**
-1. 🌟 Introduction
-2. 🏗️ Core Architecture
-3. 🔌 APIs & Services
+1. Introduction
+2. Core Architecture
+3. APIs & Services
 4. 🔒 Security Architecture
 5. 🐛 Debugging & Troubleshooting
 

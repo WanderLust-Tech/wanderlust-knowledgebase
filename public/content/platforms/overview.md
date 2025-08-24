@@ -2,14 +2,14 @@
 
 Chromium runs on multiple platforms, each with unique characteristics, capabilities, and constraints. This section provides platform-specific guidance for developing and optimizing Chromium across different operating systems and device types.
 
-## 🎯 What You'll Learn
+## What You'll Learn
 
 - **Platform Architecture**: Understanding platform-specific implementations
 - **Development Setup**: Platform-specific build and development environments
 - **Optimization Techniques**: Platform-specific performance and feature optimization
 - **Testing Strategies**: Platform-specific testing approaches
 
-## 🖥️ Supported Platforms
+## Supported Platforms
 
 ### **Desktop Platforms**
 - [**macOS Development**](mac/) - Apple ecosystem development
@@ -23,7 +23,7 @@ Chromium runs on multiple platforms, each with unique characteristics, capabilit
 ### **Specialized Platforms**
 - [**Chrome OS Development**](chromeos/) - Google's Chrome operating system
 
-## 📱 Platform Characteristics
+## Platform Characteristics
 
 ### **Android**
 - **Unique Features**: Touch interface, limited resources, Java integration
@@ -50,7 +50,7 @@ Chromium runs on multiple platforms, each with unique characteristics, capabilit
 - **Key Challenges**: Security model, resource constraints, update system
 - **Development Focus**: Web platform, Android app support, Linux compatibility
 
-## 🛠️ Platform-Specific Development
+## Platform-Specific Development
 
 ### **Build Systems**
 Each platform has specific build requirements and optimization:
@@ -75,7 +75,7 @@ How Chromium is distributed on each platform:
 - **Windows**: Direct download, enterprise MSI
 - **Chrome OS**: Integrated into OS updates
 
-## 🎯 Development Strategies
+## Development Strategies
 
 ### **Cross-Platform Development**
 - **Shared Codebase**: Common code across platforms
@@ -89,14 +89,14 @@ How Chromium is distributed on each platform:
 - **User Experience**: Platform-appropriate UX patterns
 - **Security Model**: Following platform security practices
 
-## 🚀 Getting Started
+## Getting Started
 
 1. **Choose Your Platform**: Start with the platform most relevant to your work
 2. **Setup Environment**: Follow platform-specific build instructions
 3. **Understand Differences**: Learn platform-specific characteristics
 4. **Development Workflow**: Master platform-specific development tools
 
-## 📋 Platform Comparison
+## Platform Comparison
 
 | Platform | Complexity | Resources | Unique Features |
 |----------|------------|-----------|-----------------|
@@ -106,9 +106,9 @@ How Chromium is distributed on each platform:
 | **Windows** | Medium | Variable | DirectX, Enterprise, Legacy |
 | **Chrome OS** | Medium | Limited | Security, Web-first, Updates |
 
-## 🔗 Related Sections
+## Related Sections
 
-- [🚀 Getting Started](../getting-started/setup-build) - General build instructions
-- [🧪 Testing & QA](../development/testing/android_test_instructions) - Platform-specific testing
-- [⚡ Performance](../performance/profiling_content_shell_on_android) - Platform performance
-- [🏗️ Core Architecture](../architecture/process-model) - How architecture varies by platform
+- [Getting Started](../getting-started/setup-build) - General build instructions
+- [Testing & QA](../development/testing/android_test_instructions) - Platform-specific testing
+- [Performance](../performance/profiling_content_shell_on_android) - Platform performance
+- [Core Architecture](../architecture/process-model) - How architecture varies by platform

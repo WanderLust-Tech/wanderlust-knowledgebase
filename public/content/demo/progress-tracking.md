@@ -4,25 +4,25 @@ Welcome to the comprehensive progress tracking system! This feature helps you mo
 
 ## Features Overview
 
-### 📊 Reading Progress
+### Reading Progress
 - **Automatic tracking**: Progress is tracked based on scroll position and time spent reading
 - **Article completion**: Articles are marked as complete when you reach 95% scroll progress
 - **Time tracking**: Monitor how much time you spend on each article
 - **Cross-session persistence**: Your progress is saved across browser sessions
 
-### 🎯 Learning Analytics
+### Learning Analytics
 - **Weekly activity**: Visual charts showing your reading patterns over the past week
 - **Category progress**: See how much you've explored in each content category
 - **Reading streaks**: Track consecutive days of learning activity
 - **Overall progress**: Get a bird's-eye view of your platform progress
 
-### 🛤️ Learning Paths
+### Learning Paths
 - **Custom paths**: Create structured learning journeys for specific topics
 - **Progress tracking**: Monitor completion of learning path articles
 - **Estimated time**: Get reading time estimates for entire learning paths
 - **Difficulty levels**: Organize paths by beginner, intermediate, or advanced levels
 
-### 📈 Intelligent Recommendations
+### Intelligent Recommendations
 - **Continue reading**: Smart suggestions for articles you've started but haven't finished
 - **Related content**: Discover articles based on your reading history
 - **Category exploration**: Find new areas to explore based on your interests
@@ -58,7 +58,7 @@ You'll see progress indicators throughout the platform:
 
 ### Access Your Dashboard
 
-Click the progress icon (📊) in the header to access your **Learning Progress Dashboard** where you can:
+Click the progress icon in the header to access your **Learning Progress Dashboard** where you can:
 
 - View your overall statistics
 - See your reading history

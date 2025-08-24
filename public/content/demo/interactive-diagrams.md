@@ -24,7 +24,7 @@ This diagram shows the high-level process architecture of Chromium. Each process
         "label": "Browser Process",
         "description": "Main process that manages the UI, network, and coordinates other processes",
         "details": "The browser process is the main process in Chromium. It handles the browser UI, manages tabs, bookmarks, history, and coordinates communication between other processes.",
-        "icon": "🏠",
+        "icon": "",
         "processType": "browser",
         "links": [
           { "title": "Browser Process Documentation", "url": "#/architecture/process-model" },
@@ -40,7 +40,7 @@ This diagram shows the high-level process architecture of Chromium. Each process
         "label": "Renderer Process",
         "description": "Renders web content, executes JavaScript, handles DOM manipulation",
         "details": "Each tab typically runs in its own renderer process. This provides isolation between tabs and websites for security and stability.",
-        "icon": "🌐",
+        "icon": "",
         "processType": "renderer",
         "links": [
           { "title": "Render Pipeline", "url": "#/architecture/render-pipeline" },
@@ -55,7 +55,7 @@ This diagram shows the high-level process architecture of Chromium. Each process
       "data": {
         "label": "Renderer Process",
         "description": "Another tab's renderer process (isolated)",
-        "icon": "🌐",
+        "icon": "",
         "processType": "renderer"
       }
     },
@@ -67,7 +67,7 @@ This diagram shows the high-level process architecture of Chromium. Each process
         "label": "GPU Process",
         "description": "Handles graphics acceleration and compositing",
         "details": "The GPU process manages hardware acceleration for graphics rendering, video decoding, and UI compositing.",
-        "icon": "🎮",
+        "icon": "",
         "processType": "gpu",
         "links": [
           { "title": "GPU Architecture", "url": "#/architecture/browser-components" }
@@ -82,7 +82,7 @@ This diagram shows the high-level process architecture of Chromium. Each process
         "label": "Network Process",
         "description": "Manages network requests, caching, and security",
         "details": "Handles all network communication, HTTP/HTTPS requests, caching, and network security policies.",
-        "icon": "🌍",
+        "icon": "",
         "processType": "network",
         "links": [
           { "title": "Network Stack", "url": "#/modules/networking-http" },
@@ -98,7 +98,7 @@ This diagram shows the high-level process architecture of Chromium. Each process
         "label": "Utility Process",
         "description": "Handles various utility tasks like audio, device access",
         "details": "Runs services that need sandboxing but don't fit into other process types. Examples include audio service, device service, and storage service.",
-        "icon": "🔧",
+        "icon": "",
         "processType": "utility",
         "links": [
           { "title": "Process Model", "url": "#/architecture/process-model" }
@@ -208,7 +208,7 @@ This diagram shows the internal structure of Blink, the rendering engine used in
         "label": "CSS Parser",
         "description": "Parses CSS stylesheets and computes styles",
         "details": "Parses CSS stylesheets and creates CSSOM (CSS Object Model). Handles selector matching and style computation.",
-        "icon": "🎨",
+        "icon": "",
         "componentType": "content"
       }
     },
@@ -220,7 +220,7 @@ This diagram shows the internal structure of Blink, the rendering engine used in
         "label": "Layout Engine",
         "description": "Calculates element positions and sizes",
         "details": "Performs layout calculations to determine the position and size of each element based on CSS rules and content.",
-        "icon": "📐",
+        "icon": "",
         "componentType": "blink",
         "links": [
           { "title": "Render Pipeline", "url": "#/architecture/render-pipeline" }
@@ -235,7 +235,7 @@ This diagram shows the internal structure of Blink, the rendering engine used in
         "label": "Paint Engine",
         "description": "Converts layout tree to paint instructions",
         "details": "Generates paint operations (draw commands) that describe how to render each element visually.",
-        "icon": "🖌️",
+        "icon": "",
         "componentType": "blink"
       }
     },
@@ -247,7 +247,7 @@ This diagram shows the internal structure of Blink, the rendering engine used in
         "label": "V8 JavaScript Engine",
         "description": "Executes JavaScript code and manages DOM APIs",
         "details": "High-performance JavaScript engine that compiles and executes JavaScript, manages memory, and provides DOM/Web APIs.",
-        "icon": "⚡",
+        "icon": "",
         "componentType": "v8",
         "links": [
           { "title": "JavaScript Integration", "url": "#/modules/javascript-v8" }
@@ -276,7 +276,7 @@ This diagram shows the internal structure of Blink, the rendering engine used in
       "data": {
         "label": "DOM Tree",
         "description": "Document Object Model representation",
-        "icon": "🌳"
+        "icon": ""
       }
     },
     {
@@ -286,7 +286,7 @@ This diagram shows the internal structure of Blink, the rendering engine used in
       "data": {
         "label": "Render Tree",
         "description": "Combined DOM + Style tree for rendering",
-        "icon": "🌲"
+        "icon": ""
       }
     }
   ],
@@ -410,7 +410,7 @@ Understanding how different processes communicate is crucial for Chromium develo
         "label": "Renderer",
         "description": "Renderer process handles the navigation",
         "processType": "renderer",
-        "icon": "🌐"
+        "icon": ""
       }
     },
     {
@@ -421,7 +421,7 @@ Understanding how different processes communicate is crucial for Chromium develo
         "label": "Network",
         "description": "Network process fetches the resource",
         "processType": "network",
-        "icon": "🌍"
+        "icon": ""
       }
     }
   ],

@@ -189,7 +189,7 @@ An attacker may abuse whitespace and line-wrapping characters in order to push t
 
 * Unicode explicit directional formatting commands (e.g., U+200E--U+200F, U+202A--U+202E, see the full [list](https://unicode.org/reports/tr9/#Directional_Formatting_Characters) and [`ShouldUnescapeCodePoint`](https://cs.chromium.org/chromium/src/net/base/escape.cc?l=172&rcl=dc22553340d5c4dda162f17a07d706748be44042)).
 
-* Characters that look like security UI (e.g., U+1F512 🔒).
+* Characters that look like security UI (e.g., U+1F512 lock icon).
     - Emoji may be confusing because users are not accustomed to seeing graphics in URL displays and may be misled into believing that they represent claims on the browser’s part (e.g., the Lock emoji). See issue [746350](https://bugs.chromium.org/p/chromium/issues/detail?id=746350).
 
 * Use of [Combining characters](https://blog.emojipedia.org/fun-emoji-hacks/) to create look-alikes.

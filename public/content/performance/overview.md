@@ -2,14 +2,14 @@
 
 Performance is critical to Chromium's success. This section covers the tools, techniques, and methodologies used to analyze, optimize, and maintain Chromium's performance across different platforms and use cases.
 
-## 🎯 What You'll Learn
+## What You'll Learn
 
 - **Performance Analysis**: How to identify bottlenecks and performance issues
 - **Optimization Techniques**: Advanced strategies for improving performance
 - **Profiling Tools**: Using profilers to understand runtime behavior
 - **Platform-Specific Optimization**: Optimizing for different operating systems
 
-## 📊 Performance Areas
+## Performance Areas
 
 ### Core Performance Topics
 - [Profiling Techniques](profiling) - Understanding runtime behavior and bottlenecks
@@ -19,7 +19,7 @@ Performance is critical to Chromium's success. This section covers the tools, te
 ### Platform-Specific Performance
 - [Profiling Content Shell on Android](profiling_content_shell_on_android) - Mobile performance analysis
 
-## 🛠️ Performance Tools
+## Performance Tools
 
 ### **Profiling Tools**
 - **CPU Profilers**: Understand where time is spent
@@ -39,7 +39,7 @@ Performance is critical to Chromium's success. This section covers the tools, te
 - **Continuous Monitoring**: Tracking performance over time
 - **Regression Detection**: Identifying performance regressions
 
-## 📈 Performance Metrics
+## Performance Metrics
 
 ### **Key Performance Indicators**
 - **Startup Time**: How quickly Chromium launches

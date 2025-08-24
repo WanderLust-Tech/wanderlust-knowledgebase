@@ -32,7 +32,7 @@ console.log("Original:", numbers);
 console.log("Doubled:", doubled);
 
 // Return a value to see it in the output
-"JavaScript playground is working! 🎉"
+"JavaScript playground is working!"
 ```
 
 **Instructions:** Modify the code above, add your own functions, or try different JavaScript features. The console output will appear below the editor.
@@ -95,7 +95,7 @@ simulateApiCall().then(result => {
     console.log("API Result:", result);
 });
 
-"Advanced JavaScript concepts demo complete! ✨"
+"Advanced JavaScript concepts demo complete!"
 ```
 
 **Instructions:** This example shows ES6+ features, classes, async/await, and more. Try adding your own modern JavaScript code!
@@ -162,7 +162,7 @@ Create interactive web content with HTML and CSS:
 </head>
 <body>
     <div class="card">
-        <h1>🚀 Interactive HTML Demo</h1>
+        <h1>Interactive HTML Demo</h1>
         <p>This is a live HTML/CSS example running in the browser!</p>
         
         <div class="counter">
@@ -174,7 +174,7 @@ Create interactive web content with HTML and CSS:
     </div>
     
     <div class="card">
-        <h2>✨ Features</h2>
+        <h2>Features</h2>
         <ul>
             <li>Responsive design</li>
             <li>Modern CSS with gradients and blur effects</li>
@@ -282,7 +282,7 @@ console.log("API Response:", response);
 // This would cause a TypeScript error:
 // userStore.add("invalid user"); // Error: string is not assignable to User
 
-"TypeScript playground working with full type safety! 🛡️"
+"TypeScript playground working with full type safety!"
 ```
 
 **Instructions:** This TypeScript example demonstrates interfaces, generics, and type safety. Try adding new types or modifying the existing ones!
@@ -333,7 +333,7 @@ Sorted array: [11, 12, 22, 25, 34, 64, 90]
     </style>
 </head>
 <body>
-    <h1>📝 Todo List</h1>
+    <h1>Todo List</h1>
     <div>
         <input type="text" id="todoInput" placeholder="Enter a new task...">
         <button onclick="addTodo()">Add Task</button>
