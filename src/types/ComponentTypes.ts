@@ -14,7 +14,7 @@ export interface ComponentMetadata {
 
 export interface ArticleComponent {
   id: string;
-  type: 'markdown' | 'interactive' | 'video' | 'diagram' | 'code-playground' | 'interactive-diagram' | 'quiz' | 'callout' | 'tutorial';
+  type: 'markdown' | 'interactive' | 'video' | 'diagram' | 'code-playground' | 'interactive-diagram' | 'quiz' | 'callout' | 'tutorial' | 'video-tutorial';
   content: any;
   metadata: ComponentMetadata;
   props?: Record<string, any>;
@@ -62,6 +62,13 @@ export interface VideoContent {
     time: number;
     text: string;
   }>;
+}
+
+export interface VideoTutorialContent {
+  tutorialId: string;
+  tutorial?: any; // Reference to VideoTutorial from VideoTypes
+  autoplay?: boolean;
+  startTime?: number;
 }
 
 export interface DiagramContent {

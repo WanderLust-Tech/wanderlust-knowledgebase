@@ -5,6 +5,7 @@ import { BookmarkButton } from './BookmarkButton';
 import { SectionBookmark } from './SectionBookmark';
 import CodeBlock from './CodeBlock';
 import ComponentRenderer from './ComponentRenderer';
+import { VideoTutorialPage } from './VideoTutorialPage';
 import { ArticleComponent, InteractiveDiagramContent } from '../types/ComponentTypes';
 import '../github-markdown.css';
 
@@ -13,6 +14,17 @@ const ArticleView: React.FC = () => {
   const location = useLocation();
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
+
+  // Check if this is a video tutorial path
+  const isVideoTutorialPath = path && (
+    path.startsWith('video-tutorials/') && path !== 'video-tutorials/overview' ||
+    path.startsWith('video-series/')
+  );
+
+  // If it's a video tutorial path, render the video tutorial component
+  if (isVideoTutorialPath) {
+    return <VideoTutorialPage />;
+  }
 
   // Helper function to estimate reading time
   const estimateReadingTime = (text: string): number => {

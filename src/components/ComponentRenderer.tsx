@@ -11,6 +11,7 @@ const QuizRenderer = lazy(() => import('./renderers/QuizRenderer'));
 const CodePlaygroundRenderer = lazy(() => import('./renderers/CodePlaygroundRenderer'));
 const InteractiveDiagramRenderer = lazy(() => import('./renderers/InteractiveDiagramRenderer'));
 const TutorialRenderer = lazy(() => import('./renderers/TutorialRenderer'));
+const VideoTutorialRenderer = lazy(() => import('./VideoTutorialRenderer').then(module => ({ default: module.VideoTutorialRenderer })));
 
 interface ComponentRendererProps {
   component: ArticleComponent;
@@ -118,6 +119,17 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({
               <TutorialRenderer 
                 tutorial={component.content} 
                 onComplete={(tutorialId) => handleInteraction('tutorial_completed', { tutorialId })}
+              />
+            </Suspense>
+          );
+
+        case 'video-tutorial':
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <VideoTutorialRenderer 
+                tutorial={component.content.tutorial || component.content} 
+                onComplete={(tutorialId) => handleInteraction('video_tutorial_completed', { tutorialId })}
+                autoplay={component.content.autoplay}
               />
             </Suspense>
           );

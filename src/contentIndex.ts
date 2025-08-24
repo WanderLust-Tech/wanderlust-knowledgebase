@@ -309,7 +309,44 @@ export const contentIndex: ContentNode[] = [
         ]
     },
 
-    // PHASE 15: INTERACTIVE DEMOS & EXAMPLES
+    // PHASE 15: VIDEO TUTORIALS
+    {
+        title: "Video Tutorials",
+        description: "Interactive video-based learning experiences with synchronized code examples",
+        children: [
+            { title: "Video Learning Hub", path: "video-tutorials/overview" },
+            {
+                title: "Getting Started Videos",
+                description: "Video tutorials for beginners",
+                children: [
+                    { title: "Setting Up Chromium Build Environment", path: "video-tutorials/chromium-build-system" }
+                ]
+            },
+            {
+                title: "Architecture Deep Dives",
+                description: "Advanced architectural concepts with visual explanations",
+                children: [
+                    { title: "Chromium Architecture Deep Dive", path: "video-tutorials/chromium-architecture-overview" }
+                ]
+            },
+            {
+                title: "Development Tools",
+                description: "Debugging, profiling, and development workflows",
+                children: [
+                    { title: "Debugging Chromium: Tools and Techniques", path: "video-tutorials/debugging-chromium" }
+                ]
+            },
+            {
+                title: "Learning Series",
+                description: "Structured learning paths with multiple videos",
+                children: [
+                    { title: "Chromium Development Fundamentals", path: "video-series/chromium-fundamentals" }
+                ]
+            }
+        ]
+    },
+
+    // PHASE 16: INTERACTIVE DEMOS & EXAMPLES
     {
         title: "Interactive Demos & Examples",
         description: "Hands-on examples and interactive learning tools",
