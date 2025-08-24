@@ -8,6 +8,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import CommunityPage from './components/CommunityPage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
+import ContentVersioningPage from './components/ContentVersioningPage';
 
 import { contentIndex } from './contentIndex';
 import Header from './components/Header';
@@ -31,6 +32,7 @@ const App: React.FC = () => (
                   <Route path="/progress" element={<ProgressDashboard />} />
                   <Route path="/community" element={<CommunityPage />} />
                   <Route path="/analytics" element={<AnalyticsDashboard />} />
+                  <Route path="/versioning/:contentPath?" element={<ContentVersioningPage />} />
                   <Route path="/*" element={<ArticleView />} />
                 </Routes>
               </div>
