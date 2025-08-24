@@ -212,7 +212,7 @@ const Node: React.FC<{
           <>
             <button
               onClick={handleFolderClick}
-              className={`flex items-center w-full px-2 py-2 text-left transition-colors duration-150 ${
+              className={`flex items-center w-full px-2 py-3 text-left transition-colors duration-150 text-base leading-6 ${
                 isCurrentPage ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
               }`}
               aria-label={isExpanded ? 'Collapse' : 'Expand'}
@@ -227,7 +227,7 @@ const Node: React.FC<{
         ) : node.path ? (
           <Link 
             to={`/${node.path}`} 
-            className={`flex items-center w-full px-2 py-2 transition-colors duration-150 ${
+            className={`flex items-center w-full px-2 py-3 transition-colors duration-150 text-base leading-6 ${
               isCurrentPage 
                 ? 'text-blue-700 dark:text-blue-300 font-medium' 
                 : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
@@ -238,7 +238,7 @@ const Node: React.FC<{
             <span>{node.title}</span>
           </Link>
         ) : (
-          <div className="flex items-center w-full px-2 py-2">
+          <div className="flex items-center w-full px-2 py-3 text-base leading-6">
             <div className="w-5 flex-shrink-0"></div>
             <FolderIcon expanded={false} />
             <span className="font-semibold text-gray-900 dark:text-gray-100">{node.title}</span>
