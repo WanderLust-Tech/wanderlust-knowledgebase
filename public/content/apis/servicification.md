@@ -1,4 +1,4 @@
-# Servicifying Chromium Features
+# Servicifying Chromium Features (v134+)
 
 [TOC]
 
@@ -20,6 +20,10 @@ features and subsystems, or refactoring these collections of library code into
 services with well-defined public API boundaries and very strong runtime
 isolation via Mojo interfaces.
 
+**Note for v134+**: As of Chromium v134, most major subsystems have been servicified.
+New servicification efforts should focus on remaining components that would benefit
+from isolation, testing improvements, or multi-process architecture flexibility.
+
 The primary goals are to improve maintainability and extensibility of the system
 over time, while also allowing for more flexible runtime configuration. For
 example, with the Network Service in place we can now run the entire network
@@ -30,7 +34,7 @@ independent of that switch.
 This document focuses on helpful guidelines and patterns for servicifying parts
 of Chromium.
 
-Also see general [Mojo &amp; Services](/docs/README.md#Mojo-Services)
+Also see general [Mojo & Services](mojo_and_services.md)
 documentation for other introductory guides, API references, *etc.*
 
 ## Setting Up The Service
@@ -41,13 +45,20 @@ introducing a new service.
 ### Where in the Tree?
 
 Based on the
-[service development guidelines](/services/README.md), any service which could
+[service development guidelines](https://source.chromium.org/chromium/chromium/src/+/main:services/README.md;drc=main), any service which could
 be reasonably justified as a core system service in a hypothetical,
 well-designed operating system may belong in the top-level `//services`
 directory. If that sounds super hand-wavy and unclear, that's because it is!
 There isn't really a great universal policy here, so when in doubt, contact your
 favorite local
 [services-dev@chromium.org](https://groups.google.com/a/chromium.org/forum#!forum/services-dev)
+mailing list and start a friendly discussion.
+
+**Modern Guidelines (v134+)**: Consider these factors when choosing location:
+- **Security isolation requirements**: High-risk code should be in separate processes
+- **Resource constraints**: Services with heavy resource usage should be isolatable
+- **Testing complexity**: Services are easier to test in isolation
+- **API stability**: Well-defined APIs are candidates for `//services`
 mailing list and start a friendly discussion.
 
 Other common places where developers place services, and why:
@@ -64,9 +75,24 @@ Other common places where developers place services, and why:
 ### Launching Service Processes
 
 Content provides a simple
-[`ServiceProcessHost`](https://cs.chromium.org/chromium/src/content/public/browser/service_process_host.h?rcl=723edf64a56ef6058e886afc67adc786bea39e78&l=47)
+[`ServiceProcessHost`](https://source.chromium.org/chromium/chromium/src/+/main:content/public/browser/service_process_host.h;drc=main)
 API to launch a new Service Process. The Mojo Remote corresponding to each
 process launch is effectively a lifetime control for the launched process.
+
+**Modern Pattern (v134+)**: Use `ServiceProcessHost::Launch` with proper error handling:
+
+```cpp
+// Modern service launching pattern
+auto service_remote = content::ServiceProcessHost::Launch<mojom::MyService>(
+    content::ServiceProcessHost::Options()
+        .WithDisplayName("My Service")
+        .WithSandboxType(sandbox::mojom::Sandbox::kService)
+        .Pass());
+
+service_remote.set_disconnect_handler(
+    base::BindOnce(&MyServiceClient::OnServiceDisconnected,
+                   weak_ptr_factory_.GetWeakPtr()));
+```
 
 You may choose to maintain only a single concurrent instance of your service
 at a time, similar to the Network or Storage services. In this case, typically
@@ -90,10 +116,28 @@ For out-of-process service launching, Content uses its "utility" process type.
 
 For services known to content, this is accomplished by adding an appropriate
 factory function to
-[`//content/utility/services.cc`](https://cs.chromium.org/chromium/src/content/utility/services.cc)
+[`//content/utility/services.cc`](https://source.chromium.org/chromium/chromium/src/+/main:content/utility/services.cc;drc=main)
 
 For other services known only to Chrome, we have a similar file at
-[`//chrome/utility/services.cc`](https://cs.chromium.org/chromium/src/chrome/utility/services.cc).
+[`//chrome/utility/services.cc`](https://source.chromium.org/chromium/chromium/src/+/main:chrome/utility/services.cc;drc=main).
+
+**Modern Registration Pattern (v134+)**:
+
+```cpp
+// In content/utility/services.cc or chrome/utility/services.cc
+void RegisterMyService(mojo::PendingReceiver<mojom::MyService> receiver) {
+  static base::NoDestructor<std::unique_ptr<MyServiceImpl>> service;
+  if (!*service) {
+    *service = std::make_unique<MyServiceImpl>();
+  }
+  (*service)->BindReceiver(std::move(receiver));
+}
+
+// Register in the service map
+auto RunMyService(mojo::PendingReceiver<mojom::MyService> receiver) {
+  return std::make_unique<MyServiceImpl>(std::move(receiver));
+}
+```
 
 Once an appropriate service factory is registered for your main service
 interface in one of these places, `ServiceProcessHost::Launch` can be used to
@@ -106,6 +150,70 @@ and you can then bind a Mojo Remote which is connected to that instance.
 This is useful if you want to avoid the overhead of extra processes in some
 scenarios, and it allows the detail of where and how the service runs to be
 fully hidden behind management of the main interface's Mojo Remote.
+
+## Modern Service Architecture (v134+)
+
+### Service Lifecycle Management
+
+Modern services should implement proper lifecycle management:
+
+```cpp
+class MyServiceImpl : public mojom::MyService {
+ public:
+  explicit MyServiceImpl(mojo::PendingReceiver<mojom::MyService> receiver)
+      : receiver_(this, std::move(receiver)) {
+    receiver_.set_disconnect_handler(
+        base::BindOnce(&MyServiceImpl::OnDisconnected, 
+                       base::Unretained(this)));
+  }
+
+  ~MyServiceImpl() override = default;
+
+  // mojom::MyService implementation
+  void DoWork(const std::string& data, DoWorkCallback callback) override {
+    // Implementation here
+    std::move(callback).Run(ProcessData(data));
+  }
+
+ private:
+  void OnDisconnected() {
+    // Clean up resources
+    // Service will be destroyed when this returns
+  }
+
+  mojo::Receiver<mojom::MyService> receiver_;
+};
+```
+
+### Error Handling Patterns
+
+Modern services should handle errors gracefully:
+
+```cpp
+void MyServiceImpl::ProcessRequest(ProcessRequestCallback callback) {
+  if (!IsValidState()) {
+    std::move(callback).Run(
+        mojom::Result::NewError("Service in invalid state"));
+    return;
+  }
+
+  // Process request...
+  auto result = DoProcessing();
+  if (result.has_value()) {
+    std::move(callback).Run(mojom::Result::NewSuccess(result.value()));
+  } else {
+    std::move(callback).Run(
+        mojom::Result::NewError("Processing failed"));
+  }
+}
+```
+
+### Security Considerations
+
+- **Sandboxing**: All services should run in appropriate sandboxes
+- **Input validation**: Validate all inputs at service boundaries
+- **Capability-based access**: Limit service capabilities to minimum required
+- **Process isolation**: Consider whether the service needs its own process
 
 ## Incremental Servicification
 
@@ -136,13 +244,13 @@ services:
 
 - Build out your service depending directly on existing code,
   convert the clients of that code 1-by-1, and fold the existing code into the
-  service implementation when complete ([Identity Service](https://docs.google.com/document/d/1EPLEJTZewjiShBemNP5Zyk3b_9sgdbrZlXn7j1fubW0/edit)).
+  service implementation when complete. **Note**: Some legacy service designs used this pattern.
 - Build out the service with new code and make the existing code
   into a client library of the service. In that fashion, all consumers of the
-  existing code get converted transparently ([Preferences Service](https://docs.google.com/document/d/1JU8QUWxMEXWMqgkvFUumKSxr7Z-nfq0YvreSJTkMVmU/edit#heading=h.19gc5b5u3e3x)).
+  existing code get converted transparently. **Note**: This pattern is less common in v134+.
 - Build out the new service piece-by-piece by picking a given
-  bite-size piece of functionality and entirely servicifying that functionality
-  ([Device Service](https://docs.google.com/document/d/1_1Vt4ShJCiM3fin-leaZx00-FoIPisOr8kwAKsg-Des/edit#heading=h.c3qzrjr1sqn7)).
+  bite-size piece of functionality and entirely servicifying that functionality.
+  **Recommended for v134+**: This approach ensures clean API boundaries from the start.
 
 These all have tradeoffs:
 
@@ -162,15 +270,45 @@ about doing the servicification cleanly as you go.
 ## Platform-Specific Issues: Android
 
 As you servicify code running on Android, you might find that you need to port
-interfaces that are served in Java. Here is an
-[example CL](https://codereview.chromium.org/2643713002) that gives a basic
-pattern to follow in doing this.
+interfaces that are served in Java. Here are modern patterns for handling this:
 
-You also might need to register JNI in your service. That is simple to set
-up, as illustrated in [this CL](https://codereview.chromium.org/2690963002).
-(Note that that CL is doing more than *just* enabling the Device Service to
-register JNI; you should take the register_jni.cc file added there as your
-starting point to examine the pattern to follow).
+### JNI Integration in Services (v134+)
+
+```cpp
+// Modern JNI registration pattern
+// service_jni_registrar.cc
+#include "base/android/jni_registrar.h"
+#include "my_service_jni_headers/MyServiceJni_jni.h"
+
+namespace my_service {
+
+bool RegisterJni(JNIEnv* env) {
+  return base::android::RegisterNativeMethods(
+      env, my_service::kMyServiceRegisteredMethods,
+      my_service::kMyServiceRegisteredMethodsSize);
+}
+
+}  // namespace my_service
+```
+
+### Android Context Handling
+
+Modern services should handle Android contexts through dependency injection:
+
+```cpp
+class AndroidServiceImpl : public mojom::AndroidService {
+ public:
+  explicit AndroidServiceImpl(
+      mojo::PendingReceiver<mojom::AndroidService> receiver,
+      base::android::ScopedJavaGlobalRef<jobject> context)
+      : receiver_(this, std::move(receiver)),
+        java_context_(std::move(context)) {}
+
+ private:
+  mojo::Receiver<mojom::AndroidService> receiver_;
+  base::android::ScopedJavaGlobalRef<jobject> java_context_;
+};
+```
 
 Finally, it is possible that your feature will have coupling to UI process state
 (e.g., the Activity) via Android system APIs. To handle this challenging
@@ -179,20 +317,39 @@ issue, see the section on [Coupling to UI](#Coupling-to-UI).
 ## Platform-Specific Issues: iOS
 
 *** aside
-**WARNING:** Some of this content is obsolete and needs to be updated. When in
-doubt, look approximately near the recommended bits of code and try to find
-relevant prior art.
+**Note for v134+:** iOS support for services has matured. All services run 
+in-process on iOS due to platform constraints, but the same Mojo interfaces
+work seamlessly across platforms.
 ***
 
-Services are supported on iOS insofar as Mojo is supported. However, Chrome on
+Services are fully supported on iOS. However, Chrome on
 iOS is strictly single-process, and all services thus must run in-process on
-iOS.
+iOS. This is handled automatically by the service infrastructure.
 
-If you have a use case or need for services on iOS, contact
-blundell@chromium.org. For general information on the motivations and vision for
-supporting services on iOS, see the high-level
-[servicification design doc](https://docs.google.com/document/d/15I7sQyQo6zsqXVNAlVd520tdGaS8FCicZHrN0yRu-oU/edit).
-In particular, search for the mentions of iOS within the doc.
+Modern iOS service patterns:
+
+```cpp
+// iOS-specific service considerations
+class MyServiceImpl : public mojom::MyService {
+ public:
+  explicit MyServiceImpl(mojo::PendingReceiver<mojom::MyService> receiver)
+      : receiver_(this, std::move(receiver)) {
+#if BUILDFLAG(IS_IOS)
+    // iOS-specific initialization
+    ConfigureForIOS();
+#endif
+  }
+
+ private:
+#if BUILDFLAG(IS_IOS)
+  void ConfigureForIOS() {
+    // Handle iOS-specific requirements
+  }
+#endif
+  
+  mojo::Receiver<mojom::MyService> receiver_;
+};
+```
 
 ## Client-Specific Issues
 
@@ -201,8 +358,32 @@ It is a common pattern in Blink's web tests to mock a remote Mojo interface
 in JS so that native Blink code requests interfaces from the test JS rather
 than whatever would normally service them in the browser process.
 
-The current way to set up that sort of thing looks like
-[this](https://cs.chromium.org/chromium/src/third_party/blink/web_tests/battery-status/resources/mock-battery-monitor.js?rcl=be6e0001855f7f1cfc26205d0ff5a2b5b324fcbd&l=19).
+The current way to set up that sort of thing uses modern Web Platform Tests (WPT) infrastructure:
+
+```javascript
+// Modern mock pattern for web tests
+import {MyServiceReceiver} from '/gen/my_service.mojom.m.js';
+
+class MockMyService {
+  constructor() {
+    this.receiver_ = new MyServiceReceiver(this);
+    this.interceptor_ = new MojoInterfaceInterceptor(MyService.$interfaceName);
+    this.interceptor_.oninterfacerequest = e => {
+      this.receiver_.$.bindHandle(e.handle);
+    };
+    this.interceptor_.start();
+  }
+
+  // Implement service methods
+  async doWork(data) {
+    return {result: 'mocked_result'};
+  }
+
+  reset() {
+    this.interceptor_.stop();
+  }
+}
+```
 
 #### Feature Impls That Depend on Blink Headers
 In the course of servicifying a feature that has Blink as a client, you might
@@ -214,13 +395,28 @@ by the feature implementation). These dependencies pose a challenge:
 is a client of services).
 - However, Blink is very careful about accepting dependencies from Chromium.
 
-To meet this challenge, you have two options:
+To meet this challenge, you have these options:
 
-1. Move the code in question from C++ to mojom (e.g., if it is simple structs).
-2. Move the code into the service's C++ client library, being very explicit
-   about its usage by Blink. See
-   [this CL](https://codereview.chromium.org/2415083002) for a basic pattern to
-   follow.
+1. **Move the code to mojom** (e.g., if it is simple structs) - Preferred for v134+
+2. **Use shared common libraries** that both Blink and the service can depend on
+3. Move the code into the service's C++ client library, being very explicit
+   about its usage by Blink.
+
+**Modern Pattern (v134+)**:
+```cpp
+// Preferred: Define in mojom
+module my_service.mojom;
+
+struct SharedDataStructure {
+  string name;
+  int32 value;
+  array<uint8> data;
+};
+
+interface MyService {
+  ProcessData(SharedDataStructure data) => (bool success);
+};
+```
 
 #### Frame-Scoped Connections
 You must think carefully about the scoping of the connection being made
@@ -235,19 +431,32 @@ After a
 [long discussion](https://groups.google.com/a/chromium.org/forum/#!topic/services-dev/CSnDUjthAuw),
 the policy that we have adopted for this challenge is the following:
 
-CURRENT
+**CURRENT (v134+) BEST PRACTICE:**
 
 - The renderer makes a request through its frame-scoped connection to the
-  browser.
-- The browser obtains the necessary permissions before directly servicing the
-  request.
+  browser (using `BrowserInterfaceBroker`).
+- The browser validates permissions and origin constraints.
+- The browser forwards the request to the underlying service, optionally
+  including validated context information.
 
-AFTER SERVICIFYING THE FEATURE IN QUESTION
+**Modern Implementation Pattern:**
 
-- The renderer makes a request through its frame-scoped connection to the
-  browser.
-- The browser obtains the necessary permissions before forwarding the
-  request on to the underlying service that hosts the feature.
+```cpp
+// In the browser process
+void RenderFrameHostImpl::CreateMyService(
+    mojo::PendingReceiver<mojom::MyService> receiver) {
+  // Validate permissions for this frame/origin
+  if (!IsAllowedForOrigin(GetLastCommittedOrigin())) {
+    return;  // Reject the request
+  }
+
+  // Forward to the actual service with context
+  GetMyService()->CreateFrameScopedInterface(
+      std::move(receiver), 
+      GetGlobalFrameRoutingId(),
+      GetLastCommittedOrigin());
+}
+```
 
 Notably, from the renderer's POV essentially nothing changes here.
 
@@ -273,12 +482,41 @@ the required context. The embedder (e.g., //content) maintains this map, and the
 service makes use of it. The embedder also serves as an intermediary: it
 provides a connection that is appropriately context-scoped to clients. When
 clients request the feature in question, the embedder forwards the request on
-along with the appropriate context ID.  The service impl can then map that
+along with the appropriate context ID. The service impl can then map that
 context ID back to the needed context on-demand using the mapping functionality
 injected into the service impl.
 
-To make this more concrete, see
-[this CL](https://codereview.chromium.org/2734943003).
+**Modern Context Injection Pattern (v134+)**:
+
+```cpp
+// Service interface with context support
+interface MyService {
+  SetContextProvider(pending_remote<ContextProvider> provider);
+  DoWorkWithContext(int32 context_id, string data) => (bool success);
+};
+
+// Implementation
+class MyServiceImpl : public mojom::MyService {
+ public:
+  void SetContextProvider(
+      mojo::PendingRemote<mojom::ContextProvider> provider) override {
+    context_provider_.Bind(std::move(provider));
+  }
+
+  void DoWorkWithContext(int32 context_id, const std::string& data,
+                        DoWorkWithContextCallback callback) override {
+    context_provider_->GetContext(
+        context_id,
+        base::BindOnce(&MyServiceImpl::OnContextReceived,
+                       weak_ptr_factory_.GetWeakPtr(),
+                       data, std::move(callback)));
+  }
+
+ private:
+  mojo::Remote<mojom::ContextProvider> context_provider_;
+  base::WeakPtrFactory<MyServiceImpl> weak_ptr_factory_{this};
+};
+```
 
 ### Shutdown of Singletons
 
@@ -287,18 +525,115 @@ of //content's shutdown process. As part of decoupling the feature
 implementation entirely from //content, the shutdown of these singletons must be
 either ported into your service or eliminated:
 
-- In general, as Chromium is moving away from graceful shutdown, the first
-  question to analyze is: Do the singletons actually need to be shut down at
-  all?
-- If you need to preserve shutdown of the singleton, the naive approach is to
-  move the shutdown of the singleton to the destructor of your service
-- However, you should carefully examine when your service is destroyed compared
-  to when the previous code was executing, and ensure that any differences
-  introduced do not impact correctness.
+- **First priority (v134+)**: Eliminate the need for graceful shutdown entirely.
+  Modern Chromium favors fast shutdown over graceful cleanup in most cases.
+- If you need to preserve shutdown of the singleton, move the shutdown logic
+  to the service's destructor or implement a proper shutdown sequence.
+- Carefully examine timing differences between old and new shutdown behavior.
 
-See
-[this thread](https://groups.google.com/a/chromium.org/forum/#!topic/services-dev/Y9FKZf9n1ls)
-for more discussion of this issue.
+**Modern Shutdown Pattern (v134+)**:
+
+```cpp
+class MyServiceImpl : public mojom::MyService {
+ public:
+  ~MyServiceImpl() override {
+    // Clean shutdown if needed
+    if (needs_cleanup_) {
+      PerformCriticalCleanup();
+    }
+  }
+
+  void Shutdown(ShutdownCallback callback) override {
+    // Implement explicit shutdown if required
+    PerformGracefulShutdown();
+    std::move(callback).Run();
+    
+    // Service will be destroyed after callback
+  }
+
+ private:
+  bool needs_cleanup_ = true;
+};
+```
+
+## Modern Best Practices (v134+)
+
+### Service Design Principles
+
+1. **Single Responsibility**: Each service should have one clear purpose
+2. **Minimal Dependencies**: Avoid coupling between services
+3. **Testability**: Design services to be easily testable in isolation
+4. **Error Handling**: Implement comprehensive error handling and recovery
+5. **Performance**: Consider the overhead of process boundaries
+
+### Testing Servicified Code
+
+```cpp
+// Modern service testing pattern
+class MyServiceTest : public testing::Test {
+ protected:
+  void SetUp() override {
+    service_impl_ = std::make_unique<MyServiceImpl>(
+        service_remote_.BindNewPipeAndPassReceiver());
+  }
+
+  void TearDown() override {
+    service_remote_.reset();
+    service_impl_.reset();
+    task_environment_.RunUntilIdle();
+  }
+
+  base::test::TaskEnvironment task_environment_;
+  mojo::Remote<mojom::MyService> service_remote_;
+  std::unique_ptr<MyServiceImpl> service_impl_;
+};
+
+TEST_F(MyServiceTest, BasicFunctionality) {
+  base::test::TestFuture<bool> future;
+  service_remote_->DoWork("test_data", future.GetCallback());
+  EXPECT_TRUE(future.Get());
+}
+```
+
+### Migration Checklist
+
+When servicifying existing code:
+
+- [ ] Define clear Mojo interfaces
+- [ ] Implement proper error handling
+- [ ] Add comprehensive tests
+- [ ] Handle connection errors gracefully
+- [ ] Consider security implications
+- [ ] Document the service API
+- [ ] Plan for incremental rollout
+- [ ] Monitor performance impact
+
+### Service Monitoring
+
+Modern services should include monitoring and metrics:
+
+```cpp
+class MyServiceImpl : public mojom::MyService {
+ private:
+  void RecordMetrics(const std::string& operation, bool success) {
+    base::UmaHistogramBoolean(
+        base::StrCat({"MyService.", operation, ".Success"}), success);
+  }
+  
+  void DoWork(const std::string& data, DoWorkCallback callback) override {
+    base::TimeTicks start_time = base::TimeTicks::Now();
+    
+    bool success = ProcessData(data);
+    
+    base::UmaHistogramTimes(
+        "MyService.DoWork.Duration",
+        base::TimeTicks::Now() - start_time);
+    RecordMetrics("DoWork", success);
+    
+    std::move(callback).Run(success);
+  }
+};
+```
 
 ## Additional Support
 

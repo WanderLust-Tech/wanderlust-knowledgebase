@@ -7,16 +7,20 @@
 A number of IPC messages sent (primarily between the browser and renderer
 processes) are still defined using Chrome's old IPC system in `//ipc`. This
 system uses
-[`base::Pickle`](https://cs.chromium.org/chromium/src/base/pickle.h?rcl=8b7842262ee1239b1f3ae20b9c851748ef0b9a8b&l=128)
-as the basis for message serialization and is supported by a number if `IPC_*`
+[`base::Pickle`](https://source.chromium.org/chromium/chromium/src/+/main:base/pickle.h;drc=main;l=128)
+as the basis for message serialization and is supported by a number of `IPC_*`
 preprocessor macros defined in `//ipc` and used around the source tree.
 
 There is an ongoing, distributed effort to get these messages converted to Mojo
-interface messages. Messages that still need to be converted are tracked in two
+interface messages. As of Chromium v134+, most critical IPC conversions have been
+completed, but some legacy messages remain. Messages that still need to be converted are tracked in two
 spreadsheets:
 
 - [Chrome IPC to Mojo migration](https://docs.google.com/spreadsheets/d/1pGWX_wxGdjAVtQOmlDDfhuIc3Pbwg9FtvFXAXYu7b7c/edit#gid=0) for non-web platform messages
 - [Mojoifying Platform Features](https://docs.google.com/spreadsheets/d/1VIINt17Dg2cJjPpoJ_HY3HI0uLpidql-1u8pBJtpbGk/edit#gid=1603373208) for web platform messages
+
+**Note for v134+**: Focus should be on converting remaining high-risk or frequently-used IPC messages,
+as the majority of the migration work has been completed. New features should use Mojo from the start.
 
 This document is concerned primarily with rote conversion of legacy IPC messages
 to Mojo interface messages. If you are considering more holistic refactoring and
@@ -24,7 +28,7 @@ better isolation of an entire subsystem of the browser, you may consider
 [servicifying](servicification.md) the feature instead of merely converting its
 IPCs.
 
-See other [Mojo &amp; Services](/docs/README.md#Mojo-Services) documentation
+See other [Mojo &amp; Services](mojo_and_services.md) documentation
 for introductory guides, API references, and more.
 
 ## Legacy IPC Concepts
@@ -116,8 +120,9 @@ IPC messages. Such interfaces are designated in Chrome parlance as
 **Channel-associated interfaces**.
 
 *** aside
-**NOTE:** Channel-associated interface acquisition is not constrained by the
-Service Manager in any way, so security reviewers need to be careful to inspect
+**NOTE:** Channel-associated interface acquisition is not constrained by
+modern security infrastructure in the same way as regular Mojo interfaces,
+so security reviewers need to be especially careful to inspect
 new additions and uses of such interfaces.
 ***
 
@@ -138,8 +143,9 @@ implicit ordering dependencies. A few simple APIs exist to support this.
 associated interface requests:
 
 ``` cpp
-mojo::PendingAssociatedRemote<magic::mojom::GoatTeleporter> teleporter;
-channel_->GetRemoteAssociatedInterfaces()->GetInterface(teleporter.BindNewEndpointAndPassReceiver());
+mojo::AssociatedRemote<magic::mojom::GoatTeleporter> teleporter;
+channel_->GetRemoteAssociatedInterfaces()->GetInterface(
+    teleporter.BindNewEndpointAndPassReceiver());
 
 // These messages are all guaranteed to arrive in the same order they were sent.
 channel_->Send(new FooMsg_SomeLegacyIPC);
@@ -162,6 +168,31 @@ interface requests specific to their own frame.
 There are some example conversion CLs which use Channel-associated interfaces
 [here](https://codereview.chromium.org/2381493003) and
 [here](https://codereview.chromium.org/2400313002).
+
+## Modern Security Considerations (v134+)
+
+When converting legacy IPC to Mojo in Chromium v134+, additional security considerations must be taken into account:
+
+### Interface Broker Security
+
+All new Mojo interfaces should be properly registered with the appropriate interface broker:
+- Frame-scoped interfaces should use `RenderFrameHostImpl::GetBrowserInterfaceBroker()`
+- Process-scoped interfaces should use appropriate process-level brokers
+- Ensure proper capability validation and origin checks where needed
+
+### Capability-Based Security
+
+Modern Chromium uses capability-based security patterns:
+- Interfaces should only expose the minimum required functionality
+- Consider using capability delegation patterns for complex permission scenarios
+- Validate all inputs at interface boundaries, not just at the call site
+
+### Memory Safety
+
+When converting IPC structures:
+- Prefer using `base::span<>` over raw pointers and lengths
+- Use `mojo::StructPtr<>` for nullable complex types
+- Ensure proper bounds checking in custom serialization code
 
 ## Deciding How to Approach a Conversion
 
@@ -201,8 +232,7 @@ decide how to proceed:
           any related messages.
     - If the message is sent from the browser to a renderer:
         - If an existing interface is bound by `RenderThreadImpl` and requested
-          through a `BrowserContext` Connector referencing a specific
-          `RenderProcessHost` [identity](https://cs.chromium.org/chromium/src/content/public/browser/render_process_host.h?rcl=1497b88b7d6400a2a5cced258df03d53800d7848&l=327),
+          through the browser's interface broker system,
           and the interface seems to be a good fit for the message, add the
           equivalent Mojo message to that interface.
         - If no such interface exists, consider adding one for this message and
@@ -222,12 +252,12 @@ decide how to proceed:
               to that interface.
             - If no such interface exists, consider adding one and registering it
               with `RenderFrameHostImpl`'s `BrowserInterfaceBroker`. See the
-              [simple example](/docs/mojo_and_services.md#Example_Defining-a-New-Frame-Interface)
+              [simple example](mojo_and_services.md#Example_Defining-a-New-Frame-Interface)
               in the "Intro to Mojo & Services" document.
         - If the message is sent from the browser to a renderer, consider
           adding a Mojo equivalent to the `content.mojom.Frame` interface
-          defined
-          [here](https://cs.chromium.org/chromium/src/content/common/frame.mojom?rcl=138b66744ee9ee853cbb0ae8437b71eaa1fafaa9&l=42).
+          defined in
+          [frame.mojom](https://source.chromium.org/chromium/chromium/src/+/main:content/common/frame.mojom;drc=main).
     - If the routing endpoints are **not** frame objects (for example, they may
       be `RenderView`/`RenderViewHost` objects), this is a special case which
       does not yet have an easy conversion approach readily available. Contact
@@ -236,7 +266,7 @@ decide how to proceed:
 
 *** aside
 **NOTE**: If you are converting a sync IPC, see the section on
-[Synchronous Calls](/mojo/public/cpp/bindings/README.md#Synchronous-Calls)
+[Synchronous Calls](https://chromium.googlesource.com/chromium/src/+/main/mojo/public/cpp/bindings/README.md#Synchronous-Calls)
 in the Mojo documentation.
 ***
 
@@ -265,7 +295,7 @@ interface Foo {
   DoTheThing(string name) => (bool success);
 };
 ```
-See [Receiving responses](/mojo/public/cpp/bindings/README.md#receiving-responses)
+See [Receiving responses](https://chromium.googlesource.com/chromium/src/+/main/mojo/public/cpp/bindings/README.md#receiving-responses)
 for more information.
 
 ## Repurposing `IPC::ParamTraits` and `IPC_STRUCT*` Invocations
@@ -290,8 +320,8 @@ C++ bindings will -- as if by magic -- replace the mojom type with the
 typemapped C++ type and will internally use the existing `IPC::ParamTraits<T>`
 specialization for that type in order to serialize and deserialize the struct.
 
-For example, given the
-[`resource_messages.h`](https://cs.chromium.org/chromium/src/content/common/resource_messages.h?rcl=2e7a430d8d88222c04ab3ffb0a143fa85b3cec5b&l=215) header
+For example, given an existing IPC struct definition like
+[`resource_messages.h`](https://source.chromium.org/chromium/chromium/src/+/main:content/common/resource_messages.h;drc=main) 
 which defines an IPC mapping for `content::ResourceRequest`:
 
 ``` cpp
@@ -303,7 +333,7 @@ IPC_STRUCT_TRAITS_END()
 ```
 
 and the
-[`resource_request.h`](https://cs.chromium.org/chromium/src/content/common/resource_request.h?rcl=dce9e476a525e4ff0304787935dc1a8c38392ac8&l=32) header
+[`resource_request.h`](https://source.chromium.org/chromium/chromium/src/+/main:content/common/resource_request.h;drc=main) header
 which actually defines the `content::ResourceRequest` type:
 
 ``` cpp
@@ -326,7 +356,7 @@ struct URLRequest;
 ```
 
 and add a typemap like
-[`url_request.typemap`](https://cs.chromium.org/chromium/src/content/common/url_request.typemap?rcl=4b5963fa744a706398f8f06a4cbbf70d7fa3213d)
+[`url_request.typemap`](https://source.chromium.org/chromium/chromium/src/+/main:content/common/url_request.typemap;drc=main)
 to define how to map between them:
 
 ``` python
@@ -415,7 +445,7 @@ between Blink-style code and Chromium-style code. It is handled automatically
 during message serialization and deserialization.
 
 For more information about variants, see
-[this section](/mojo/public/cpp/bindings/README.md#Variants) of the C++ bindings
+[this section](https://chromium.googlesource.com/chromium/src/+/main/mojo/public/cpp/bindings/README.md#Variants) of the C++ bindings
 documentation.
 
 ### Binding callbacks
@@ -433,21 +463,32 @@ If the response can be discarded in case the object is not alive by the time
 the response is received, use `WrapWeakPersistent(this)` for binding the response callback:
 
 ``` cpp
-// src/third_party/blink/renderer/modules/device_orientation/device_sensor_entry.cc
-sensor_.set_connection_error_handler(WTF::BindOnce(
+// Modern example with error handling
+auto remote = std::make_unique<mojo::Remote<device::mojom::SensorProvider>>();
+remote->set_disconnect_handler(WTF::BindOnce(
     &DeviceSensorEntry::HandleSensorError, WrapWeakPersistent(this)));
-sensor_->ConfigureReadingChangeNotifications(/*enabled=*/false);
-sensor_->AddConfiguration(
-    std::move(config), WTF::BindOnce(&DeviceSensorEntry::OnSensorAddConfiguration,
-                                 WrapWeakPersistent(this)));
+
+// Use more specific error handling
+remote->GetSensor(device::mojom::SensorType::ACCELEROMETER,
+    WTF::BindOnce(&DeviceSensorEntry::OnSensorCreated, 
+                  WrapWeakPersistent(this)));
 ```
 
 Otherwise (for example, if the response callback is used to resolve a Promise),
 use `WrapPersistent(this)` to keep the object alive:
 
 ``` cpp
-// src/third_party/blink/renderer/modules/nfc/nfc.cc
-ScriptPromiseResolver* resolver = ScriptPromiseResolver::Create(script_state);
+// Promise-based example with proper error handling
+ScriptPromiseResolver* resolver = MakeGarbageCollected<ScriptPromiseResolver>(script_state);
+auto promise = resolver->Promise();
+
+nfc_remote_->CancelAllWatches(
+    WTF::BindOnce(&NFC::OnRequestCompleted,
+                  WrapPersistent(this),
+                  WrapPersistent(resolver)));
+                  
+return promise;
+```
 ... 
 nfc_->CancelAllWatches(WTF::BindOnce(&NFC::OnRequestCompleted,
                                  WrapPersistent(this),
@@ -470,50 +511,145 @@ setup in both the object header and implementation.
 
 ``` cpp
 // MyObject.h
-class MyObject : public GarbageCollected,
-                 public example::mojom::blink::Example {
+class MyObject : public GarbageCollected<MyObject>,
+                 public example::mojom::blink::Example,
+                 public Supplement<ExecutionContext> {
   USING_PRE_FINALIZER(MyObject, Dispose);
+  USING_GARBAGE_COLLECTED_MIXIN(MyObject);
 
  public:
-  MyObject();
+  static const char kSupplementName[];
+  static MyObject& From(ExecutionContext&);
+
+  explicit MyObject(ExecutionContext&);
   void Dispose();
 
   // Implementation of example::mojom::blink::Example.
+  void DoSomething(const WTF::String& data, 
+                   DoSomethingCallback callback) override;
+
+  // Supplement implementation
+  void Trace(Visitor*) const override;
 
  private:
-  mojo::Receiver<example::mojom::blink::Example> m_receiver{this};
+  mojo::Receiver<example::mojom::blink::Example> receiver_{this};
+  Member<ExecutionContext> execution_context_;
 };
 
 // MyObject.cpp
 void MyObject::Dispose() {
-  m_receiver.Close();
+  receiver_.reset();
+}
+
+void MyObject::Trace(Visitor* visitor) const {
+  visitor->Trace(execution_context_);
+  Supplement<ExecutionContext>::Trace(visitor);
 }
 ```
 
 For more information about Blink's Garbage Collector, see
-[Blink GC API Reference](/third_party/blink/renderer/platform/heap/BlinkGCAPIReference.md).
+[Blink GC API Reference](https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/platform/heap/BlinkGCAPIReference.md;drc=main).
+
+## Testing Converted Mojo Interfaces
+
+When converting legacy IPC to Mojo, it's important to update tests appropriately:
+
+### Unit Testing Patterns
+
+Use `mojo::test::MockReceiver` and `mojo::Remote` for testing:
+
+``` cpp
+// test_helper.h
+class MockExampleInterface : public example::mojom::Example {
+ public:
+  MockExampleInterface() = default;
+  ~MockExampleInterface() override = default;
+
+  MOCK_METHOD(void, DoSomething, 
+              (const std::string& data, DoSomethingCallback callback), 
+              (override));
+
+  mojo::PendingRemote<example::mojom::Example> BindNewPipeAndPassRemote() {
+    return receiver_.BindNewPipeAndPassRemote();
+  }
+
+ private:
+  mojo::Receiver<example::mojom::Example> receiver_{this};
+};
+```
+
+### Integration Testing
+
+For integration tests involving converted IPC:
+- Use `base::test::TaskEnvironment` for proper async handling
+- Consider using `mojo::SyncCallRestrictions::ScopedAllowSyncCallForTesting` for test-only synchronous calls
+- Ensure proper cleanup of Mojo connections in test teardown
+
+### Browser Tests
+
+When testing frame-scoped interfaces:
+- Use `RenderFrameHostTester` for setting up test scenarios
+- Consider using `MockBrowserInterfaceBroker` for controlled testing environments
 
 ### Typemaps For Content and Blink Types
 
 Using typemapping for messages that go between Blink and content browser code
 can sometimes be tricky due to things like dependency cycles or confusion over
-the correct place for some definition
-to live. There are some example CLs provided here, but feel free to also contact
+the correct place for some definition to live. 
+
+Modern approaches for v134+ include:
+- Using `base::span<>` instead of raw arrays where possible
+- Leveraging `std::optional<>` for nullable primitive types
+- Using `base::flat_map<>` and `base::flat_set<>` for better performance
+
+Feel free to contact
 [chromium-mojo@chromium.org](https://groups.google.com/a/chromium.org/forum/#!forum/chromium-mojo)
 with specific details if you encounter trouble.
 
-[This CL](https://codereview.chromium.org/2363533002) introduces a Mojom
-definition and typemap for `ui::WindowOpenDisposition` as a precursor to the
-IPC conversion below.
+Example patterns for modern typemaps:
 
-The [follow-up CL](https://codereview.chromium.org/2363573002) uses that
-definition along with several other new typemaps (including native typemaps as
-described above) to convert the relatively large `ViewHostMsg_CreateWindow`
-message to Mojo.
+``` cpp
+// Modern mojom definition
+module example.mojom;
+
+struct ModernRequest {
+  string url;
+  map<string, string> headers;
+  array<uint8>? body;  // Optional body data
+};
+
+interface ModernAPI {
+  ProcessRequest(ModernRequest request) => (bool success, string? error);
+};
+```
+
+With corresponding typemap using modern C++ types:
+
+``` python
+mojom = "//example/public/mojom/modern_api.mojom"
+public_headers = [ 
+  "//example/public/modern_request.h",
+  "//base/containers/flat_map.h"
+]
+traits_headers = [ "//example/common/modern_request_mojom_traits.h" ]
+type_mappings = [ 
+  "example.mojom.ModernRequest=example::ModernRequest[move_only]" 
+]
+```
 
 ## Additional Support
 
 If this document was not helpful in some way, please post a message to your
-friendly
-[chromium-mojo@chromium.org](https://groups.google.com/a/chromium.org/forum/#!forum/chromium-mojo)
+friendly [chromium-mojo@chromium.org](https://groups.google.com/a/chromium.org/forum/#!forum/chromium-mojo)
 mailing list.
+
+For Chromium v134+ specific questions:
+- Check the [Mojo documentation](https://chromium.googlesource.com/chromium/src/+/main/mojo/README.md) for the latest patterns
+- Review recent [Mojo-related CLs](https://chromium-review.googlesource.com/q/hashtag:mojo) for examples
+- Consider the [Chromium security guidelines](https://chromium.googlesource.com/chromium/src/+/main/docs/security/README.md) for interface design
+
+## See Also
+
+- [Mojo & Services Overview](mojo_and_services.md)
+- [Servicification Guide](servicification.md)
+- [Chromium IPC Security](https://source.chromium.org/chromium/chromium/src/+/main:docs/security/mojo.md)

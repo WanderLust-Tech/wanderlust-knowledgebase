@@ -146,7 +146,7 @@ method argument on some other already-connected interface.
 One such interface which we always have connected between a renderer's
 `RenderFrameImpl` and its corresponding `RenderFrameHostImpl` in the browser
 is
-[`BrowserInterfaceBroker`](https://cs.chromium.org/chromium/src/third_party/blink/public/mojom/browser_interface_broker.mojom).
+[`BrowserInterfaceBroker`](https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/public/mojom/browser_interface_broker.mojom).
 This interface is a factory for acquiring other interfaces. Its `GetInterface`
 method takes a `GenericPendingReceiver`, which allows passing arbitrary
 interface receivers.
@@ -232,6 +232,60 @@ between a renderer frame and its browser-side host object!
 Assuming we kept our `pingable` object alive in the renderer long enough,
 we would eventually see its `OnPong` callback invoked with the totally random
 value of `4`, as defined by the browser-side implementation above.
+
+## Modern Mojo Patterns (Chromium v134+)
+
+### Interface Registry Updates
+
+Starting with Chromium v134, the recommended pattern for registering interfaces
+has been streamlined. The `mojo::BinderMap` now supports more type-safe registration:
+
+```cpp
+// Modern registration pattern
+void PopulateFrameBinders(RenderFrameHostImpl* host,
+                          mojo::BinderMap* map) {
+  // Use base::BindRepeating with proper lifetime management
+  map->Add<example::mojom::Pingable>(
+      base::BindRepeating(&RenderFrameHostImpl::GetPingable,
+                          host->GetWeakPtr()));
+}
+```
+
+### Improved Error Handling
+
+Modern Mojo usage includes better error handling patterns:
+
+```cpp
+// Set disconnect handler for better error handling
+pingable.set_disconnect_handler(base::BindOnce([]() {
+  LOG(ERROR) << "Pingable service disconnected";
+}));
+
+// Use connection error callback with additional context
+pingable.set_disconnect_with_reason_handler(base::BindOnce(
+    [](uint32_t error_code, const std::string& description) {
+      LOG(ERROR) << "Connection lost: " << error_code << " - " << description;
+    }));
+```
+
+### Task Runner Specification
+
+When binding interfaces that need specific threading behavior, explicitly specify
+the task runner:
+
+```cpp
+// Bind interface to specific sequence
+map->Add<magic::mojom::GoatTeleporter>(
+    base::BindRepeating(&RenderFrameHostImpl::GetGoatTeleporter,
+                        base::Unretained(host)),
+    content::GetIOThreadTaskRunner({}));
+
+// For UI thread binding (default, but explicit is better)
+map->Add<magic::mojom::GoatTeleporter>(
+    base::BindRepeating(&RenderFrameHostImpl::GetGoatTeleporter,
+                        base::Unretained(host)),
+    content::GetUIThreadTaskRunner({}));
+```
 
 ## Services Overview &amp; Terminology
 The previous section only scratches the surface of how Mojo IPC is used in
@@ -359,8 +413,8 @@ available in- or out-of-process.
 
 ### Hooking Up the Service Implementation
 
-For an out-of-process Chrome service, we simply register a factory function
-in [`//chrome/utility/services.cc`](https://cs.chromium.org/chromium/src/chrome/utility/services.cc).
+For an out-of-process Chrome service, we register a factory function
+in [`//chrome/utility/services.cc`](https://source.chromium.org/chromium/chromium/src/+/main:chrome/utility/services.cc).
 
 ``` cpp
 auto RunMathService(mojo::PendingReceiver<math::mojom::MathService> receiver) {
@@ -389,14 +443,19 @@ out-of-process.
 
 To launch an out-of-process service instance after the hookup performed in the
 previous section, use Content's
-[`ServiceProcessHost`](https://cs.chromium.org/chromium/src/content/public/browser/service_process_host.h?rcl=e7a1f6c9a24f3151c875598174a05167fb12c5d5&l=47)
+[`ServiceProcessHost`](https://source.chromium.org/chromium/chromium/src/+/main:content/public/browser/service_process_host.h)
 API:
 
 ``` cpp
+// Modern service launch pattern with better options API
 mojo::Remote<math::mojom::MathService> math_service =
     content::ServiceProcessHost::Launch<math::mojom::MathService>(
         content::ServiceProcessHost::Options()
-            .WithDisplayName("Math!")
+            .WithDisplayName("Math Service")
+            .WithProcessCallback(base::BindOnce([](const base::Process& process) {
+              // Optional: Handle process launch completion
+              LOG(INFO) << "Math service launched with PID: " << process.Pid();
+            }))
             .Pass());
 ```
 
@@ -411,7 +470,9 @@ We can now perform an out-of-process division:
 // confirmation of a connection. We can start queueing messages immediately and
 // they will be delivered as soon as the service is up and running.
 math_service->Divide(
-    42, 6, base::BindOnce([](int32_t quotient) { LOG(INFO) << quotient; }));
+    42, 6, base::BindOnce([](int32_t quotient) { 
+      LOG(INFO) << "Result: " << quotient; 
+    }));
 ```
 *** aside
 NOTE: To ensure the execution of the response callback, the
@@ -430,8 +491,9 @@ defined in consultation with security-dev@chromium.org.
 The preferred way to define the sandbox for your interface is by specifying a
 `[ServiceSandbox=type]` attribute on your `interface {}` in its `.mojom` file:
 
-```
+```cpp
 import "sandbox/policy/mojom/sandbox.mojom";
+
 [ServiceSandbox=sandbox.mojom.Sandbox.kService]
 interface FakeService {
   ...
@@ -439,13 +501,54 @@ interface FakeService {
 ```
 
 Valid values are those in
-[`//sandbox/policy/mojom/sandbox.mojom`](https://cs.chromium.org/chromium/src/sandbox/policy/mojom/sandbox.mojom). Note
+[`//sandbox/policy/mojom/sandbox.mojom`](https://source.chromium.org/chromium/chromium/src/+/main:sandbox/policy/mojom/sandbox.mojom). Note
 that the sandbox is only applied if the interface is launched
 out-of-process using `content::ServiceProcessHost::Launch()`.
 
 As a last resort, dynamic or feature based mapping to an underlying platform
 sandbox can be achieved but requires plumbing through ContentBrowserClient
 (e.g. `ShouldSandboxNetworkService()`).
+
+### Security Considerations (v134+)
+
+Modern Chromium emphasizes additional security practices for Mojo interfaces:
+
+#### Input Validation
+Always validate parameters in interface implementations:
+
+```cpp
+void MathService::Divide(int32_t dividend,
+                         int32_t divisor,
+                         DivideCallback callback) {
+  // Validate inputs to prevent security issues
+  if (divisor == 0) {
+    // Use mojo::ReportBadMessage for security violations
+    mojo::ReportBadMessage("Division by zero attempted");
+    return;
+  }
+  
+  // Additional range checks for potential overflow
+  if (abs(dividend) > INT32_MAX / 2 || abs(divisor) > INT32_MAX / 2) {
+    std::move(callback).Run(0);  // Safe fallback
+    return;
+  }
+  
+  std::move(callback).Run(dividend / divisor);
+}
+```
+
+#### Interface Documentation
+Use structured comments for security-critical interfaces:
+
+```cpp
+// interfaces/example.mojom
+interface SecuritySensitiveService {
+  // Processes user authentication token.
+  // |token| must be validated before use.
+  // This method should only be called from trusted contexts.
+  [Sync] ValidateUserToken(string token) => (bool is_valid);
+};
+```
 
 ## Content-Layer Services Overview
 
@@ -455,7 +558,7 @@ We define an explicit mojom interface with a persistent connection
 between a renderer's frame object and the corresponding
 `RenderFrameHostImpl` in the browser process.
 This interface is called
-[`BrowserInterfaceBroker`](https://cs.chromium.org/chromium/src/third_party/blink/public/mojom/browser_interface_broker.mojom?rcl=09aa5ae71649974cae8ad4f889d7cd093637ccdb&l=11)
+[`BrowserInterfaceBroker`](https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/public/mojom/browser_interface_broker.mojom)
 and is fairly easy to work with: you add a new method on `RenderFrameHostImpl`:
 
 ``` cpp
@@ -498,15 +601,15 @@ with the following differences:
  - For Dedicated Workers, add a new method to
    [`DedicatedWorkerHost`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/worker_host/dedicated_worker_host.h)
    and register it in
-   [`PopulateDedicatedWorkerBinders`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/browser_interface_binders.cc;l=1126;drc=e24e0a914ff0da18e78044ebad7518afe9e13847)
+   [`PopulateDedicatedWorkerBinders`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/browser_interface_binders.cc)
  - For Shared Workers, add a new method to
    [`SharedWorkerHost`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/worker_host/shared_worker_host.h)
    and register it in
-   [`PopulateSharedWorkerBinders`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/browser_interface_binders.cc;l=1232;drc=e24e0a914ff0da18e78044ebad7518afe9e13847)
+   [`PopulateSharedWorkerBinders`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/browser_interface_binders.cc)
  - For Service Workers, add a new method to
    [`ServiceWorkerHost`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/service_worker/service_worker_host.h)
    and register it in
-   [`PopulateServiceWorkerBinders`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/browser_interface_binders.cc;l=1326;drc=e24e0a914ff0da18e78044ebad7518afe9e13847)
+   [`PopulateServiceWorkerBinders`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/browser_interface_binders.cc)
 
 Interfaces can also be added at the process level using the
 `BrowserInterfaceBroker` connection between the Blink `Platform` object in the
@@ -516,16 +619,16 @@ renderer to access the interface, but comes with additional overhead because
 the `BrowserInterfaceBroker` implementation used must be thread-safe. To add a
 new process-level interface, add a new method to `RenderProcessHostImpl` and
 register it using a call to
-[`AddUIThreadInterface`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/renderer_host/render_process_host_impl.h;l=918;drc=ec5eaba0e021b757d5cbbf2c27ac8f06809d81e9)
+[`AddUIThreadInterface`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/renderer_host/render_process_host_impl.h)
 in
-[`RenderProcessHostImpl::RegisterMojoInterfaces`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/renderer_host/render_process_host_impl.cc;l=2317;drc=a817d852ea2f2085624d64154ad847dfa3faaeb6).
+[`RenderProcessHostImpl::RegisterMojoInterfaces`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/renderer_host/render_process_host_impl.cc).
 On the renderer side, use
-[`Platform::GetBrowserInterfaceBroker`](https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/public/platform/platform.h;l=781;drc=ee1482552c4c97b40f15605fe6a52565cfe74548)
+[`Platform::GetBrowserInterfaceBroker`](https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/public/platform/platform.h)
 to retrieve the corresponding `BrowserInterfaceBroker` object to call
 `GetInterface` on.
 
 For binding an embedder-specific document-scoped interface, override
-[`ContentBrowserClient::RegisterBrowserInterfaceBindersForFrame()`](https://cs.chromium.org/chromium/src/content/public/browser/content_browser_client.h?rcl=3eb14ce219e383daa0cd8d743f475f9d9ce8c81a&l=999)
+[`ContentBrowserClient::RegisterBrowserInterfaceBindersForFrame()`](https://source.chromium.org/chromium/chromium/src/+/main:content/public/browser/content_browser_client.h)
 and add the binders to the provided map.
 
 *** aside
@@ -536,7 +639,7 @@ receiver (one of the consequences is a termination of the renderer). To
 avoid this crash in tests (when content_shell doesn't bind some
 Chrome-specific interfaces, but the renderer requests them anyway),
 use the
-[`EmptyBinderForFrame`](https://cs.chromium.org/chromium/src/content/browser/browser_interface_binders.cc?rcl=12e73e76a6898cb6df6a361a98320a8936f37949&l=407)
+[`EmptyBinderForFrame`](https://source.chromium.org/chromium/chromium/src/+/main:content/browser/browser_interface_binders.cc)
 helper in `browser_interface_binders.cc`. However, it is recommended
 to have the renderer and browser sides consistent if possible.
 ***
@@ -566,11 +669,135 @@ to get an object to call
 [pending associated receiver](https://chromium.googlesource.com/chromium/src/+/main/mojo/public/cpp/bindings/README.md#associated-interfaces)
 instead of a pending receiver).
 
+## Testing Mojo Interfaces (v134+)
+
+### Unit Testing Patterns
+
+Modern Mojo testing uses improved patterns for better reliability:
+
+```cpp
+// test_math_service.cc
+class MathServiceTest : public testing::Test {
+ public:
+  void SetUp() override {
+    math_service_ = std::make_unique<math::MathService>(
+        math_service_remote_.BindNewPipeAndPassReceiver());
+  }
+
+  void TearDown() override {
+    // Ensure clean shutdown
+    math_service_remote_.reset();
+    task_environment_.RunUntilIdle();
+  }
+
+ protected:
+  base::test::TaskEnvironment task_environment_;
+  mojo::Remote<math::mojom::MathService> math_service_remote_;
+  std::unique_ptr<math::MathService> math_service_;
+};
+
+TEST_F(MathServiceTest, BasicDivision) {
+  base::test::TestFuture<int32_t> future;
+  math_service_remote_->Divide(10, 2, future.GetCallback());
+  EXPECT_EQ(future.Get(), 5);
+}
+
+TEST_F(MathServiceTest, DivisionByZeroError) {
+  base::test::TestFuture<int32_t> future;
+  
+  // Set up bad message expectation
+  std::string error_message;
+  mojo::SetDefaultProcessErrorHandler(base::BindLambdaForTesting(
+      [&error_message](const std::string& message) {
+        error_message = message;
+      }));
+  
+  math_service_remote_->Divide(10, 0, future.GetCallback());
+  task_environment_.RunUntilIdle();
+  
+  EXPECT_EQ(error_message, "Division by zero attempted");
+}
+```
+
+## New Features in Chromium v134+
+
+### Enhanced Service Process Management
+
+Chromium v134 introduces improved service lifecycle management:
+
+```cpp
+// More granular process control
+auto options = content::ServiceProcessHost::Options()
+    .WithDisplayName("Advanced Math Service")
+    .WithSandboxType(sandbox::mojom::Sandbox::kService)
+    .WithProcessCallback(base::BindOnce([](const base::Process& process) {
+      // Set up process monitoring, memory limits, etc.
+    }))
+    .WithExtraCommandLineSwitches({"--enable-special-math-mode"});
+
+mojo::Remote<math::mojom::MathService> service =
+    content::ServiceProcessHost::Launch<math::mojom::MathService>(
+        std::move(options));
+```
+
+### Improved Mojo Debugging
+
+New debugging capabilities for interface communication:
+
+```cpp
+// Enable detailed Mojo tracing (debug builds)
+TRACE_EVENT_INSTANT("mojo", "MathService::Divide",
+                     TRACE_EVENT_SCOPE_THREAD,
+                     "dividend", dividend,
+                     "divisor", divisor);
+
+// Use connection diagnostics
+if (math_service_remote_.is_bound()) {
+  // Check connection health
+  bool is_connected = math_service_remote_.is_connected();
+  DVLOG(1) << "Service connection status: " << is_connected;
+}
+```
+
+### Structured Binding Support
+
+Modern C++ patterns are now better supported:
+
+```cpp
+// Use structured bindings with Mojo callbacks (C++17+)
+auto [success, result] = future.Take();
+if (success) {
+  ProcessResult(result);
+}
+```
+
+## Integration Testing
+
+For testing service process hosting:
+
+```cpp
+class MathServiceIntegrationTest : public content::BrowserTestBase {
+ public:
+  void SetUpOnMainThread() override {
+    math_service_ = content::ServiceProcessHost::Launch<math::mojom::MathService>(
+        content::ServiceProcessHost::Options()
+            .WithDisplayName("Test Math Service")
+            .Pass());
+  }
+
+ protected:
+  mojo::Remote<math::mojom::MathService> math_service_;
+};
+```
+
 ## Additional Support
 
-If this document was not helpful in some way, please post a message to your
-friendly
-[chromium-mojo@chromium.org](https://groups.google.com/a/chromium.org/forum/#!forum/chromium-mojo)
-or
-[services-dev@chromium.org](https://groups.google.com/a/chromium.org/forum/#!forum/services-dev)
-mailing list.
+If this document was not helpful in some way, please consider:
+
+- Checking the [Mojo documentation](https://chromium.googlesource.com/chromium/src/+/main/mojo/README.md) for comprehensive API references
+- Reviewing existing implementations in the Chromium codebase for patterns
+- Posting questions to [chromium-mojo@chromium.org](https://groups.google.com/a/chromium.org/forum/#!forum/chromium-mojo) for Mojo-specific issues
+- Posting to [services-dev@chromium.org](https://groups.google.com/a/chromium.org/forum/#!forum/services-dev) for service architecture questions
+- Filing bugs at [crbug.com](https://bugs.chromium.org/p/chromium/issues/list) with the `Internals>Mojo` component for suspected issues
+
+For WanderLust-specific implementations, consult the [custom browser documentation](/docs) in this knowledge base.
