@@ -494,3 +494,165 @@ Understanding how different processes communicate is crucial for Chromium develo
 ### Next Steps:
 
 Explore the linked documentation pages to dive deeper into each component's implementation details and design principles.
+
+## Advanced Linking Example
+
+Here's a comprehensive example showing how to link multiple diagrams together with clickable edges and cross-references:
+
+```interactive-diagram
+{
+  "title": "Navigation Hub - Chromium Architecture Overview",
+  "description": "Central navigation hub with links to detailed component diagrams. Click edges to explore specific processes.",
+  "height": 500,
+  "interactive": true,
+  "controls": true,
+  "background": true,
+  "navigationHints": [
+    "Click node details to access related documentation",
+    "Click edges to navigate to detailed process flows",
+    "Use the related diagrams section to jump between views"
+  ],
+  "relatedDiagrams": [
+    { 
+      "title": "Blink Engine Details", 
+      "url": "#blink-rendering-engine-components",
+      "description": "Detailed view of the Blink rendering engine components"
+    },
+    {
+      "title": "IPC Message Flow",
+      "url": "#ipc-inter-process-communication-flow", 
+      "description": "Step-by-step IPC communication example"
+    },
+    {
+      "title": "Security Model",
+      "url": "/security/security-model",
+      "description": "Chromium's multi-layered security architecture"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "browser-process",
+      "type": "chromium-process",
+      "position": { "x": 200, "y": 100 },
+      "data": {
+        "label": "Browser Process",
+        "description": "Main process that coordinates all other processes and handles UI",
+        "details": "The browser process is the main process that manages the application lifecycle, UI, and coordinates with other processes.",
+        "processType": "browser",
+        "icon": "🖥️",
+        "links": [
+          { "title": "Browser Components", "url": "#/architecture/browser-components" },
+          { "title": "Process Model", "url": "#/architecture/process-model" }
+        ]
+      }
+    },
+    {
+      "id": "renderer-hub",
+      "type": "chromium-process",
+      "position": { "x": 500, "y": 100 },
+      "data": {
+        "label": "Renderer Processes",
+        "description": "Isolated processes for rendering web content",
+        "details": "Each tab or frame runs in its own renderer process for security and stability.",
+        "processType": "renderer",
+        "icon": "🌐",
+        "links": [
+          { "title": "Blink Engine Details", "url": "#blink-rendering-engine-components" },
+          { "title": "Render Pipeline", "url": "#/architecture/render-pipeline" }
+        ]
+      }
+    },
+    {
+      "id": "gpu-process",
+      "type": "chromium-process",
+      "position": { "x": 200, "y": 300 },
+      "data": {
+        "label": "GPU Process",
+        "description": "Hardware-accelerated graphics and compositing",
+        "processType": "gpu",
+        "icon": "🎮",
+        "links": [
+          { "title": "GPU Architecture", "url": "#/architecture/browser-components" }
+        ]
+      }
+    },
+    {
+      "id": "network-process",
+      "type": "chromium-process",
+      "position": { "x": 500, "y": 300 },
+      "data": {
+        "label": "Network Process",
+        "description": "Handles all network requests and caching",
+        "processType": "network",
+        "icon": "🌍",
+        "links": [
+          { "title": "Network Stack", "url": "#/modules/networking-http" }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "browser-renderer",
+      "source": "browser-process",
+      "target": "renderer-hub",
+      "label": "Manages",
+      "type": "smoothstep",
+      "animated": true,
+      "clickable": true,
+      "description": "Browser process creates and manages renderer processes",
+      "links": [
+        { "title": "IPC Communication Flow", "url": "#ipc-inter-process-communication-flow" }
+      ],
+      "markerEnd": { "type": "arrowclosed", "color": "#2563eb" }
+    },
+    {
+      "id": "browser-gpu",
+      "source": "browser-process", 
+      "target": "gpu-process",
+      "label": "GPU Commands",
+      "type": "smoothstep",
+      "clickable": true,
+      "links": [
+        { "title": "GPU Architecture", "url": "#/architecture/browser-components" }
+      ],
+      "style": { "stroke": "#16a34a" },
+      "markerEnd": { "type": "arrowclosed", "color": "#16a34a" }
+    },
+    {
+      "id": "renderer-gpu",
+      "source": "renderer-hub",
+      "target": "gpu-process", 
+      "label": "Compositing",
+      "type": "smoothstep",
+      "clickable": true,
+      "links": [
+        { "title": "Render Pipeline", "url": "#/architecture/render-pipeline" }
+      ],
+      "style": { "stroke": "#dc2626" },
+      "markerEnd": { "type": "arrowclosed", "color": "#dc2626" }
+    },
+    {
+      "id": "renderer-network",
+      "source": "renderer-hub",
+      "target": "network-process",
+      "label": "Resource Requests", 
+      "type": "smoothstep",
+      "clickable": true,
+      "links": [
+        { "title": "Network Module", "url": "#/modules/networking-http" }
+      ],
+      "style": { "stroke": "#ea580c" },
+      "markerEnd": { "type": "arrowclosed", "color": "#ea580c" }
+    }
+  ]
+}
+```
+
+### Diagram Linking Features:
+
+1. **Node Links**: Click on any node to see detailed information and links to related documentation
+2. **Edge Navigation**: Click on edges (the arrows between nodes) to navigate to detailed process flows
+3. **Related Diagrams**: Use the footer section to jump to related diagrams and documentation
+4. **Cross-References**: Links can point to other diagrams in the same document or external pages
+5. **Navigation Hints**: Interactive guidance to help users understand available interactions

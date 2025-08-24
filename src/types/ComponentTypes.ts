@@ -88,6 +88,8 @@ export interface InteractiveDiagramContent {
   controls?: boolean;
   background?: boolean;
   nodeTypes?: Record<string, any>;
+  relatedDiagrams?: { title: string; url: string; description?: string }[];
+  navigationHints?: string[];
 }
 
 export interface DiagramNode {
@@ -122,6 +124,8 @@ export interface DiagramEdge {
     type: 'arrow' | 'arrowclosed';
     color?: string;
   };
+  links?: { title: string; url: string }[];
+  clickable?: boolean;
 }
 
 export interface CalloutContent {

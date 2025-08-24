@@ -2,14 +2,14 @@
 
 Effective Chromium development requires mastering a comprehensive set of tools, processes, and best practices. This section provides everything you need to become a productive Chromium contributor.
 
-## 🎯 What You'll Learn
+## What You'll Learn
 
 - **Version Control**: Advanced Git workflows for large codebases
 - **Code Quality**: Tools and practices for maintaining high code quality
 - **Review Process**: How to participate in Chromium's code review culture
 - **Language Guidelines**: Best practices for C++, Rust, and other languages
 
-## 📋 Development Essentials
+## Development Essentials
 
 ### Version Control Mastery
 - [Git Cookbook](git_cookbook) - Common Git operations and workflows
@@ -34,7 +34,7 @@ Effective Chromium development requires mastering a comprehensive set of tools, 
 - [Clang Gardening](clang_gardening) - Maintaining the build infrastructure
 - [Clang Sheriffing](clang_sheriffing) - Monitoring and maintaining code quality
 
-## 🛠️ Tool Categories
+## Tool Categories
 
 ### **Essential Daily Tools**
 - Git (version control)
@@ -54,14 +54,14 @@ Effective Chromium development requires mastering a comprehensive set of tools, 
 - Memory analyzers
 - Security scanners
 
-## 🚀 Getting Started
+## Getting Started
 
 1. **Start Here**: [Git Cookbook](git_cookbook) - Master the basics
 2. **Next**: [Code Reviews](code_reviews) - Understand the review process  
 3. **Then**: [Clang Overview](clang) - Set up your development environment
 4. **Finally**: Choose language-specific guides based on your work
 
-## 🎯 Success Metrics
+## Success Metrics
 
 After completing this section, you should be able to:
 - ✅ Navigate the Chromium codebase efficiently
@@ -70,8 +70,8 @@ After completing this section, you should be able to:
 - ✅ Use debugging and profiling tools confidently
 - ✅ Follow Chromium's coding standards and conventions
 
-## 🔗 Related Sections
+## Related Sections
 
-- [🧪 Testing & QA](testing/testing_in_chromium) - Quality assurance practices
-- [⚡ Performance](../performance/profiling) - Performance optimization tools
-- [🤝 Contributing](../contributing/contributing) - How to contribute to Chromium
+- [Testing & QA](testing/testing_in_chromium) - Quality assurance practices
+- [Performance](../performance/profiling) - Performance optimization tools
+- [Contributing](../contributing/contributing) - How to contribute to Chromium

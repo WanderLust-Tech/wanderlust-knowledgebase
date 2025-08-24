@@ -205,6 +205,11 @@ export const InteractiveDiagramRenderer: React.FC<InteractiveDiagramRendererProp
       type: edge.type || 'default',
       animated: edge.animated || false,
       style: edge.style,
+      data: {
+        description: edge.description,
+        links: edge.links,
+        clickable: edge.clickable
+      },
       markerEnd: edge.markerEnd ? {
         type: edge.markerEnd.type === 'arrow' ? MarkerType.Arrow : MarkerType.ArrowClosed,
         color: edge.markerEnd.color || '#6b7280',
@@ -229,6 +234,30 @@ export const InteractiveDiagramRenderer: React.FC<InteractiveDiagramRendererProp
 
   const onEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
     console.log('Edge clicked:', edge);
+    
+    // Handle edge navigation if links are available
+    const edgeData = edge.data as { links?: { title: string; url: string }[]; clickable?: boolean; description?: string };
+    if (edgeData?.links && Array.isArray(edgeData.links) && edgeData.links.length > 0) {
+      // If only one link, navigate directly
+      if (edgeData.links.length === 1) {
+        const link = edgeData.links[0];
+        if (link.url.startsWith('#')) {
+          // Internal navigation
+          window.location.hash = link.url.substring(1);
+        } else {
+          // External navigation
+          window.open(link.url, '_blank');
+        }
+      } else {
+        // Multiple links - show a tooltip or modal (for now, just navigate to first)
+        const link = edgeData.links[0];
+        if (link.url.startsWith('#')) {
+          window.location.hash = link.url.substring(1);
+        } else {
+          window.open(link.url, '_blank');
+        }
+      }
+    }
   }, []);
 
   return (
@@ -292,8 +321,49 @@ export const InteractiveDiagramRenderer: React.FC<InteractiveDiagramRendererProp
         </ReactFlow>
       </div>
       
-      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 text-xs text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
-        💡 Click on nodes to see details, drag to rearrange, and use mouse wheel to zoom
+      {/* Enhanced footer with navigation hints and related diagrams */}
+      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+          💡 Click on nodes to see details, drag to rearrange, and use mouse wheel to zoom
+          {content.relatedDiagrams && content.relatedDiagrams.length > 0 && " • Click edges to navigate to related content"}
+        </div>
+        
+        {/* Navigation hints */}
+        {content.navigationHints && content.navigationHints.length > 0 && (
+          <div className="mb-2">
+            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Navigation Tips:</div>
+            <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+              {content.navigationHints.map((hint, index) => (
+                <li key={index} className="flex items-center">
+                  <span className="w-1 h-1 bg-gray-400 rounded-full mr-2 flex-shrink-0"></span>
+                  {hint}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {/* Related diagrams */}
+        {content.relatedDiagrams && content.relatedDiagrams.length > 0 && (
+          <div>
+            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Related Diagrams:</div>
+            <div className="flex flex-wrap gap-2">
+              {content.relatedDiagrams.map((diagram, index) => (
+                <a
+                  key={index}
+                  href={diagram.url.startsWith('#') ? diagram.url : `#${diagram.url}`}
+                  className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                  title={diagram.description}
+                >
+                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  {diagram.title}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
