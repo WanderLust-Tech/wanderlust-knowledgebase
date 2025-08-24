@@ -7,6 +7,7 @@ import { ProgressDashboard } from './components/ProgressDashboard';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import CommunityPage from './components/CommunityPage';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 
 import { contentIndex } from './contentIndex';
 import Header from './components/Header';
@@ -29,6 +30,7 @@ const App: React.FC = () => (
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/progress" element={<ProgressDashboard />} />
                   <Route path="/community" element={<CommunityPage />} />
+                  <Route path="/analytics" element={<AnalyticsDashboard />} />
                   <Route path="/*" element={<ArticleView />} />
                 </Routes>
               </div>
