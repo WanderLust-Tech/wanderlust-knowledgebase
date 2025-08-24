@@ -10,6 +10,7 @@ import CommunityPage from './components/CommunityPage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import ContentVersioningPage from './components/ContentVersioningPage';
 import AIContentSuggestionsPage from './components/AIContentSuggestionsPage';
+import CodeExamplesRepository from './components/CodeExamplesRepository';
 
 import { contentIndex } from './contentIndex';
 import Header from './components/Header';
@@ -33,6 +34,7 @@ const App: React.FC = () => (
                   <Route path="/progress" element={<ProgressDashboard />} />
                   <Route path="/community" element={<CommunityPage />} />
                   <Route path="/analytics" element={<AnalyticsDashboard />} />
+                  <Route path="/code-examples" element={<CodeExamplesRepository />} />
                   <Route path="/versioning/:contentPath?" element={<ContentVersioningPage />} />
                   <Route path="/ai-suggestions/:contentPath?" element={<AIContentSuggestionsPage />} />
                   <Route path="/*" element={<ArticleView />} />

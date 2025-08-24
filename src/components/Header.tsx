@@ -170,6 +170,15 @@ const Header: React.FC = () => {
             </svg>
           </Link>
           <Link
+            to="/code-examples"
+            className="hover:text-blue-200 dark:hover:text-blue-300 transition-colors p-1"
+            title="Code Examples Repository"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+          </Link>
+          <Link
             to="/search"
             className="hover:text-blue-200 dark:hover:text-blue-300 transition-colors p-1"
             title="Advanced Search"
