@@ -6,6 +6,7 @@ import { SectionBookmark } from './SectionBookmark';
 import CodeBlock from './CodeBlock';
 import ComponentRenderer from './ComponentRenderer';
 import { VideoTutorialPage } from './VideoTutorialPage';
+import AIContentSuggestions from './AIContentSuggestions';
 import { ArticleComponent, InteractiveDiagramContent } from '../types/ComponentTypes';
 import '../github-markdown.css';
 
@@ -205,6 +206,24 @@ const ArticleView: React.FC = () => {
       <article className="markdown-body pt-4">
         <ReactMarkdown components={components}>{content}</ReactMarkdown>
       </article>
+      
+      {/* AI Content Suggestions */}
+      {path && content && (
+        <div className="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
+          <AIContentSuggestions
+            contentPath={`/content/${path}.md`}
+            userId="user-1"
+            showPersonalized={true}
+            maxSuggestions={5}
+            onSuggestionImplement={(suggestion) => {
+              console.log('Suggestion implemented:', suggestion.title);
+            }}
+            onSuggestionFeedback={(suggestionId, feedback) => {
+              console.log('Feedback provided:', suggestionId, feedback);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };

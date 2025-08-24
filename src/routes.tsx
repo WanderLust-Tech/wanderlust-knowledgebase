@@ -9,6 +9,7 @@ import { SidebarProvider } from './contexts/SidebarContext';
 import CommunityPage from './components/CommunityPage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import ContentVersioningPage from './components/ContentVersioningPage';
+import AIContentSuggestionsPage from './components/AIContentSuggestionsPage';
 
 import { contentIndex } from './contentIndex';
 import Header from './components/Header';
@@ -33,6 +34,7 @@ const App: React.FC = () => (
                   <Route path="/community" element={<CommunityPage />} />
                   <Route path="/analytics" element={<AnalyticsDashboard />} />
                   <Route path="/versioning/:contentPath?" element={<ContentVersioningPage />} />
+                  <Route path="/ai-suggestions/:contentPath?" element={<AIContentSuggestionsPage />} />
                   <Route path="/*" element={<ArticleView />} />
                 </Routes>
               </div>
