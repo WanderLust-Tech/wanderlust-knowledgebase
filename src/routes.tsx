@@ -6,6 +6,7 @@ import Breadcrumb from './components/Breadcrumb';
 import { ProgressDashboard } from './components/ProgressDashboard';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SidebarProvider } from './contexts/SidebarContext';
+import CommunityPage from './components/CommunityPage';
 
 import { contentIndex } from './contentIndex';
 import Header from './components/Header';
@@ -27,6 +28,7 @@ const App: React.FC = () => (
                   <Route path="/" element={<Navigate to="/introduction/overview" replace />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/progress" element={<ProgressDashboard />} />
+                  <Route path="/community" element={<CommunityPage />} />
                   <Route path="/*" element={<ArticleView />} />
                 </Routes>
               </div>
