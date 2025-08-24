@@ -198,14 +198,12 @@ html {
 /* Adjust code block positioning for section bookmarks */
 .markdown-body pre {
   position: relative;
-  margin-left: 2rem;
 }
 
 /* Adjust heading positioning for section bookmarks */
 .markdown-body h2,
 .markdown-body h3 {
   position: relative;
-  margin-left: 2rem;
 }
 
 /* Ensure bookmark indicators don't interfere with content */
