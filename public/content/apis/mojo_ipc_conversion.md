@@ -1,7 +1,5 @@
 # Converting Legacy IPC to Mojo
 
-[TOC]
-
 ## Overview
 
 A number of IPC messages sent (primarily between the browser and renderer

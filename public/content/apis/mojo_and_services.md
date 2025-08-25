@@ -1,7 +1,5 @@
 # Intro to Mojo &amp; Services
 
-[TOC]
-
 ## Overview
 
 This document contains the minimum amount of information needed for a developer

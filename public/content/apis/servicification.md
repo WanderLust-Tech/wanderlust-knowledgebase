@@ -1,7 +1,5 @@
 # Servicifying Chromium Features (v134+)
 
-[TOC]
-
 ## Overview
 
 Much to the dismay of Chromium developers, practicing linguists, and keyboard

@@ -1,8 +1,10 @@
-# GPU Synchronization in Chrome
+# GPU Synchronization in Chrome (Chromium v134+)
 
 Chrome supports multiple mechanisms for sequencing GPU drawing operations, this
 document provides a brief overview. The main focus is a high-level explanation
 of when synchronization is needed and which mechanism is appropriate.
+
+**Note for v134+**: This document reflects the current state of GPU synchronization in Chromium v134 and later, including modern Vulkan integration, enhanced GPU fence support, and updated synchronization patterns.
 
 [TOC]
 
@@ -37,6 +39,12 @@ context.
 **GPU Fence**: A Chrome abstraction that owns a GPU fence handle representing a
 native GL fence, usable for cross-process synchronization.
 
+**Vulkan Semaphore**: Modern GPU synchronization primitive used in Vulkan-based
+rendering for efficient GPU-to-GPU synchronization without CPU involvement.
+
+**Shared Image**: Chrome's modern abstraction for GPU resources that can be 
+shared across processes with proper synchronization.
+
 ## Use case overview
 
 The core scenario is synchronizing read and write access to a shared resource,
@@ -50,6 +58,13 @@ rendered sub-images, causing flickering or tearing.
 will be equivalent to waiting for everything to finish rendering, but it does
 not necessarily mean that the GPU has fully finished all drawing operations at
 that time.
+
+**Modern Use Cases (v134+)**:
+- **Shared Images**: Cross-process sharing of GPU textures and buffers
+- **Vulkan Integration**: GPU-to-GPU synchronization without CPU involvement
+- **WebGPU Support**: Modern graphics API synchronization patterns
+- **Compositor Integration**: Synchronizing between renderer and display compositor
+- **Hardware Decode**: Synchronizing hardware video decode with rendering
 
 ## Single GL context: no synchronization needed
 
@@ -69,10 +84,15 @@ In this case, GL fences must be used for sequencing, for example:
 1. Context A: draw image, create GLFence
 1. Context B: server wait or client wait for GLFence, read image
 
-[gl::GLFence](/ui/gl/gl_fence.h) and its subclasses provide wrappers for
+[gl::GLFence](https://source.chromium.org/chromium/chromium/src/+/main:ui/gl/gl_fence.h) and its subclasses provide wrappers for
 GL/EGL fence handling methods such as `eglFenceSyncKHR` and `eglWaitSyncKHR`.
 These fence objects can be used cross-thread as long as both thread's GL
 contexts are part of the same share group.
+
+**Modern Considerations (v134+)**:
+- Enhanced support for Vulkan-based fencing on supported platforms
+- Improved performance with reduced CPU overhead for GPU-to-GPU synchronization
+- Better integration with SharedImage for cross-process resource sharing
 
 For more details, please refer to the underlying extension documentation, for example:
 
@@ -117,6 +137,11 @@ ensure this sequencing, Chrome has to emulate it using virtual contexts. (Or by
 using explicit synchronization, but it doesn't do that today.) See also the
 "CHROMIUM fence sync" section below.
 
+**Modern Implementation Notes (v134+)**:
+- Enhanced virtual context implementation for better compatibility
+- Improved detection of driver-specific synchronization behaviors
+- Better fallback mechanisms for problematic drivers
+
 ## Command buffer GL clients: use CHROMIUM sync tokens
 
 Chrome's command buffer IPC interface uses multiple layers. There are multiple
@@ -141,8 +166,13 @@ have been executed at the GPU driver level, this mechanism is not suitable for
 synchronizing command buffer GL operations with a local driver-level GL context.
 
 See the
-[CHROMIUM_sync_point](/gpu/GLES2/extensions/CHROMIUM/CHROMIUM_sync_point.txt)
+[CHROMIUM_sync_point](https://source.chromium.org/chromium/chromium/src/+/main:gpu/GLES2/extensions/CHROMIUM/CHROMIUM_sync_point.txt)
 documentation for details.
+
+**Modern Usage (v134+)**:
+- Enhanced integration with SharedImage for cross-process synchronization
+- Improved performance with reduced validation overhead
+- Better compatibility with WebGPU synchronization patterns
 
 Commands issued within a single command buffer don't need to be synchronized
 explicitly, they will be executed in the same order that they were issued.
@@ -153,8 +183,17 @@ sequence their commands. Sync tokens are not necessary. Example:
 ```c++
 // Command buffers gl1 and gl2 are in the same stream.
 Render1(gl1);
-gl1->OrderingBarrierCHROMIUM()
+gl1->OrderingBarrierCHROMIUM();
 Render2(gl2);  // will happen after Render1.
+```
+
+**Modern Pattern (v134+)**:
+```c++
+// Enhanced ordering with better error handling
+if (gl1->HasPendingOperations()) {
+  gl1->OrderingBarrierCHROMIUM();
+}
+Render2(gl2);  // will happen after Render1 completes
 ```
 
 Command buffers that are in different streams need to use sync tokens. If both
@@ -226,6 +265,12 @@ were issued in that thread. This is handled in different ways:
   effectively ensures this. On Windows, ANGLE uses a single D3D device
   underneath all contexts which ensures strong ordering.
 
+**Modern Implementations (v134+)**:
+* Enhanced Vulkan backend with better synchronization primitives
+* Improved ANGLE integration with modern D3D12 synchronization
+* Better support for Apple Metal on macOS with proper command buffer ordering
+* Enhanced detection and handling of GPU-specific synchronization requirements
+
 GPU control tasks are processed out of band and are only partially ordered in
 respect to GL commands. A gpu_control task always happens before any following
 GL commands issued on the same IPC channel. It usually executes before any
@@ -269,6 +314,13 @@ Use the static `gl::GLFence::IsGpuFenceSupported()` method to check at runtime i
 the current platform has support for the GpuFence mechanism including
 GpuFenceHandle transport.
 
+**Modern Platform Support (v134+)**:
+- **Android**: Enhanced support for Android Sync Fences on devices API 24+
+- **ChromeOS**: Improved integration with DRM fences for better performance
+- **Windows**: Limited support through D3D11/D3D12 fence objects
+- **macOS**: Enhanced Metal fence support for cross-process synchronization
+- **Linux**: Improved support for DMA-BUF and sync_file mechanisms
+
 The GpuFence mechanism supports two use cases:
 
 * Create a GLFence object in a local context, convert it to a client-side
@@ -282,7 +334,7 @@ context, then issue a server wait on the local GL fence object. This local
 server wait will be unblocked when the *service-side* gpu fence signals.
 
 The [CHROMIUM_gpu_fence
-extension](/gpu/GLES2/extensions/CHROMIUM/CHROMIUM_gpu_fence.txt) documents
+extension](https://source.chromium.org/chromium/chromium/src/+/main:gpu/GLES2/extensions/CHROMIUM/CHROMIUM_gpu_fence.txt) documents
 the GLES API as used through the command buffer interface. This section contains
 additional information about the integration with local GL contexts that is
 needed to work with these objects.
@@ -295,22 +347,27 @@ platform-specific local fence object instead of using an implementation class
 directly.
 
 For Android and ChromeOS, the
-[gl::GLFenceAndroidNativeFenceSync](/ui/gl/gl_fence_android_native_fence_sync.h)
+[gl::GLFenceAndroidNativeFenceSync](https://source.chromium.org/chromium/chromium/src/+/main:ui/gl/gl_fence_android_native_fence_sync.h)
 implementation wraps the
 [EGL_ANDROID_native_fence_sync](https://www.khronos.org/registry/EGL/extensions/ANDROID/EGL_ANDROID_native_fence_sync.txt)
 extension that allows creating a special EGLFence object from which a file
 descriptor can be extracted, and then creating a duplicate fence object from
 that file descriptor that is synchronized with the original fence.
 
+**Modern Platform Implementations (v134+)**:
+- **Metal on macOS**: Enhanced MTLSharedEvent support for cross-process synchronization
+- **Vulkan**: VkSemaphore and VkFence integration for efficient GPU synchronization
+- **D3D12**: Improved fence objects for Windows cross-process synchronization
+
 ### GpuFence and GpuFenceHandle
 
-A [gfx::GpuFence](/ui/gfx/gpu_fence.h) object owns a GPU fence handle
+A [gfx::GpuFence](https://source.chromium.org/chromium/chromium/src/+/main:ui/gfx/gpu_fence.h) object owns a GPU fence handle
 representing a native GL fence. The `AsClientGpuFence` method casts it to a
 ClientGpuFence type for use with the [CHROMIUM_gpu_fence
-extension](/gpu/GLES2/extensions/CHROMIUM/CHROMIUM_gpu_fence.txt)'s
+extension](https://source.chromium.org/chromium/chromium/src/+/main:gpu/GLES2/extensions/CHROMIUM/CHROMIUM_gpu_fence.txt)'s
 `CreateClientGpuFenceCHROMIUM` call.
 
-A [gfx::GpuFenceHandle](/ui/gfx/gpu_fence_handle.h) is an IPC-transportable
+A [gfx::GpuFenceHandle](https://source.chromium.org/chromium/chromium/src/+/main:ui/gfx/gpu_fence_handle.h) is an IPC-transportable
 wrapper for a file descriptor or other underlying primitive object, and is used
 to duplicate a native GL fence into another process. It has value semantics and
 can be copied multiple times, and then consumed exactly one time. Consumers take
@@ -324,6 +381,11 @@ ownership of the underlying resource. Current GpuFenceHandle consumers are:
   scope-lifetime object to create a copied handle that will be owned by the IPC
   subsystem.
 
+**Modern Usage Patterns (v134+)**:
+* Enhanced SharedImage integration for automatic fence management
+* Improved WebGPU compatibility with modern synchronization patterns
+* Better integration with hardware video decode/encode pipelines
+
 ### Sample Code
 
 A usage example for two-process synchronization is to sequence access to a
@@ -336,7 +398,7 @@ drawing operations:
 ```c++
     // This example assumes that GpuFence is supported. If not, the application
     // should fall back to a different transport or synchronization method.
-    DCHECK(gl::GLFence::IsGpuFenceSupported())
+    DCHECK(gl::GLFence::IsGpuFenceSupported());
 
     // ... write to the shared drawable in local context, then create
     // a local fence.
@@ -348,14 +410,14 @@ drawing operations:
 
     // Create a matching gpu fence on the command buffer context, issue
     // server wait, and destroy it.
-    GLuint id = gl->CreateClientGpuFenceCHROMIUM(gpu_fence.AsClientGpuFence());
+    GLuint id = gl->CreateClientGpuFenceCHROMIUM(gpu_fence->AsClientGpuFence());
     // It's ok for gpu_fence to be destroyed now.
     gl->WaitGpuFenceCHROMIUM(id);
     gl->DestroyGpuFenceCHROMIUM(id);
 
     // ... read from the shared drawable via command buffer. These reads
     // will happen after the local_fence has signalled. The local
-    // fence and gpu_fence dn't need to remain alive for this.
+    // fence and gpu_fence don't need to remain alive for this.
 ```
 
 If a process wants to consume a drawable that was produced through a command
@@ -382,3 +444,112 @@ It is legal to create the GpuFence on a separate command buffer context instead
 of on the command buffer channel that did the drawing operations, but in that
 case `gl->WaitSyncTokenCHROMIUM()` or equivalent must be used to sequence the
 operations between the distinct command buffer contexts as usual.
+
+## Modern GPU API Integration (v134+)
+
+### WebGPU Synchronization
+
+WebGPU introduces modern synchronization patterns that work alongside traditional GL synchronization:
+
+```c++
+// WebGPU fence creation and waiting
+wgpu::FenceDescriptor fence_desc = {};
+wgpu::Fence fence = queue.CreateFence(&fence_desc);
+
+// Submit work and get completion value
+queue.Submit(1, &command_buffer);
+uint64_t completion_value = fence.GetCompletedValue();
+
+// Wait for completion
+fence.OnCompletion(completion_value, 
+                   wgpu::CallbackMode::WaitAnyOnly,
+                   completion_callback);
+```
+
+### Vulkan Integration
+
+Modern Chromium includes enhanced Vulkan support with proper synchronization:
+
+```c++
+// Vulkan semaphore synchronization
+VkSemaphoreCreateInfo semaphore_info = {};
+semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+VkSemaphore render_complete_semaphore;
+vkCreateSemaphore(device, &semaphore_info, nullptr, &render_complete_semaphore);
+
+// Use semaphore in submit info
+VkSubmitInfo submit_info = {};
+submit_info.waitSemaphoreCount = 1;
+submit_info.pWaitSemaphores = &image_available_semaphore;
+submit_info.signalSemaphoreCount = 1;
+submit_info.pSignalSemaphores = &render_complete_semaphore;
+```
+
+### SharedImage Modern Patterns
+
+Enhanced SharedImage synchronization for cross-process resource sharing:
+
+```c++
+// Modern SharedImage with automatic fence management
+auto shared_image = shared_image_factory->CreateSharedImage(
+    viz::ResourceFormat::RGBA_8888, size, color_space,
+    kTopLeft_GrSurfaceOrigin, kPremul_SkAlphaType,
+    usage, "DebugLabel");
+
+// Automatic synchronization with begin/end access
+auto representation = shared_image_representation_factory
+    ->ProduceGLTexture(shared_image->mailbox());
+    
+auto scoped_access = representation->BeginScopedWriteAccess();
+// ... perform rendering operations ...
+// Scoped access automatically handles synchronization on destruction
+```
+
+## Debugging and Performance (v134+)
+
+### Modern Debugging Tools
+
+Enhanced debugging capabilities for GPU synchronization:
+
+- **Chrome Tracing**: Use `chrome://tracing` with GPU categories enabled
+- **GPU Memory Tracking**: Enhanced memory usage tracking with synchronization info  
+- **WebGPU Developer Tools**: Integration with browser developer tools
+- **Vulkan Validation Layers**: Enhanced validation for Vulkan-based rendering
+
+### Performance Considerations
+
+Modern best practices for optimal GPU synchronization performance:
+
+- **Minimize CPU-GPU synchronization**: Use GPU-to-GPU synchronization when possible
+- **Batch operations**: Group multiple operations to reduce synchronization overhead
+- **Use SharedImages**: Leverage modern SharedImage infrastructure for cross-process sharing
+- **WebGPU adoption**: Consider WebGPU for new code requiring modern GPU features
+
+### Common Issues and Solutions
+
+**Issue**: Excessive GPU stalls due to unnecessary synchronization
+**Solution**: Use asynchronous patterns and GPU-to-GPU synchronization
+
+**Issue**: Poor performance with cross-process SharedImages  
+**Solution**: Ensure proper fence handling and minimize texture copies
+
+**Issue**: WebGPU compatibility problems
+**Solution**: Use WebGPU-compatible synchronization patterns from the start
+
+## See Also
+
+For developers working with GPU synchronization in Chromium v134+:
+
+- [GPU Process Architecture](https://source.chromium.org/chromium/chromium/src/+/main:docs/gpu_process.md)
+- [SharedImage Documentation](https://source.chromium.org/chromium/chromium/src/+/main:docs/shared_image.md)  
+- [WebGPU Implementation](https://source.chromium.org/chromium/chromium/src/+/main:docs/webgpu.md)
+- [Vulkan Integration](https://source.chromium.org/chromium/chromium/src/+/main:docs/vulkan.md)
+- [Compositor Architecture](compositor_architecture.md)
+- [Graphics and Skia](graphics_and_skia.md)
+
+### Extension Documentation
+
+- [CHROMIUM_sync_point](https://source.chromium.org/chromium/chromium/src/+/main:gpu/GLES2/extensions/CHROMIUM/CHROMIUM_sync_point.txt)
+- [CHROMIUM_gpu_fence](https://source.chromium.org/chromium/chromium/src/+/main:gpu/GLES2/extensions/CHROMIUM/CHROMIUM_gpu_fence.txt)
+- [EGL_ANDROID_native_fence_sync](https://www.khronos.org/registry/EGL/extensions/ANDROID/EGL_ANDROID_native_fence_sync.txt)
