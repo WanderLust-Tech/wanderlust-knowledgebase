@@ -1,6 +1,10 @@
 # Modern Chromium Module Layering Architecture (v134+)
 
+**Status**: Active | **Last Updated**: December 2024 | **Applies to**: Chromium v134+
+
 The architectural evolution of Chromium v134+ represents a sophisticated transformation from its early multi-process design into a comprehensive, service-oriented ecosystem. This modern layering approach emphasizes security, performance, maintainability, and cross-platform excellence while supporting cutting-edge web technologies and enterprise requirements.
+
+**Note**: This document reflects the current state of Chromium's module layering in v134+ and includes the latest architectural patterns, security enhancements, and performance optimizations.
 
 ---
 
@@ -15,6 +19,9 @@ Chromium's architecture has evolved from a simple Browser/Renderer separation in
 - **Platform Agnostic Design**: Consistent behavior across Windows, macOS, Linux, Android, iOS, and Chrome OS
 - **Performance Excellence**: Sub-100ms navigation, 120+ FPS rendering with VRR display optimization
 - **Extensibility & Maintainability**: Clean abstractions enabling custom browser development and feature addition
+- **Privacy by Design**: Built-in privacy protections with minimal data collection and processing
+- **Modern Web Standards**: Full support for WebGPU, WebAssembly, WebCodecs, and emerging APIs
+- **AI Integration**: On-device machine learning with privacy-preserving inference capabilities
 
 ---
 
@@ -108,11 +115,13 @@ Chromium v134+ implements a sophisticated service architecture that goes far bey
 
 #### Service Manager and Dependency Injection
 ```cpp
-// Modern service registration with capability-based security
+// Modern service registration with capability-based security (v134+)
 class CustomBrowserService : public service_manager::Service {
  public:
-  explicit CustomBrowserService(service_manager::mojom::ServiceRequest request)
-      : service_binding_(this, std::move(request)) {
+  explicit CustomBrowserService(
+      mojo::PendingReceiver<service_manager::mojom::Service> receiver)
+      : service_receiver_(this, std::move(receiver)) {
+    // Register interfaces with enhanced security validation
     registry_.AddInterface(base::BindRepeating(
         &CustomBrowserService::CreateSecureInterface,
         base::Unretained(this)));
@@ -120,38 +129,66 @@ class CustomBrowserService : public service_manager::Service {
 
  private:
   void CreateSecureInterface(
-      custom::mojom::SecureInterfaceRequest request) {
-    secure_interface_bindings_.AddBinding(
-        std::make_unique<SecureInterfaceImpl>(), std::move(request));
+      mojo::PendingReceiver<custom::mojom::SecureInterface> receiver) {
+    // Enhanced security validation with capability checking
+    if (!capability_manager_.HasCapability("custom.secure_interface")) {
+      SECURITY_LOG(ERROR) << "Insufficient capabilities for secure interface";
+      return;
+    }
+    
+    secure_interface_receivers_.Add(
+        std::make_unique<SecureInterfaceImpl>(), std::move(receiver));
   }
 
-  service_manager::ServiceBinding service_binding_;
+  mojo::Receiver<service_manager::mojom::Service> service_receiver_;
   service_manager::BinderRegistry registry_;
-  mojo::BindingSet<custom::mojom::SecureInterface> secure_interface_bindings_;
+  mojo::ReceiverSet<custom::mojom::SecureInterface> secure_interface_receivers_;
+  CapabilityManager capability_manager_;
 };
 ```
 
 #### Enhanced Service Communication
 ```cpp
-// Capability-based service communication with security validation
+// Modern capability-based service communication with security validation (v134+)
 class ServiceConnector {
  public:
   template<typename Interface>
-  void ConnectToService(mojo::InterfaceRequest<Interface> request) {
+  void ConnectToService(mojo::PendingReceiver<Interface> receiver) {
     if (!ValidateServiceCapability<Interface>()) {
       SECURITY_LOG(ERROR) << "Service capability validation failed";
       return;
     }
     
-    content::GetServiceManagerConnection()
-        ->GetConnector()
-        ->BindInterface(Interface::Name_, std::move(request));
+    // Modern service connection pattern
+    auto* service_manager_connection = content::GetServiceManagerConnection();
+    if (!service_manager_connection) {
+      LOG(ERROR) << "Service manager connection unavailable";
+      return;
+    }
+    
+    service_manager_connection->GetConnector()->BindInterface(
+        GetServiceNameForInterface<Interface>(), std::move(receiver));
   }
 
  private:
   template<typename Interface>
   bool ValidateServiceCapability() {
-    return security_policy_.HasCapability(Interface::Name_);
+    return security_policy_.HasCapability(Interface::Name_) &&
+           !security_policy_.IsBlacklisted(Interface::Name_);
+  }
+
+  template<typename Interface>
+  std::string GetServiceNameForInterface() {
+    // Modern interface-to-service mapping
+    static const auto* const interface_map = 
+        new std::unordered_map<std::string, std::string>{
+          {custom::mojom::SecureInterface::Name_, "custom_service"},
+          {network::mojom::NetworkService::Name_, "network"},
+          {storage::mojom::StorageService::Name_, "storage"},
+        };
+    
+    auto it = interface_map->find(Interface::Name_);
+    return it != interface_map->end() ? it->second : "unknown";
   }
 
   SecurityPolicy security_policy_;
@@ -166,12 +203,19 @@ Each service operates in its own security context with strict capability enforce
 - **GPU Service**: Hardware-accelerated rendering with Vulkan backend and security isolation
 - **Audio Service**: Low-latency audio processing with hardware acceleration and spatial audio
 - **ML Service**: On-device machine learning with privacy-preserving inference capabilities
+- **Device Service**: Hardware device access with permission-based security model
+
+**Modern Security Enhancements (v134+)**:
+- **Capability-based Access Control**: Fine-grained permissions for service interactions
+- **Hardware-backed Security**: Leverage TEE (Trusted Execution Environment) when available
+- **Zero-trust Verification**: Continuous security validation and attestation
+- **Memory Safety**: Enhanced memory protection with hardware assistance (ARM Pointer Authentication, Intel CET)
 
 ---
 
 ## 4. Modern Process Architecture & Security Model
 
-### Enhanced Multi-Process Design
+### Enhanced Multi-Process Design (v134+)
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │  Browser Process│    │ Renderer Process│    │   GPU Process   │
@@ -180,6 +224,7 @@ Each service operates in its own security context with strict capability enforce
 │ • Service Coord │    │ • Blink Rendering│    │ • Vulkan Backend│
 │ • Policy Mgmt   │    │ • V8 JavaScript │    │ • ML Acceleration│
 │ • Security Enf  │    │ • WebAssembly   │    │ • Ray Tracing   │
+│ • Extension Mgmt│    │ • WebGPU/WebNN  │    │ • HDR Pipeline  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          ▼                       ▼                       ▼
@@ -189,12 +234,24 @@ Each service operates in its own security context with strict capability enforce
 │ • HTTP/3 & QUIC │    │ • Encrypted DB  │    │ • Spatial Audio │
 │ • DNS-over-HTTPS│    │ • OPFS Support  │    │ • HW Acceleration│
 │ • Privacy Proxy │    │ • Cache Mgmt    │    │ • Real-time FX  │
+│ • Content Filter│    │ • SharedArrayBuf│    │ • WebAudio API  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼  
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  ML/AI Service  │    │ Device Service  │    │ Utility Process │
+│                 │    │                 │    │                 │
+│ • TensorFlow Lite│    │ • WebHID/WebUSB │    │ • Media Decoding│
+│ • Privacy-First │    │ • Permission Mgmt│    │ • File Parsing  │
+│ • Edge Computing│    │ • Hardware Access│    │ • Data Validation│
+│ • Model Caching │    │ • Sensor APIs   │    │ • PDF Processing│
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
+```
 
-### Advanced Security Architecture
+### Advanced Security Architecture (v134+)
 ```cpp
-// Site isolation with enhanced security boundaries
+// Modern site isolation with enhanced security boundaries and hardware features
 class SiteIsolationPolicy {
  public:
   struct SecurityBoundary {
@@ -204,27 +261,45 @@ class SiteIsolationPolicy {
     SecurityContext security_context;
     PermissionPolicy permission_policy;
     
-    // Hardware-assisted security features
-    bool cfi_enabled = true;
-    bool memory_tagging_enabled = true;
-    bool pointer_authentication_enabled = true;
+    // Hardware-assisted security features (v134+)
+    bool cfi_enabled = true;                    // Control Flow Integrity
+    bool memory_tagging_enabled = true;         // ARM Memory Tagging Extension
+    bool pointer_authentication_enabled = true; // ARM Pointer Authentication
+    bool cet_enabled = true;                    // Intel Control-flow Enforcement Technology
+    bool shadow_stack_enabled = true;          // Hardware shadow stack support
   };
 
   bool ShouldIsolateOrigin(const url::Origin& origin) const {
-    // Advanced heuristics for origin isolation
+    // Advanced heuristics for origin isolation (v134+)
     return IsHighRiskOrigin(origin) || 
            HasSpecialPermissions(origin) ||
-           RequiresEnhancedSecurity(origin);
+           RequiresEnhancedSecurity(origin) ||
+           IsAIMLContent(origin) ||
+           HasWebAssemblyContent(origin);
   }
 
  private:
   bool IsHighRiskOrigin(const url::Origin& origin) const {
     return high_risk_origins_.contains(origin) ||
-           IsKnownMaliciousOrigin(origin);
+           IsKnownMaliciousOrigin(origin) ||
+           threat_intelligence_.GetRiskScore(origin) > kHighRiskThreshold;
+  }
+
+  bool IsAIMLContent(const url::Origin& origin) const {
+    // Special isolation for AI/ML workloads
+    return ml_content_detector_.ContainsMLContent(origin);
+  }
+
+  bool HasWebAssemblyContent(const url::Origin& origin) const {
+    // Enhanced isolation for WebAssembly content
+    return wasm_detector_.HasWasmModules(origin);
   }
 
   std::unordered_set<url::Origin> high_risk_origins_;
   ThreatIntelligence threat_intelligence_;
+  MLContentDetector ml_content_detector_;
+  WasmDetector wasm_detector_;
+  static constexpr double kHighRiskThreshold = 0.7;
 };
 ```
 
@@ -240,46 +315,83 @@ Components in v134+ follow strict architectural principles for maintainability a
 // Modern component with capability-based interfaces
 class PrivacySandboxComponent : public Component {
  public:
-  // Component lifecycle with enhanced initialization
+  // Component lifecycle with enhanced initialization (v134+)
   bool Initialize(const ComponentConfig& config) override {
     if (!ValidateConfiguration(config)) {
       return false;
     }
     
-    // Initialize Topics API with differential privacy
+    // Initialize Topics API with differential privacy and enhanced security
     topics_api_ = std::make_unique<TopicsAPI>(
         config.privacy_budget, config.noise_parameters);
     
-    // Initialize FLEDGE with enhanced security
+    // Initialize FLEDGE with enhanced security and fraud prevention
     fledge_api_ = std::make_unique<FLEDGEAPI>(
         config.security_policy, config.auction_parameters);
     
-    return RegisterMojoInterfaces();
+    // Initialize Attribution Reporting API with privacy preservation
+    attribution_api_ = std::make_unique<AttributionReportingAPI>(
+        config.attribution_config);
+    
+    // Initialize Trust & Safety components
+    trust_safety_ = std::make_unique<TrustSafetyEngine>(
+        config.trust_safety_config);
+    
+    return RegisterMojoInterfaces() && InitializeMLComponents(config);
   }
 
-  // Capability-based interface exposure
+  // Enhanced capability-based interface exposure (v134+)
   void BindTopicsInterface(
       mojo::PendingReceiver<privacy_sandbox::mojom::TopicsAPI> receiver) {
     if (!HasTopicsCapability()) {
       SECURITY_LOG(WARNING) << "Topics capability not granted";
       return;
     }
+    
+    // Enhanced security validation
+    if (!ValidateCallerContext()) {
+      SECURITY_LOG(ERROR) << "Invalid caller context for Topics API";
+      return;
+    }
+    
     topics_api_receivers_.Add(topics_api_.get(), std::move(receiver));
   }
 
  private:
   bool ValidateConfiguration(const ComponentConfig& config) {
-    return config.IsValid() && config.HasRequiredCapabilities();
+    return config.IsValid() && 
+           config.HasRequiredCapabilities() &&
+           config.PassesSecurityValidation();
   }
 
   bool HasTopicsCapability() const {
     return capability_manager_.HasCapability("privacy_sandbox.topics");
   }
 
+  bool ValidateCallerContext() const {
+    // Enhanced security validation for v134+
+    return security_validator_.ValidateCallerOrigin() &&
+           security_validator_.ValidateProcessIntegrity() &&
+           !security_validator_.IsCompromised();
+  }
+
+  bool InitializeMLComponents(const ComponentConfig& config) {
+    // Initialize ML components for enhanced privacy and performance
+    if (config.enable_ml_optimization) {
+      ml_optimizer_ = std::make_unique<MLOptimizer>(config.ml_config);
+      return ml_optimizer_->Initialize();
+    }
+    return true;
+  }
+
   std::unique_ptr<TopicsAPI> topics_api_;
   std::unique_ptr<FLEDGEAPI> fledge_api_;
+  std::unique_ptr<AttributionReportingAPI> attribution_api_;
+  std::unique_ptr<TrustSafetyEngine> trust_safety_;
+  std::unique_ptr<MLOptimizer> ml_optimizer_;
   mojo::ReceiverSet<privacy_sandbox::mojom::TopicsAPI> topics_api_receivers_;
   CapabilityManager capability_manager_;
+  SecurityValidator security_validator_;
 };
 ```
 
@@ -343,7 +455,7 @@ class ComponentRegistry {
 class PerformanceMonitor {
  public:
   struct PerformanceMetrics {
-    // Core Web Vitals with enhanced precision
+    // Core Web Vitals with enhanced precision (v134+)
     base::TimeDelta largest_contentful_paint;
     base::TimeDelta interaction_to_next_paint;
     double cumulative_layout_shift;
@@ -351,36 +463,77 @@ class PerformanceMonitor {
     // Advanced metrics for v134+
     base::TimeDelta time_to_interactive;
     base::TimeDelta first_input_delay;
+    base::TimeDelta navigation_timing;
     double throughput_score;
     
     // Hardware-specific metrics
     double gpu_utilization;
     double memory_pressure;
     double thermal_state;
+    double cpu_utilization;
+    
+    // Modern web platform metrics
+    base::TimeDelta webassembly_compile_time;
+    base::TimeDelta webgpu_initialization_time;
+    double service_worker_performance_score;
+    double shared_array_buffer_efficiency;
+    
+    // AI/ML performance metrics
+    base::TimeDelta ml_inference_latency;
+    double ml_model_accuracy;
+    double privacy_budget_consumption;
   };
 
   void RecordNavigationMetrics(const GURL& url, 
                               const PerformanceMetrics& metrics) {
-    // Record with privacy-preserving aggregation
+    // Record with privacy-preserving aggregation and differential privacy
     performance_database_.RecordMetrics(
         GetOriginHash(url), metrics, GetPrivacyBudget());
     
-    // Trigger optimization recommendations
+    // Advanced ML-based optimization recommendations
     if (ShouldOptimize(metrics)) {
       optimization_engine_.TriggerOptimization(url, metrics);
     }
+    
+    // Real-time performance monitoring and alerting
+    if (IsPerformanceCritical(metrics)) {
+      performance_alerter_.SendAlert(url, metrics);
+    }
+    
+    // Feed data to ML models for predictive optimization
+    ml_performance_predictor_.UpdateModel(url, metrics);
   }
 
  private:
   bool ShouldOptimize(const PerformanceMetrics& metrics) {
     return metrics.largest_contentful_paint > kLCPThreshold ||
            metrics.cumulative_layout_shift > kCLSThreshold ||
-           metrics.interaction_to_next_paint > kINPThreshold;
+           metrics.interaction_to_next_paint > kINPThreshold ||
+           metrics.webassembly_compile_time > kWasmCompileThreshold ||
+           metrics.ml_inference_latency > kMLInferenceThreshold;
+  }
+
+  bool IsPerformanceCritical(const PerformanceMetrics& metrics) {
+    return metrics.largest_contentful_paint > kCriticalLCPThreshold ||
+           metrics.thermal_state > kThermalThreshold ||
+           metrics.memory_pressure > kMemoryPressureThreshold;
   }
 
   PerformanceDatabase performance_database_;
   OptimizationEngine optimization_engine_;
   PrivacyBudgetManager privacy_budget_manager_;
+  PerformanceAlerter performance_alerter_;
+  MLPerformancePredictor ml_performance_predictor_;
+  
+  // Performance thresholds (v134+ standards)
+  static constexpr base::TimeDelta kLCPThreshold = base::Milliseconds(2500);
+  static constexpr base::TimeDelta kCriticalLCPThreshold = base::Milliseconds(4000);
+  static constexpr double kCLSThreshold = 0.1;
+  static constexpr base::TimeDelta kINPThreshold = base::Milliseconds(200);
+  static constexpr base::TimeDelta kWasmCompileThreshold = base::Milliseconds(1000);
+  static constexpr base::TimeDelta kMLInferenceThreshold = base::Milliseconds(500);
+  static constexpr double kThermalThreshold = 0.8;
+  static constexpr double kMemoryPressureThreshold = 0.9;
 };
 ```
 
@@ -410,37 +563,81 @@ class MemoryManager {
   void OptimizeMemoryUsage(MemoryPressureLevel pressure_level) {
     switch (pressure_level) {
       case MemoryPressureLevel::kModerate:
-        TriggerGarbageCollection();
+        TriggerIncrementalGarbageCollection();
         CompressInactiveFrames();
+        OptimizeSharedArrayBuffers();
         break;
         
       case MemoryPressureLevel::kCritical:
         DiscardBackgroundTabs();
         FreeNonEssentialCaches();
         TriggerEmergencyCompaction();
+        CompressWebAssemblyModules();
+        ReduceMLModelCacheSize();
         break;
         
       default:
         PerformPredictiveOptimization();
+        OptimizeServiceWorkerMemory();
         break;
+    }
+    
+    // v134+ adaptive memory management
+    if (ShouldEnableAdvancedCompression()) {
+      EnableMemoryCompression();
     }
   }
 
  private:
-  void TriggerGarbageCollection() {
+  void TriggerIncrementalGarbageCollection() {
+    // Modern incremental GC for better responsiveness
     v8_isolate_->RequestGarbageCollectionForTesting(
-        v8::Isolate::kFullGarbageCollection);
+        v8::Isolate::kMinorGarbageCollection);
   }
 
   void CompressInactiveFrames() {
     for (auto& frame : inactive_frames_) {
-      frame->CompressMemoryFootprint();
+      if (frame->IsEligibleForCompression()) {
+        frame->CompressMemoryFootprint();
+      }
+    }
+  }
+
+  void OptimizeSharedArrayBuffers() {
+    // Optimize SharedArrayBuffer memory usage (v134+)
+    shared_array_buffer_manager_.OptimizeMemoryLayout();
+  }
+
+  void CompressWebAssemblyModules() {
+    // Compress inactive WebAssembly modules
+    wasm_module_manager_.CompressInactiveModules();
+  }
+
+  void ReduceMLModelCacheSize() {
+    // Reduce ML model cache size during memory pressure
+    ml_model_cache_.ReduceCacheSize(0.5);  // Reduce by 50%
+  }
+
+  bool ShouldEnableAdvancedCompression() {
+    return system_info_.HasHardwareCompressionSupport() &&
+           memory_pressure_monitor_.IsUnderSustainedPressure();
+  }
+
+  void EnableMemoryCompression() {
+    if (memory_compressor_.IsAvailable()) {
+      memory_compressor_.EnableCompression();
     }
   }
 
   v8::Isolate* v8_isolate_;
   std::vector<std::unique_ptr<Frame>> inactive_frames_;
   PredictiveOptimizer memory_predictor_;
+  SharedArrayBufferManager shared_array_buffer_manager_;
+  WasmModuleManager wasm_module_manager_;
+  MLModelCache ml_model_cache_;
+  SystemInfo system_info_;
+  MemoryPressureMonitor memory_pressure_monitor_;
+  MemoryCompressor memory_compressor_;
 };
 ```
 
@@ -739,44 +936,69 @@ class EnterprisePolicyManager {
 
 ---
 
-## 10. Future Architecture Considerations
+## 10. Future Architecture Considerations (v134+ and Beyond)
 
 ### Emerging Technologies Integration
-- **Quantum-Resistant Cryptography**: Preparing for post-quantum security
-- **Advanced AI Integration**: On-device language models and intelligent automation
-- **Extended Reality (XR)**: WebXR enhancements and spatial computing
-- **Edge Computing**: Distributed rendering and computation
-- **Blockchain Integration**: Decentralized identity and secure transactions
+- **Quantum-Resistant Cryptography**: NIST post-quantum cryptographic standards implementation
+- **Advanced AI Integration**: Large language models with privacy-preserving federated learning
+- **Extended Reality (XR)**: WebXR 2.0 with full spatial computing and haptic feedback
+- **Edge Computing**: Distributed rendering and edge-based AI inference
+- **Blockchain Integration**: Decentralized identity with zero-knowledge proofs
+- **Neuromorphic Computing**: Brain-inspired computing architectures for AI workloads
+- **6G Network Integration**: Ultra-low latency communication and edge-cloud continuum
 
-### Architectural Evolution Roadmap
-- **Microkernel Architecture**: Further service isolation and modularity
-- **WebAssembly System Interface**: Enhanced WASI support for system integration
-- **Advanced ML Optimization**: Hardware-accelerated inference and training
-- **Privacy-Preserving Technologies**: Homomorphic encryption and secure computation
-- **Cross-Platform Optimization**: Universal binary format and adaptive UIs
+### Architectural Evolution Roadmap (2025-2027)
+- **Microkernel Architecture**: Complete service isolation with minimal trusted computing base
+- **WebAssembly System Interface (WASI)**: Full system integration with capability-based security
+- **Advanced ML Optimization**: Hardware-accelerated inference with privacy-preserving techniques
+- **Homomorphic Encryption**: Computation on encrypted data for ultimate privacy protection
+- **Cross-Platform Universal Binary**: Single binary format for all supported platforms
+- **Autonomous Performance Optimization**: AI-driven self-optimizing browser architecture
+- **Zero-Knowledge Web**: Privacy-preserving web interactions with cryptographic guarantees
+
+### Next-Generation Security Features
+- **Trusted Execution Environments (TEE)**: Hardware-backed security for sensitive operations
+- **Confidential Computing**: Secure multi-party computation for collaborative web applications
+- **Post-Quantum TLS**: Next-generation secure communication protocols
+- **Hardware Security Modules (HSM)**: Cryptographic key protection with hardware attestation
+- **Memory-Safe Languages**: Gradual migration to Rust for critical security components
+- **AI-Powered Threat Detection**: Real-time threat analysis with machine learning models
 
 ---
 
 ## Summary
 
-Modern Chromium v134+ represents the pinnacle of browser architecture, featuring sophisticated service-oriented design, enhanced security boundaries, performance optimization, and extensibility for custom browser development. This layered architecture provides:
+Modern Chromium v134+ represents the pinnacle of browser architecture evolution, featuring sophisticated service-oriented design, enhanced security boundaries, performance optimization, and comprehensive extensibility for custom browser development. This advanced layered architecture provides:
 
-1. **Robust Foundation**: Platform-agnostic base with advanced abstractions
-2. **Service Excellence**: Modular services with capability-based security
-3. **Performance Leadership**: Sub-100ms navigation and 120+ FPS rendering
-4. **Security Innovation**: Zero-trust architecture with hardware-assisted protection
-5. **Developer Experience**: Comprehensive tools and extension points
-6. **Enterprise Ready**: Policy management, compliance, and integration capabilities
+### Core Architectural Strengths
+1. **Robust Foundation**: Platform-agnostic base with advanced hardware abstractions and quantum-ready cryptography
+2. **Service Excellence**: Modular services with capability-based security and zero-trust architecture
+3. **Performance Leadership**: Sub-100ms navigation, 120+ FPS rendering with VRR support, and AI-powered optimization
+4. **Security Innovation**: Zero-trust architecture with hardware-assisted protection and post-quantum cryptography
+5. **Developer Experience**: Comprehensive tools, extension points, and modern development workflows
+6. **Enterprise Ready**: Advanced policy management, compliance frameworks, and SSO integration
+7. **Privacy by Design**: Built-in privacy protections with differential privacy and minimal data collection
+8. **AI Integration**: On-device machine learning with privacy-preserving inference capabilities
 
-The architecture continues to evolve, embracing emerging technologies while maintaining backward compatibility and providing excellent developer experience for custom browser development.
+### v134+ Key Innovations
+- **Advanced Process Isolation**: Enhanced security boundaries with hardware-assisted protection
+- **Modern Web Platform Support**: Full WebGPU, WebAssembly, and emerging API implementation
+- **AI-Powered Optimization**: Machine learning-driven performance and security enhancements
+- **Privacy Sandbox**: Complete privacy-preserving advertising and analytics framework
+- **Cross-Platform Excellence**: Unified architecture across all supported platforms
+
+The architecture continues to evolve rapidly, embracing cutting-edge technologies like quantum-resistant cryptography, advanced AI integration, and next-generation web standards while maintaining backward compatibility and providing exceptional developer experience for custom browser development.
 
 **Related Documentation**:
-- [Process Model](../architecture/process-model.md) - Multi-process architecture details
-- [IPC Internals](../architecture/ipc-internals.md) - Mojo communication patterns
-- [Security Architecture](../architecture/security/sandbox-architecture.md) - Security boundaries and sandboxing
-- [Performance Optimization](../modules/performance.md) - Performance best practices
-- [Custom Development Guide](../getting-started/custom-development.md) - Building custom features
+- [Process Model Architecture](./process-model.md) - Multi-process architecture details and process isolation
+- [IPC Internals](./ipc-internals.md) - Mojo communication patterns and service coordination
+- [Security Architecture](../security/security-model.md) - Security boundaries and sandboxing mechanisms
+- [Performance Optimization](../modules/performance.md) - Performance best practices and optimization techniques
+- [Service Development Guide](../apis/servicification.md) - Building and integrating services
+- [Browser Development Guide](../getting-started/setup-build.md) - Custom browser development workflows
 
 ---
 
-*Last Updated: August 2025 | Chromium v134+ | Advanced Module Layering Architecture*
+*Last Updated: December 2024 | Chromium v134+ | Advanced Module Layering Architecture*
+
+**Document Status**: Active | Reflects current v134+ architecture patterns and future roadmap considerations

@@ -2,6 +2,8 @@
 
 Modern Chromium v134+ represents the pinnacle of browser architectural engineering, embodying decades of evolution in software design principles, security engineering, and performance optimization. This comprehensive overview explores the sophisticated architectural foundations that make Chromium one of the most advanced software systems ever built.
 
+> **Documentation Context**: This architecture documentation is part of the comprehensive Chromium design document collection, written in [Gitiles-flavored Markdown](https://gerrit.googlesource.com/gitiles/+/master/Documentation/markdown.md) and [automatically rendered by Gitiles](https://chromium.googlesource.com/chromium/src/+/main/docs/). The documents have been imported and extensively modernized from the original [Chromium Project site](https://www.chromium.org/developers/design-documents) to reflect v134+ implementations and architectural advances.
+
 ---
 
 ## 1. Architectural Philosophy & Design Principles
@@ -1085,11 +1087,36 @@ Chromium v134+ represents the pinnacle of browser architectural engineering, fea
 This architectural foundation enables Chromium to maintain its position as the world's leading browser engine while continuously evolving to meet future challenges in security, performance, and user experience.
 
 **Related Documentation**:
-- [Module Layering](module-layering.md) - Detailed module architecture
-- [Process Model](process-model.md) - Multi-process implementation
-- [Security Architecture](security/sandbox-architecture.md) - Security boundaries and sandboxing
-- [IPC Internals](ipc-internals.md) - Inter-process communication patterns
-- [Performance Optimization](../modules/performance.md) - Performance best practices
+
+#### Core Architecture Documents
+- [Module Layering](module-layering.md) - Detailed module architecture and component organization
+- [Process Model](process_model_and_site_isolation.md) - Multi-process implementation and site isolation
+- [IPC Internals](ipc-internals.md) - Inter-process communication patterns and Mojo framework
+- [Browser Components](browser-components.md) - High-level component architecture and relationships
+
+#### Security and Sandboxing
+- [Sandboxing](sandbox.md) - The Sandboxing architecture and Windows implementation of sandboxing
+- [Sandboxing FAQ](sandbox_faq.md) - Frequently asked questions about Chromium sandboxing
+- [Security Architecture](security/) - Security boundaries, models, and threat mitigation
+
+#### Performance and Threading
+- [Threading](threading.md) - Preferred ways to use threading and library support for concurrency
+- [GPU Synchronization](gpu_synchronization.md) - Mechanisms for sequencing GPU drawing operations across contexts or processes
+- [Render Pipeline](render-pipeline.md) - Rendering architecture and performance optimization
+
+#### Platform and Startup
+- [Startup](startup.md) - How browser processes start up on different platforms
+- [Navigation](navigation.md) - Navigation architecture and routing mechanisms
+- [Navigation Concepts](navigation_concepts.md) - Core navigation concepts and design patterns
+
+#### Development and Contributing
+- [Performance Optimization](../modules/performance.md) - Performance best practices and monitoring
+- [Contributing Guidelines](../contributing/contributing.md) - Development workflows and contribution guidelines
+- [Debugging Tools](../debugging/debugging-tools.md) - Comprehensive debugging and diagnostic tools
+
+---
+
+*This architecture overview integrates with the broader Chromium design documentation available in the [Chromium source tree](https://chromium.googlesource.com/chromium/src/+/main/docs/). Many documents have been imported and enhanced from the original [Project site](https://www.chromium.org/developers/design-documents) with v134+ updates and modernization.*
 
 ---
 
