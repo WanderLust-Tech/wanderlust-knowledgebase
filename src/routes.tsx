@@ -10,6 +10,7 @@ import { ErrorProvider } from './contexts/ErrorContext';
 import { LoadingProvider } from './contexts/LoadingContext';
 import ErrorDisplay from './components/ErrorDisplay';
 import LoadingDisplay from './components/LoadingDisplay';
+import RealTimeNotifications from './components/RealTimeNotifications';
 import CommunityPage from './components/CommunityPage';
 import ApiCommunityPage from './components/ApiCommunityPage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
@@ -17,6 +18,7 @@ import ContentVersioningPage from './components/ContentVersioningPage';
 import AIContentSuggestionsPage from './components/AIContentSuggestionsPage';
 import CodeExamplesRepository from './components/CodeExamplesRepository';
 import ArticleSyncPage from './components/ArticleSyncPage';
+import RealTimeDemoPage from './components/RealTimeDemoPage';
 
 import { contentIndex } from './contentIndex';
 import Header from './components/Header';
@@ -41,6 +43,7 @@ const App: React.FC = () => (
                       <Route path="/search" element={<SearchResults />} />
                       <Route path="/progress" element={<ProgressDashboard />} />
                       <Route path="/community" element={<CommunityPage />} />
+                      <Route path="/real-time-demo" element={<RealTimeDemoPage />} />
                       <Route path="/api-community" element={<ApiCommunityPage />} />
                       <Route path="/analytics" element={<AnalyticsDashboard />} />
                       <Route path="/code-examples" element={<CodeExamplesRepository />} />
@@ -57,6 +60,9 @@ const App: React.FC = () => (
             {/* Global Error and Loading Display */}
             <ErrorDisplay position="top-right" maxErrors={3} />
             <LoadingDisplay showGlobalOverlay={true} showInlineLoaders={false} />
+            
+            {/* Real-time Notifications */}
+            <RealTimeNotifications position="bottom-right" maxNotifications={5} />
           </Router>
         </SidebarProvider>
       </ThemeProvider>
