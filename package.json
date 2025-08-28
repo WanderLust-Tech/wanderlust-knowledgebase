@@ -1,7 +1,7 @@
 {
   "name": "wanderlust-knowledgebase",
-  "version": "3.3.0",
-  "description": "",
+  "version": "4.0.0",
+  "description": "Comprehensive interactive knowledge base for Chromium development with advanced search, tutorials, and progress tracking",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,11 @@
     "deploy:test": "node scripts/deploy.js test-connection",
     "deploy:staging": "cross-env NODE_ENV=staging npm run deploy",
     "deploy:production": "cross-env NODE_ENV=production npm run deploy",
-    "deploy:setup": "node scripts/test-deployment.js"
+    "deploy:setup": "node scripts/test-deployment.js",
+    "test": "npm run build && npm run preview",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist node_modules/.vite",
+    "update-deps": "npm update && npm audit fix"
   },
   "dependencies": {
     "@microsoft/signalr": "^9.0.6",
@@ -43,6 +47,29 @@
     "typescript": "^5.1.6",
     "vite": "^4.4.9"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "WanderLust Tech",
+  "license": "MIT",
+  "homepage": "https://github.com/WanderLust-Tech/wanderlust-knowledgebase#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WanderLust-Tech/wanderlust-knowledgebase.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WanderLust-Tech/wanderlust-knowledgebase/issues"
+  },
+  "keywords": [
+    "chromium",
+    "knowledge-base",
+    "documentation",
+    "tutorial",
+    "learning",
+    "react",
+    "typescript",
+    "pwa",
+    "educational"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
 }
