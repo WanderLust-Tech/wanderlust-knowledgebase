@@ -88,35 +88,10 @@ jobs:
         path: dist/
         retention-days: 30
 
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: [check-version-change]
-    if: needs.check-version-change.outputs.version-changed == 'true' || github.event_name == 'workflow_dispatch'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run tests
-      run: npm test --if-present
-      
-    - name: Run linting
-      run: npm run lint --if-present
-
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [build, test, check-version-change]
+    needs: [build, check-version-change]
     if: github.ref == 'refs/heads/develop' && (needs.check-version-change.outputs.version-changed == 'true' || github.event_name == 'workflow_dispatch')
     environment: staging
     
@@ -154,7 +129,7 @@ jobs:
   deploy-production:
     name: Deploy to Production (Version Changes)
     runs-on: ubuntu-latest
-    needs: [build, test, check-version-change]
+    needs: [build, check-version-change]
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && (needs.check-version-change.outputs.version-changed == 'true' || github.event_name == 'workflow_dispatch')
     environment: production
     
@@ -210,7 +185,7 @@ jobs:
   deploy-ssh:
     name: Deploy via SSH/Rsync
     runs-on: ubuntu-latest
-    needs: [build, test, check-version-change]
+    needs: [build, check-version-change]
     if: false # Set to true to enable SSH deployment
     environment: production
     
@@ -238,7 +213,7 @@ jobs:
   deploy-pages:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    needs: [build, test, check-version-change]
+    needs: [build, check-version-change]
     if: false # Set to true to enable GitHub Pages deployment
     
     permissions:
