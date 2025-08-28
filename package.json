@@ -1,6 +1,6 @@
 {
   "name": "wanderlust-knowledgebase",
-  "version": "4.3.0",
+  "version": "4.3.1",
   "description": "Comprehensive interactive knowledge base for Chromium development with advanced search, tutorials, and progress tracking",
   "main": "index.js",
   "scripts": {

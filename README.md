@@ -44,7 +44,7 @@ npm run dev
 
 ## Environment Configuration
 
-The application uses environment variables for configuration:
+The application uses environment variables for configuration. These variables are embedded at build time.
 
 ### Required Environment Variables
 
@@ -55,7 +55,7 @@ VITE_API_URL=http://localhost:5070    # Development
 
 # App Configuration
 VITE_APP_TITLE=Wanderlust Knowledge Base
-VITE_APP_VERSION=4.1.0
+VITE_APP_VERSION=4.3.0
 ```
 
 ### Environment Files
@@ -65,6 +65,27 @@ VITE_APP_VERSION=4.1.0
 - `.env.local` - Local overrides (gitignored)
 
 The application will automatically use the correct environment based on the build mode.
+
+### GitHub Actions Deployment
+
+For automated deployments with GitHub Actions, environment variables are provided via GitHub Secrets:
+
+#### Required GitHub Secrets
+
+| Secret Name | Description | Example |
+|-------------|-------------|---------|
+| `VITE_API_URL` | Production API URL | `https://api.wander-lust.tech` |
+| `VITE_APP_TITLE` | App title | `Wanderlust Knowledge Base` |
+
+#### Setting Up Secrets
+
+1. Go to repository **Settings** → **Secrets and variables** → **Actions**
+2. Add the required secrets listed above
+3. The workflow will automatically use these during build
+
+See `GITHUB_SECRETS.md` for detailed setup instructions.
+
+**Note**: Vite environment variables are embedded at build time, so they must be available during the GitHub Actions build process, not at runtime.
 
 ## Development
 
