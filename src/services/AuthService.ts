@@ -14,8 +14,37 @@ export interface User {
   avatarUrl?: string;
   role: 'Member' | 'Contributor' | 'Moderator' | 'Admin';
   isEmailVerified: boolean;
+  isActive: boolean;
   createdAt: string;
   lastLoginAt: string;
+  
+  // Additional properties to match backend
+  reputation: number;
+  badges: UserBadge[];
+  preferences: UserPreferences;
+}
+
+export interface UserBadge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  earnedDate: string;
+  category: 'Contribution' | 'Learning' | 'Community' | 'Achievement';
+  userId: number;
+}
+
+export interface UserPreferences {
+  id: string;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  themePreference: 'light' | 'dark' | 'system';
+  language: string;
+  timezone: string;
+  discussionSort: 'newest' | 'oldest' | 'popular' | 'relevance';
+  autoSubscribe: boolean;
+  userId: number;
 }
 
 export interface LoginRequest {
