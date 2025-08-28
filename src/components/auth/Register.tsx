@@ -122,10 +122,10 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+    <div className="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
-        <p className="text-gray-600 mt-2">Join the Wanderlust community</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
+        <p className="text-gray-600 dark:text-gray-300 mt-2">Join the Wanderlust community</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,7 +145,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
         )}
 
         <div>
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Username *
           </label>
           <input
@@ -155,8 +155,8 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
             required
             value={formData.username}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-              errors.username ? 'border-red-300' : 'border-gray-300'
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+              errors.username ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
             }`}
             placeholder="Choose a username"
             disabled={isLoading}
@@ -167,7 +167,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Email Address *
           </label>
           <input
@@ -177,8 +177,8 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
             required
             value={formData.email}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-              errors.email ? 'border-red-300' : 'border-gray-300'
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+              errors.email ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
             }`}
             placeholder="Enter your email"
             disabled={isLoading}
@@ -189,7 +189,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
         </div>
 
         <div>
-          <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Display Name *
           </label>
           <input
@@ -199,8 +199,8 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
             required
             value={formData.displayName}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-              errors.displayName ? 'border-red-300' : 'border-gray-300'
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+              errors.displayName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
             }`}
             placeholder="Your full name or display name"
             disabled={isLoading}
@@ -211,7 +211,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Password *
           </label>
           <input
@@ -221,8 +221,8 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
             required
             value={formData.password}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-              errors.password ? 'border-red-300' : 'border-gray-300'
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+              errors.password ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
             }`}
             placeholder="Create a strong password"
             disabled={isLoading}
@@ -233,7 +233,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Confirm Password *
           </label>
           <input
@@ -243,8 +243,8 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
             required
             value={formData.confirmPassword}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
-              errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+              errors.confirmPassword ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'
             }`}
             placeholder="Confirm your password"
             disabled={isLoading}
@@ -255,7 +255,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
         </div>
 
         <div>
-          <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Bio (Optional)
           </label>
           <textarea
@@ -264,7 +264,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
             rows={3}
             value={formData.bio || ''}
             onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="Tell us a bit about yourself..."
             disabled={isLoading}
           />
@@ -286,7 +286,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
 
         {onSwitchToLogin && (
           <div className="text-center">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               Already have an account?{' '}
               <button
                 type="button"

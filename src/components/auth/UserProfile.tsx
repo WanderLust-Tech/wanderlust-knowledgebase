@@ -130,9 +130,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md">
+    <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md">
       {/* Profile Header */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-4">
           <div className="flex-shrink-0">
             <img
@@ -142,8 +142,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
             />
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900">{user.displayName}</h1>
-            <p className="text-gray-600">@{user.username}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.displayName}</h1>
+            <p className="text-gray-600 dark:text-gray-400">@{user.username}</p>
             <div className="flex items-center space-x-2 mt-2">
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
                 {user.role}
@@ -189,11 +189,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
 
       {/* Edit Profile Form */}
       {isEditing && (
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Edit Profile</h2>
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Edit Profile</h2>
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Display Name
               </label>
               <input
@@ -201,13 +201,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
                 id="displayName"
                 value={editForm.displayName}
                 onChange={(e) => setEditForm(prev => ({ ...prev, displayName: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Bio
               </label>
               <textarea
@@ -215,13 +215,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
                 rows={3}
                 value={editForm.bio}
                 onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Tell us about yourself..."
               />
             </div>
 
             <div>
-              <label htmlFor="avatarUrl" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="avatarUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Avatar URL
               </label>
               <input
@@ -229,7 +229,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
                 id="avatarUrl"
                 value={editForm.avatarUrl}
                 onChange={(e) => setEditForm(prev => ({ ...prev, avatarUrl: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="https://example.com/avatar.jpg"
               />
             </div>
@@ -256,11 +256,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
 
       {/* Change Password Form */}
       {isChangingPassword && (
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Change Password</h2>
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Change Password</h2>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Current Password
               </label>
               <input
@@ -268,13 +268,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
                 id="currentPassword"
                 value={passwordForm.currentPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 New Password
               </label>
               <input
@@ -282,13 +282,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
                 id="newPassword"
                 value={passwordForm.newPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Confirm New Password
               </label>
               <input
@@ -296,7 +296,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
                 id="confirmPassword"
                 value={passwordForm.confirmPassword}
                 onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -326,23 +326,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* User Info */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">About</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">About</h3>
             <dl className="space-y-2">
               <div>
-                <dt className="text-sm font-medium text-gray-500">Email</dt>
-                <dd className="text-sm text-gray-900">{user.email}</dd>
+                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
+                <dd className="text-sm text-gray-900 dark:text-gray-300">{user.email}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Bio</dt>
-                <dd className="text-sm text-gray-900">{user.bio || 'No bio provided'}</dd>
+                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Bio</dt>
+                <dd className="text-sm text-gray-900 dark:text-gray-300">{user.bio || 'No bio provided'}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Joined</dt>
-                <dd className="text-sm text-gray-900">{formatDate(user.createdAt)}</dd>
+                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Joined</dt>
+                <dd className="text-sm text-gray-900 dark:text-gray-300">{formatDate(user.createdAt)}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Last Login</dt>
-                <dd className="text-sm text-gray-900">{formatDate(user.lastLoginAt)}</dd>
+                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Login</dt>
+                <dd className="text-sm text-gray-900 dark:text-gray-300">{formatDate(user.lastLoginAt)}</dd>
               </div>
             </dl>
           </div>
@@ -350,23 +350,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, isOwnProfile = false 
           {/* User Stats */}
           {userStats && (
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-3">Statistics</h3>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Statistics</h3>
               <dl className="space-y-2">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Articles Created</dt>
-                  <dd className="text-sm text-gray-900">{userStats.articlesCreated}</dd>
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Articles Created</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-300">{userStats.articlesCreated}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Code Examples</dt>
-                  <dd className="text-sm text-gray-900">{userStats.codeExamplesCreated}</dd>
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Code Examples</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-300">{userStats.codeExamplesCreated}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Community Posts</dt>
-                  <dd className="text-sm text-gray-900">{userStats.communityPostsCreated}</dd>
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Community Posts</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-300">{userStats.communityPostsCreated}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Total Contributions</dt>
-                  <dd className="text-sm text-gray-900 font-semibold">{userStats.totalContributions}</dd>
+                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Contributions</dt>
+                  <dd className="text-sm text-gray-900 dark:text-gray-300 font-semibold">{userStats.totalContributions}</dd>
                 </div>
               </dl>
             </div>
