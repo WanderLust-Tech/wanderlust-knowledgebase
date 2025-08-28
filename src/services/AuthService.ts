@@ -53,7 +53,7 @@ class AuthService {
   private readonly TOKEN_KEY = 'wanderlust_access_token';
   private readonly REFRESH_TOKEN_KEY = 'wanderlust_refresh_token';
   private readonly USER_KEY = 'wanderlust_user';
-  private readonly API_BASE_URL = 'http://localhost:5070/api';
+  private readonly API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5070'}/api`;
 
   private currentUser: User | null = null;
   private refreshTokenTimer: number | null = null;

@@ -3,7 +3,7 @@
  * Provides methods to interact with the Wanderlust API
  */
 
-const API_BASE_URL = 'http://localhost:5070/api';
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5070'}/api`;
 
 export interface ApiArticle {
   id: number;

@@ -34,9 +34,37 @@ cd wanderlust-knowledgebase
 # Install dependencies
 npm install
 
+# Setup environment variables
+cp .env.example .env
+# Edit .env with your API URL and deployment settings
+
 # Start development server
 npm run dev
 ```
+
+## Environment Configuration
+
+The application uses environment variables for configuration:
+
+### Required Environment Variables
+
+```bash
+# API Base URL - Backend API server URL
+VITE_API_URL=http://localhost:5070    # Development
+# VITE_API_URL=https://api.yourdomain.com  # Production
+
+# App Configuration
+VITE_APP_TITLE=Wanderlust Knowledge Base
+VITE_APP_VERSION=4.1.0
+```
+
+### Environment Files
+
+- `.env.development` - Development environment (included)
+- `.env.production` - Production environment (create as needed)
+- `.env.local` - Local overrides (gitignored)
+
+The application will automatically use the correct environment based on the build mode.
 
 ## Development
 
@@ -71,12 +99,23 @@ npm run deploy:backup    # Backup current remote files
 
 We support multiple deployment methods:
 
+### Environment Configuration for Production
+
+Before deploying, ensure you set the correct environment variables:
+
+```bash
+# For production deployment
+VITE_API_URL=https://your-api-domain.com
+VITE_APP_TITLE=Wanderlust Knowledge Base
+VITE_APP_VERSION=4.1.0
+```
+
 ### Quick Deployment (FTP)
 
 1. **Setup environment**:
    ```bash
    cp .env.example .env
-   # Edit .env with your FTP credentials
+   # Edit .env with your FTP credentials and API URL
    ```
 
 2. **Deploy**:
@@ -86,7 +125,9 @@ We support multiple deployment methods:
 
 ### GitHub Actions CI/CD
 
-1. **Configure GitHub Secrets** in your repository settings
+1. **Configure GitHub Secrets** in your repository settings:
+   - `VITE_API_URL` - Your production API URL
+   - FTP credentials (if using FTP deployment)
 2. **Push to main/master** for automatic production deployment
 3. **Push to develop** for staging deployment
 

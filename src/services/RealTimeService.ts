@@ -59,8 +59,8 @@ class RealTimeService {
   }
 
   private setupConnection() {
-    // Get the API base URL
-    const apiUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5071';
+    // Get the API base URL from environment variable
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5071';
     
     this.connection = new signalR.HubConnectionBuilder()
       .withUrl(`${apiUrl}/hubs/community`, {
