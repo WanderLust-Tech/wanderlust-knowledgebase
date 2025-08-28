@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBookmarks, Bookmark } from '../contexts/BookmarkContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface BookmarksPanelProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface BookmarksPanelProps {
 
 export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({ isOpen, onClose }) => {
   const { bookmarks, removeBookmark, clearAllBookmarks, exportBookmarks, importBookmarks } = useBookmarks();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'timestamp' | 'title' | 'category'>('timestamp');
@@ -135,10 +137,15 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({ isOpen, onClose 
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search bookmarks..."
+                placeholder={isAuthenticated ? "Search bookmarks..." : "Sign in to search bookmarks"}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                disabled={!isAuthenticated}
+                className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                  isAuthenticated
+                    ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 placeholder-gray-400 dark:placeholder-gray-600 cursor-not-allowed'
+                }`}
               />
               <svg className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -150,7 +157,12 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({ isOpen, onClose 
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'timestamp' | 'title' | 'category')}
-                className="flex-1 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                disabled={!isAuthenticated}
+                className={`flex-1 rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring-1 ${
+                  isAuthenticated
+                    ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                }`}
               >
                 <option value="timestamp">Recent</option>
                 <option value="title">Title</option>
@@ -160,7 +172,12 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({ isOpen, onClose 
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="flex-1 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                disabled={!isAuthenticated}
+                className={`flex-1 rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring-1 ${
+                  isAuthenticated
+                    ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                }`}
               >
                 <option value="all">All Categories</option>
                 {categories.map(category => (
@@ -173,20 +190,30 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({ isOpen, onClose 
             <div className="flex gap-2">
               <button
                 onClick={handleExport}
-                className="flex-1 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                disabled={!isAuthenticated || bookmarks.length === 0}
+                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                  isAuthenticated && bookmarks.length > 0
+                    ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                }`}
               >
                 Export
               </button>
-              <label className="flex-1 cursor-pointer rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-center">
+              <label className={`flex-1 cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 text-center ${
+                isAuthenticated
+                  ? 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500'
+                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              }`}>
                 Import
                 <input
                   type="file"
                   accept=".json"
                   onChange={handleImport}
+                  disabled={!isAuthenticated}
                   className="hidden"
                 />
               </label>
-              {bookmarks.length > 0 && (
+              {isAuthenticated && bookmarks.length > 0 && (
                 <button
                   onClick={() => {
                     if (confirm('Are you sure you want to clear all bookmarks?')) {
@@ -203,7 +230,15 @@ export const BookmarksPanel: React.FC<BookmarksPanelProps> = ({ isOpen, onClose 
 
           {/* Bookmarks List */}
           <div className="flex-1 overflow-y-auto p-4">
-            {filteredBookmarks.length === 0 ? (
+            {!isAuthenticated ? (
+              <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
+                <svg className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <p className="mt-2 font-medium">Sign in to access bookmarks</p>
+                <p className="text-sm">Save your favorite articles and sections for quick access</p>
+              </div>
+            ) : filteredBookmarks.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
                 {bookmarks.length === 0 ? (
                   <>

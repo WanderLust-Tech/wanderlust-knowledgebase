@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 
 export interface Bookmark {
   id: string;
@@ -40,15 +41,29 @@ interface BookmarkProviderProps {
   children: ReactNode;
 }
 
-const STORAGE_KEY = 'wanderlust-bookmarks';
+const STORAGE_KEY_PREFIX = 'wanderlust-bookmarks';
 
 export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) => {
+  const { isAuthenticated, user } = useAuth();
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
-  // Load bookmarks from localStorage on mount
+  // Generate user-specific storage key
+  const getStorageKey = () => {
+    const userId = user?.id || 'anonymous';
+    return `${STORAGE_KEY_PREFIX}-${userId}`;
+  };
+
+  // Load bookmarks from localStorage on mount and when authentication changes
   useEffect(() => {
+    if (!isAuthenticated) {
+      // Clear bookmarks when not authenticated
+      setBookmarks([]);
+      return;
+    }
+
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const storageKey = getStorageKey();
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsedBookmarks = JSON.parse(saved);
         setBookmarks(parsedBookmarks);
@@ -56,18 +71,23 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
     } catch (error) {
       console.error('Failed to load bookmarks:', error);
     }
-  }, []);
+  }, [isAuthenticated, user]);
 
-  // Save bookmarks to localStorage whenever they change
+  // Save bookmarks to localStorage whenever they change (only when authenticated)
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+      const storageKey = getStorageKey();
+      localStorage.setItem(storageKey, JSON.stringify(bookmarks));
     } catch (error) {
       console.error('Failed to save bookmarks:', error);
     }
-  }, [bookmarks]);
+  }, [bookmarks, isAuthenticated, user]);
 
   const addBookmark = (bookmarkData: Omit<Bookmark, 'id' | 'timestamp'>) => {
+    if (!isAuthenticated) return;
+    
     const newBookmark: Bookmark = {
       ...bookmarkData,
       id: generateId(),
@@ -90,10 +110,12 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
   };
 
   const removeBookmark = (id: string) => {
+    if (!isAuthenticated) return;
     setBookmarks(prev => prev.filter(b => b.id !== id));
   };
 
   const isBookmarked = (path: string, section?: string): boolean => {
+    if (!isAuthenticated) return false;
     return bookmarks.some(b => 
       b.path === path && 
       b.section === section
@@ -101,6 +123,7 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
   };
 
   const getBookmarkByPath = (path: string, section?: string): Bookmark | undefined => {
+    if (!isAuthenticated) return undefined;
     return bookmarks.find(b => 
       b.path === path && 
       b.section === section
@@ -108,20 +131,27 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
   };
 
   const getBookmarksByCategory = (category: string): Bookmark[] => {
+    if (!isAuthenticated) return [];
     return bookmarks.filter(b => b.category === category);
   };
 
   const updateBookmark = (id: string, updates: Partial<Bookmark>) => {
+    if (!isAuthenticated) return;
     setBookmarks(prev => 
       prev.map(b => b.id === id ? { ...b, ...updates } : b)
     );
   };
 
   const clearAllBookmarks = () => {
+    if (!isAuthenticated) return;
     setBookmarks([]);
+    // Clear user-specific localStorage
+    const storageKey = getStorageKey();
+    localStorage.removeItem(storageKey);
   };
 
   const importBookmarks = (importedBookmarks: Bookmark[]) => {
+    if (!isAuthenticated) return;
     setBookmarks(prev => {
       const combined = [...prev];
       
@@ -141,6 +171,7 @@ export const BookmarkProvider: React.FC<BookmarkProviderProps> = ({ children }) 
   };
 
   const exportBookmarks = (): Bookmark[] => {
+    if (!isAuthenticated) return [];
     return [...bookmarks];
   };
 

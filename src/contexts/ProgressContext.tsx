@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
 
 export interface ReadingProgress {
   path: string;
@@ -97,6 +98,7 @@ const getCategoryFromPath = (path: string): string => {
 };
 
 export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, user } = useAuth();
   const [readingProgress, setReadingProgress] = useState<ReadingProgress[]>([]);
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
   const [stats, setStats] = useState<ProgressStats>({
@@ -115,12 +117,41 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [sessionStart, setSessionStart] = useState<Date>(new Date());
   const [currentArticle, setCurrentArticle] = useState<string | null>(null);
 
-  // Load data from localStorage on mount
+  // Generate user-specific storage keys
+  const getUserStorageKeys = () => {
+    const userId = user?.id || 'anonymous';
+    return {
+      READING_PROGRESS: `wanderlust-reading-progress-${userId}`,
+      LEARNING_PATHS: `wanderlust-learning-paths-${userId}`,
+      PROGRESS_STATS: `wanderlust-progress-stats-${userId}`,
+    };
+  };
+
+  // Load data from localStorage on mount and when authentication changes
   useEffect(() => {
+    if (!isAuthenticated) {
+      // Clear data when not authenticated
+      setReadingProgress([]);
+      setLearningPaths([]);
+      setStats({
+        totalArticlesRead: 0,
+        totalTimeSpent: 0,
+        categoriesExplored: [],
+        currentStreak: 0,
+        longestStreak: 0,
+        lastReadDate: new Date(),
+        averageReadingSpeed: 200,
+        completedPaths: 0,
+        totalProgress: 0,
+      });
+      return;
+    }
+
     try {
-      const savedProgress = localStorage.getItem(STORAGE_KEYS.READING_PROGRESS);
-      const savedPaths = localStorage.getItem(STORAGE_KEYS.LEARNING_PATHS);
-      const savedStats = localStorage.getItem(STORAGE_KEYS.PROGRESS_STATS);
+      const userStorageKeys = getUserStorageKeys();
+      const savedProgress = localStorage.getItem(userStorageKeys.READING_PROGRESS);
+      const savedPaths = localStorage.getItem(userStorageKeys.LEARNING_PATHS);
+      const savedStats = localStorage.getItem(userStorageKeys.PROGRESS_STATS);
 
       if (savedProgress) {
         const progress = JSON.parse(savedProgress);
@@ -154,32 +185,41 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (error) {
       console.error('Error loading progress data:', error);
     }
-  }, []);
+  }, [isAuthenticated, user]);
 
-  // Save data to localStorage when state changes
+  // Save data to localStorage when state changes (only when authenticated)
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     try {
-      localStorage.setItem(STORAGE_KEYS.READING_PROGRESS, JSON.stringify(readingProgress));
+      const userStorageKeys = getUserStorageKeys();
+      localStorage.setItem(userStorageKeys.READING_PROGRESS, JSON.stringify(readingProgress));
     } catch (error) {
       console.error('Error saving reading progress:', error);
     }
-  }, [readingProgress]);
+  }, [readingProgress, isAuthenticated, user]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     try {
-      localStorage.setItem(STORAGE_KEYS.LEARNING_PATHS, JSON.stringify(learningPaths));
+      const userStorageKeys = getUserStorageKeys();
+      localStorage.setItem(userStorageKeys.LEARNING_PATHS, JSON.stringify(learningPaths));
     } catch (error) {
       console.error('Error saving learning paths:', error);
     }
-  }, [learningPaths]);
+  }, [learningPaths, isAuthenticated, user]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+    
     try {
-      localStorage.setItem(STORAGE_KEYS.PROGRESS_STATS, JSON.stringify(stats));
+      const userStorageKeys = getUserStorageKeys();
+      localStorage.setItem(userStorageKeys.PROGRESS_STATS, JSON.stringify(stats));
     } catch (error) {
       console.error('Error saving stats:', error);
     }
-  }, [stats]);
+  }, [stats, isAuthenticated, user]);
 
   // Track time spent on current article
   useEffect(() => {
@@ -201,6 +241,9 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     scrollPosition: number = -1,
     additionalTime: number = 0
   ) => {
+    // Only track progress for authenticated users
+    if (!isAuthenticated) return;
+    
     setReadingProgress(prev => {
       const existing = prev.find(p => p.path === path);
       const now = new Date();
@@ -247,6 +290,8 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const markArticleCompleted = (path: string) => {
+    if (!isAuthenticated) return;
+    
     updateReadingProgress(path, 100);
     
     // Update learning paths
@@ -269,10 +314,13 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const getArticleProgress = (path: string): ReadingProgress | undefined => {
+    if (!isAuthenticated) return undefined;
     return readingProgress.find(p => p.path === path);
   };
 
   const createLearningPath = (pathData: Omit<LearningPath, 'id' | 'created' | 'lastAccessed' | 'completedArticles' | 'progress' | 'timeSpent'>) => {
+    if (!isAuthenticated) return;
+    
     const newPath: LearningPath = {
       ...pathData,
       id: `path-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -422,15 +470,20 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const exportProgress = (): string => {
+    if (!isAuthenticated) return JSON.stringify({}, null, 2);
+    
     return JSON.stringify({
       readingProgress,
       learningPaths,
       stats,
       exportDate: new Date().toISOString(),
+      userId: user?.id,
     }, null, 2);
   };
 
   const importProgress = (data: string) => {
+    if (!isAuthenticated) return;
+    
     try {
       const imported = JSON.parse(data);
       
@@ -462,6 +515,8 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const clearAllProgress = () => {
+    if (!isAuthenticated) return;
+    
     setReadingProgress([]);
     setLearningPaths([]);
     setStats({
@@ -476,8 +531,9 @@ export const ProgressProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       totalProgress: 0,
     });
     
-    // Clear localStorage
-    Object.values(STORAGE_KEYS).forEach(key => {
+    // Clear user-specific localStorage
+    const userStorageKeys = getUserStorageKeys();
+    Object.values(userStorageKeys).forEach(key => {
       localStorage.removeItem(key);
     });
   };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useBookmarks } from '../contexts/BookmarkContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface BookmarkButtonProps {
   title: string;
@@ -27,12 +28,18 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   size = 'md',
 }) => {
   const { addBookmark, removeBookmark, isBookmarked, getBookmarkByPath } = useBookmarks();
+  const { isAuthenticated } = useAuth();
   const [isAnimating, setIsAnimating] = useState(false);
   
-  const bookmarked = isBookmarked(path, section);
+  const bookmarked = isAuthenticated && isBookmarked(path, section);
   const bookmark = getBookmarkByPath(path, section);
 
   const handleToggle = () => {
+    if (!isAuthenticated) {
+      alert('Please sign in to bookmark content');
+      return;
+    }
+
     setIsAnimating(true);
     
     if (bookmarked && bookmark) {
@@ -71,31 +78,58 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({
       className={`
         ${buttonSizeClasses[size]}
         flex items-center gap-2 
-        text-gray-600 dark:text-gray-400 
-        hover:text-blue-600 dark:hover:text-blue-400
+        ${isAuthenticated 
+          ? 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400' 
+          : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+        }
         transition-all duration-200
         ${isAnimating ? 'scale-110' : 'scale-100'}
         ${className}
       `}
-      title={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
-      aria-label={bookmarked ? 'Remove bookmark' : 'Add bookmark'}
+      title={
+        !isAuthenticated 
+          ? 'Sign in to bookmark content' 
+          : bookmarked 
+            ? 'Remove bookmark' 
+            : 'Add bookmark'
+      }
+      aria-label={
+        !isAuthenticated 
+          ? 'Sign in to bookmark content' 
+          : bookmarked 
+            ? 'Remove bookmark' 
+            : 'Add bookmark'
+      }
+      disabled={!isAuthenticated}
     >
-      <svg
-        className={`${sizeClasses[size]} transition-all duration-200`}
-        fill={bookmarked ? 'currentColor' : 'none'}
-        stroke="currentColor"
-        strokeWidth={bookmarked ? 0 : 2}
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-        />
-      </svg>
+      <div className="relative">
+        <svg
+          className={`${sizeClasses[size]} transition-all duration-200`}
+          fill={bookmarked ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth={bookmarked ? 0 : 2}
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+          />
+        </svg>
+        {!isAuthenticated && (
+          <svg className="absolute -top-1 -right-1 w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+          </svg>
+        )}
+      </div>
       {showLabel && (
         <span className="text-sm font-medium">
-          {bookmarked ? 'Bookmarked' : 'Bookmark'}
+          {!isAuthenticated 
+            ? 'Sign in to bookmark' 
+            : bookmarked 
+              ? 'Bookmarked' 
+              : 'Bookmark'
+          }
         </span>
       )}
     </button>
