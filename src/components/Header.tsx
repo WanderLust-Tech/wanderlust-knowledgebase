@@ -6,6 +6,7 @@ import { useBookmarks } from '../contexts/BookmarkContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useAdvancedSearch } from '../contexts/AdvancedSearchContext';
 import { useAuth } from '../contexts/AuthContext';
+import AuthModal from './auth/AuthModal';
 
 
 interface SearchResult {
@@ -19,12 +20,14 @@ const Header: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const { bookmarks } = useBookmarks();
   const { toggleSidebar, isMobile, isInitialized } = useSidebar();
   const { getSuggestions, search: performSearch } = useAdvancedSearch();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,6 +37,20 @@ const Header: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogin = () => {
+    setAuthModalMode('login');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleRegister = () => {
+    setAuthModalMode('register');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const quickSuggestions = query.length > 1 ? getSuggestions(query).slice(0, 5) : [];
 
@@ -273,11 +290,49 @@ const Header: React.FC = () => {
               </svg>
             )}
           </Link>
+          {/* Authentication Section */}
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-blue-100 dark:text-gray-300">
+                Hi, {user?.username || user?.email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="text-sm bg-blue-500 hover:bg-blue-400 dark:bg-gray-700 dark:hover:bg-gray-600 px-3 py-1 rounded transition-colors"
+                title="Sign out"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleLogin}
+                className="text-sm hover:text-blue-200 dark:hover:text-blue-300 transition-colors"
+                title="Sign in"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={handleRegister}
+                className="text-sm bg-blue-500 hover:bg-blue-400 dark:bg-gray-700 dark:hover:bg-gray-600 px-3 py-1 rounded transition-colors"
+                title="Sign up"
+              >
+                Sign up
+              </button>
+            </div>
+          )}
           <ThemeToggle />
         </div>
       </nav>
       
       <BookmarksPanel isOpen={showBookmarks} onClose={() => setShowBookmarks(false)} />
+      
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authModalMode}
+      />
     </header>
   );
 };
