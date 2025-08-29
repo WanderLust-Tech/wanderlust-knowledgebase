@@ -1,7 +1,8 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
-import ArticleView from './components/ArticleView';
+import HybridSidebar from './components/HybridSidebar';
+import EnhancedArticleView from './components/EnhancedArticleView';
+import ArticleView from './components/ArticleView'; // Keep as fallback
 import Breadcrumb from './components/Breadcrumb';
 import { ProgressDashboard } from './components/ProgressDashboard';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -35,9 +36,9 @@ const App: React.FC = () => (
           <SidebarProvider>
             <Router>
               <div className="flex flex-col h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
-                <Header /> {/* Add the Header component */}
+                <Header />
                 <div className="flex flex-1 overflow-hidden">
-                  <Sidebar nodes={contentIndex} />
+                  <HybridSidebar fallbackNodes={contentIndex} />
                   <main className="flex-1 flex flex-col overflow-hidden">
                     <Breadcrumb />
                     <div className="flex-1 overflow-auto">
@@ -89,7 +90,7 @@ const App: React.FC = () => (
                         <Route path="/cms" element={<CMSDashboard />} />
                         <Route path="/versioning/:contentPath?" element={<ContentVersioningPage />} />
                         <Route path="/ai-suggestions/:contentPath?" element={<AIContentSuggestionsPage />} />
-                        <Route path="/*" element={<ArticleView />} />
+                        <Route path="/*" element={<EnhancedArticleView />} />
                       </Routes>
                     </div>
                   </main>
