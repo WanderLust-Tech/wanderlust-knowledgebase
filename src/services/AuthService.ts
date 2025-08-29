@@ -291,7 +291,17 @@ class AuthService {
     if (!token) return false;
 
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      // Validate JWT format first
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+
+      const payloadPart = parts[1];
+      if (!payloadPart) return false;
+
+      // Ensure proper base64 padding
+      const paddedPayload = payloadPart.padEnd(Math.ceil(payloadPart.length / 4) * 4, '=');
+      
+      const payload = JSON.parse(atob(paddedPayload));
       const currentTime = Date.now() / 1000;
       return payload.exp > currentTime;
     } catch {
@@ -356,7 +366,24 @@ class AuthService {
     if (!token) return;
 
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      // Validate JWT format first
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.error('Invalid JWT format: token does not have 3 parts');
+        return;
+      }
+
+      // Get the payload part and validate it's properly base64 encoded
+      const payloadPart = parts[1];
+      if (!payloadPart) {
+        console.error('Invalid JWT: missing payload part');
+        return;
+      }
+
+      // Ensure proper base64 padding
+      const paddedPayload = payloadPart.padEnd(Math.ceil(payloadPart.length / 4) * 4, '=');
+      
+      const payload = JSON.parse(atob(paddedPayload));
       const expirationTime = payload.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
       const refreshTime = expirationTime - (5 * 60 * 1000); // Refresh 5 minutes before expiry
@@ -368,6 +395,8 @@ class AuthService {
       }
     } catch (error) {
       console.error('Error setting up token refresh:', error);
+      // Clear the invalid token
+      this.logout();
     }
   }
 
