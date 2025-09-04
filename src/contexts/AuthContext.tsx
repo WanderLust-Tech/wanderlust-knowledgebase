@@ -54,9 +54,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (request: LoginRequest) => {
     try {
+      console.log('AuthContext: Starting login...');
       const authResponse = await authService.login(request);
+      console.log('AuthContext: Login successful, setting user:', authResponse.user);
       setUser(authResponse.user);
+      console.log('AuthContext: User state updated');
     } catch (error) {
+      console.error('AuthContext: Login failed:', error);
       throw error;
     }
   };
@@ -124,6 +128,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hasRole,
     refreshUser,
   };
+
+  // Debug logging
+  useEffect(() => {
+    console.log('AuthContext state changed:', {
+      user: user?.username || user?.email || 'null',
+      isAuthenticated: !!user && authService.isAuthenticated(),
+      isLoading
+    });
+  }, [user, isLoading]);
 
   return (
     <AuthContext.Provider value={value}>

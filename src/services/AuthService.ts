@@ -95,6 +95,7 @@ class AuthService {
   // Authentication Methods
   async login(request: LoginRequest): Promise<AuthResponse> {
     try {
+      console.log('AuthService: Starting login request...');
       const response = await fetch(`${this.API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -108,18 +109,26 @@ class AuthService {
         throw new Error(error.message || 'Login failed');
       }
 
-      const authResponse: AuthResponse = await response.json();
+      const apiResponse = await response.json();
+      console.log('AuthService: API response received:', apiResponse);
+      
+      // Handle wrapped API response format
+      const authResponse: AuthResponse = apiResponse.data || apiResponse;
+      console.log('AuthService: Auth response extracted:', authResponse);
+      
       this.setAuthData(authResponse);
       this.setupTokenRefresh();
 
       return authResponse;
     } catch (error) {
+      console.error('AuthService: Login error:', error);
       throw error instanceof Error ? error : new Error('Login failed');
     }
   }
 
   async register(request: RegisterRequest): Promise<AuthResponse> {
     try {
+      console.log('AuthService: Starting register request...');
       const response = await fetch(`${this.API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
@@ -133,12 +142,19 @@ class AuthService {
         throw new Error(error.message || 'Registration failed');
       }
 
-      const authResponse: AuthResponse = await response.json();
+      const apiResponse = await response.json();
+      console.log('AuthService: Registration API response received:', apiResponse);
+      
+      // Handle wrapped API response format
+      const authResponse: AuthResponse = apiResponse.data || apiResponse;
+      console.log('AuthService: Registration auth response extracted:', authResponse);
+      
       this.setAuthData(authResponse);
       this.setupTokenRefresh();
 
       return authResponse;
     } catch (error) {
+      console.error('AuthService: Registration error:', error);
       throw error instanceof Error ? error : new Error('Registration failed');
     }
   }

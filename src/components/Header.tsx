@@ -7,6 +7,7 @@ import { useSidebar } from '../contexts/SidebarContext';
 import { useAdvancedSearch } from '../contexts/AdvancedSearchContext';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './auth/AuthModal';
+import UserProfileDropdown from './UserProfileDropdown';
 
 
 interface SearchResult {
@@ -292,18 +293,7 @@ const Header: React.FC = () => {
           </Link>
           {/* Authentication Section */}
           {isAuthenticated ? (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-blue-100 dark:text-gray-300">
-                Hi, {user?.username || user?.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-sm bg-blue-500 hover:bg-blue-400 dark:bg-gray-700 dark:hover:bg-gray-600 px-3 py-1 rounded transition-colors"
-                title="Sign out"
-              >
-                Sign out
-              </button>
-            </div>
+            <UserProfileDropdown />
           ) : (
             <div className="flex items-center space-x-2">
               <button
