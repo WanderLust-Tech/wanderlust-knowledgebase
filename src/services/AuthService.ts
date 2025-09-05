@@ -110,11 +110,22 @@ class AuthService {
       }
 
       const apiResponse = await response.json();
-      console.log('AuthService: API response received:', apiResponse);
+      console.log('AuthService: Raw API response:', apiResponse);
+      console.log('AuthService: API response type:', typeof apiResponse);
+      console.log('AuthService: API response keys:', Object.keys(apiResponse));
       
       // Handle wrapped API response format
       const authResponse: AuthResponse = apiResponse.data || apiResponse;
-      console.log('AuthService: Auth response extracted:', authResponse);
+      console.log('AuthService: Extracted auth response:', authResponse);
+      console.log('AuthService: Auth response type:', typeof authResponse);
+      
+      if (!authResponse.accessToken) {
+        throw new Error('No access token in response');
+      }
+      
+      if (!authResponse.user) {
+        throw new Error('No user data in response');
+      }
       
       this.setAuthData(authResponse);
       this.setupTokenRefresh();
@@ -295,7 +306,21 @@ class AuthService {
 
   // Token Management
   getAccessToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    if (!token) return null;
+    
+    // Validate JWT format
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      console.error('AuthService: Invalid JWT format detected, clearing token:', {
+        token: token.substring(0, 50) + '...',
+        parts: parts.length
+      });
+      localStorage.removeItem(this.TOKEN_KEY);
+      return null;
+    }
+    
+    return token;
   }
 
   getRefreshToken(): string | null {
@@ -344,6 +369,13 @@ class AuthService {
 
   // Private Methods
   private setAuthData(authResponse: AuthResponse): void {
+    console.log('AuthService: Setting auth data:', authResponse);
+    console.log('AuthService: Access token format check:', {
+      token: authResponse.accessToken,
+      tokenParts: authResponse.accessToken?.split('.').length || 0,
+      isValidFormat: authResponse.accessToken?.split('.').length === 3
+    });
+    
     localStorage.setItem(this.TOKEN_KEY, authResponse.accessToken);
     localStorage.setItem(this.REFRESH_TOKEN_KEY, authResponse.refreshToken);
     localStorage.setItem(this.USER_KEY, JSON.stringify(authResponse.user));
@@ -379,20 +411,29 @@ class AuthService {
     }
 
     const token = this.getAccessToken();
-    if (!token) return;
+    if (!token) {
+      console.log('AuthService: No token available for refresh setup');
+      return;
+    }
 
     try {
       // Validate JWT format first
       const parts = token.split('.');
       if (parts.length !== 3) {
-        console.error('Invalid JWT format: token does not have 3 parts');
+        console.error('AuthService: Invalid JWT format: token does not have 3 parts', {
+          partsCount: parts.length,
+          tokenPreview: token.substring(0, 50) + '...'
+        });
+        // Clear invalid token and logout user
+        this.clearAuthData();
         return;
       }
 
       // Get the payload part and validate it's properly base64 encoded
       const payloadPart = parts[1];
       if (!payloadPart) {
-        console.error('Invalid JWT: missing payload part');
+        console.error('AuthService: Invalid JWT: missing payload part');
+        this.clearAuthData();
         return;
       }
 
@@ -400,19 +441,36 @@ class AuthService {
       const paddedPayload = payloadPart.padEnd(Math.ceil(payloadPart.length / 4) * 4, '=');
       
       const payload = JSON.parse(atob(paddedPayload));
+      
+      if (!payload.exp) {
+        console.error('AuthService: JWT payload missing expiration time');
+        this.clearAuthData();
+        return;
+      }
+      
       const expirationTime = payload.exp * 1000; // Convert to milliseconds
       const currentTime = Date.now();
       const refreshTime = expirationTime - (5 * 60 * 1000); // Refresh 5 minutes before expiry
+
+      console.log('AuthService: Token refresh setup', {
+        expirationTime: new Date(expirationTime).toISOString(),
+        currentTime: new Date(currentTime).toISOString(),
+        refreshTime: new Date(refreshTime).toISOString(),
+        timeUntilRefresh: Math.max(0, refreshTime - currentTime)
+      });
 
       if (refreshTime > currentTime) {
         this.refreshTokenTimer = setTimeout(() => {
           this.refreshToken().catch(console.error);
         }, refreshTime - currentTime);
+      } else {
+        console.log('AuthService: Token expires soon, attempting immediate refresh');
+        this.refreshToken().catch(console.error);
       }
     } catch (error) {
-      console.error('Error setting up token refresh:', error);
-      // Clear the invalid token
-      this.logout();
+      console.error('AuthService: Error setting up token refresh:', error);
+      // Clear the invalid token and logout user
+      this.clearAuthData();
     }
   }
 
