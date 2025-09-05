@@ -125,15 +125,16 @@ class AuthService {
       console.log('AuthService: API response keys:', Object.keys(apiResponse));
       
       // Handle wrapped API response format
-      const authResponse: AuthResponse = apiResponse.data || apiResponse;
-      console.log('AuthService: Extracted auth response:', authResponse);
-      console.log('AuthService: Auth response type:', typeof authResponse);
+      const authResponse: AuthResponse = apiResponse;
+      console.log('AuthService: Full auth response:', authResponse);
       
-      if (!authResponse.data.accessToken) {
+      if (!authResponse.data || !authResponse.data.accessToken) {
+        console.error('AuthService: Missing access token in response data');
         throw new Error('No access token in response');
       }
       
       if (!authResponse.data.user) {
+        console.error('AuthService: Missing user data in response');
         throw new Error('No user data in response');
       }
       
@@ -167,8 +168,18 @@ class AuthService {
       console.log('AuthService: Registration API response received:', apiResponse);
       
       // Handle wrapped API response format
-      const authResponse: AuthResponse = apiResponse.data || apiResponse;
-      console.log('AuthService: Registration auth response extracted:', authResponse);
+      const authResponse: AuthResponse = apiResponse;
+      console.log('AuthService: Registration auth response:', authResponse);
+      
+      if (!authResponse.data || !authResponse.data.accessToken) {
+        console.error('AuthService: Missing access token in registration response');
+        throw new Error('No access token in response');
+      }
+      
+      if (!authResponse.data.user) {
+        console.error('AuthService: Missing user data in registration response');
+        throw new Error('No user data in response');
+      }
       
       this.setAuthData(authResponse);
       this.setupTokenRefresh();
@@ -220,7 +231,18 @@ class AuthService {
         return false;
       }
 
-      const authResponse: AuthResponse = await response.json();
+      const apiResponse = await response.json();
+      console.log('AuthService: Refresh token API response:', apiResponse);
+      
+      const authResponse: AuthResponse = apiResponse;
+      console.log('AuthService: Refresh token auth response:', authResponse);
+      
+      if (!authResponse.data || !authResponse.data.accessToken) {
+        console.error('AuthService: Missing access token in refresh response');
+        this.clearAuthData();
+        return false;
+      }
+      
       this.setAuthData(authResponse);
       this.setupTokenRefresh();
 
