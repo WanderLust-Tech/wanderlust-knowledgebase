@@ -56,8 +56,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('AuthContext: Starting login...');
       const authResponse = await authService.login(request);
-      console.log('AuthContext: Login successful, setting user:', authResponse.user);
-      setUser(authResponse.user);
+      console.log('AuthContext: Login successful, setting user:', authResponse.data.user);
+      setUser(authResponse.data.user);
       console.log('AuthContext: User state updated');
     } catch (error) {
       console.error('AuthContext: Login failed:', error);
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (request: RegisterRequest) => {
     try {
       const authResponse = await authService.register(request);
-      setUser(authResponse.user);
+      setUser(authResponse.data.user);
     } catch (error) {
       throw error;
     }
