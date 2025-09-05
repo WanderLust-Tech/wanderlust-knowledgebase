@@ -63,6 +63,16 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
+  data: Data;
+  message: string;
+  statusCode: number;
+  success: boolean;
+  error: any;
+  timestamp?: string;
+  requestId?: string;
+}
+
+export interface Data {
   accessToken: string;
   refreshToken: string;
   expiresAt: string;
@@ -119,11 +129,11 @@ class AuthService {
       console.log('AuthService: Extracted auth response:', authResponse);
       console.log('AuthService: Auth response type:', typeof authResponse);
       
-      if (!authResponse.accessToken) {
+      if (!authResponse.data.accessToken) {
         throw new Error('No access token in response');
       }
       
-      if (!authResponse.user) {
+      if (!authResponse.data.user) {
         throw new Error('No user data in response');
       }
       
@@ -371,15 +381,15 @@ class AuthService {
   private setAuthData(authResponse: AuthResponse): void {
     console.log('AuthService: Setting auth data:', authResponse);
     console.log('AuthService: Access token format check:', {
-      token: authResponse.accessToken,
-      tokenParts: authResponse.accessToken?.split('.').length || 0,
-      isValidFormat: authResponse.accessToken?.split('.').length === 3
+      token: authResponse.data.accessToken,
+      tokenParts: authResponse.data.accessToken?.split('.').length || 0,
+      isValidFormat: authResponse.data.accessToken?.split('.').length === 3
     });
     
-    localStorage.setItem(this.TOKEN_KEY, authResponse.accessToken);
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, authResponse.refreshToken);
-    localStorage.setItem(this.USER_KEY, JSON.stringify(authResponse.user));
-    this.currentUser = authResponse.user;
+    localStorage.setItem(this.TOKEN_KEY, authResponse.data.accessToken);
+    localStorage.setItem(this.REFRESH_TOKEN_KEY, authResponse.data.refreshToken);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(authResponse.data.user));
+    this.currentUser = authResponse.data.user;
   }
 
   private clearAuthData(): void {
