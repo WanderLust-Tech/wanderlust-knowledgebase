@@ -79,6 +79,7 @@ export const contentIndex: ContentNode[] = [
         description: "Understanding Chromium's security model and sandbox architecture",
         children: [
             { title: "Security Model Overview", path: "security/security-model" },
+            { title: "Advanced Mojo IPC & Security Research", path: "security/advanced-mojo-ipc-security" },
             { title: "Sandbox Architecture", path: "architecture/security/sandbox-architecture" }
         ]
     },

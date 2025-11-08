@@ -366,3 +366,4 @@ The transition to Mojo has enabled Chromium's sophisticated multi-process archit
 
 ### Related Documentation
 - [Plugin 3D Rendering Architecture](../modules/plugin-3d-rendering.md) - Detailed analysis of IPC communication for plugin 3D rendering workflows
+- [Advanced Mojo IPC & Security Research](../security/advanced-mojo-ipc-security.md) - In-depth analysis of Mojo security implications and vulnerability research
