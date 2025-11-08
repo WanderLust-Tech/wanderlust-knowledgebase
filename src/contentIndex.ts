@@ -116,6 +116,20 @@ export const contentIndex: ContentNode[] = [
         ]
     },
 
+    // PHASE 7.5: FEATURES & IMPLEMENTATIONS
+    {
+        title: "Features & Implementations",
+        description: "Chrome feature implementations and development case studies",
+        children: [
+            {
+                title: "Privacy & Security Features",
+                children: [
+                    { title: "DNS-over-HTTPS UI Implementation", path: "features/dns-over-https-ui" }
+                ]
+            }
+        ]
+    },
+
     // PHASE 8: DEVELOPMENT WORKFLOW
     {
         title: "Development Workflow",
