@@ -157,7 +157,8 @@ export const contentIndex: ContentNode[] = [
                 title: "Language-Specific Guides",
                 children: [
                     { title: "Rust in Chromium", path: "development/rust" },
-                    { title: "Rust Unsafe Guidelines", path: "development/rust-unsafe" }
+                    { title: "Rust Unsafe Guidelines", path: "development/rust-unsafe" },
+                    { title: "Rust Community Perspectives", path: "development/rust-community-perspectives" }
                 ]
             },
             {
