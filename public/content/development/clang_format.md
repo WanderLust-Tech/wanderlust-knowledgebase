@@ -80,3 +80,9 @@ tool-assisted refactoring more difficult.
 Again, if clang-format produces something odd, please err on the side of
 [reporting an issue](#Reporting-problems): bugs that aren't reported can't be
 fixed.
+
+## Related Documentation
+
+- [Modern C++ Features](modern-cpp-features.md) - C++ standards and style guidelines for Chromium
+- [Clang Tidy](clang_tidy.md) - Static analysis and code improvement suggestions
+- [Code Reviews](code_reviews.md) - Code review process and formatting requirements

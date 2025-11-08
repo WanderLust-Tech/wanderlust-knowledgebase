@@ -708,6 +708,7 @@ The evolution from manual memory management to these sophisticated smart pointer
 
 ## Related Topics
 
+- [Modern C++ Features](modern-cpp-features.md) - C++ standards and memory management alternatives in Chromium
 - [Threading and Tasks](../architecture/threading-implementation) - How smart pointers integrate with Chromium's threading model
 - [Process Model](../architecture/process-model-and-site-isolation) - Memory isolation and smart pointer usage across processes
 - [Security Architecture](../security/security-model) - How memory safety contributes to overall security

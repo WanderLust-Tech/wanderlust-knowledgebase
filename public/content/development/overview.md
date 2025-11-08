@@ -7,7 +7,8 @@ Effective Chromium development requires mastering a comprehensive set of tools, 
 - **Version Control**: Advanced Git workflows for large codebases
 - **Code Quality**: Tools and practices for maintaining high code quality
 - **Review Process**: How to participate in Chromium's code review culture
-- **Language Guidelines**: Best practices for C++, Rust, and other languages
+- **Language Guidelines**: Modern C++ standards, Rust, and best practices
+- **Development Standards**: Coding conventions and feature approval processes
 
 ## Development Essentials
 
@@ -27,6 +28,7 @@ Effective Chromium development requires mastering a comprehensive set of tools, 
 - [Clang Static Analyzer](clang_static_analyzer) - Advanced static analysis tools
 
 ### Language-Specific Guidelines
+- [Modern C++ Features](modern-cpp-features) - Comprehensive guide to C++ standards and features in Chromium
 - [Rust in Chromium](rust) - Using Rust in the Chromium codebase
 - [Rust Unsafe Guidelines](rust-unsafe) - Best practices for unsafe Rust code
 

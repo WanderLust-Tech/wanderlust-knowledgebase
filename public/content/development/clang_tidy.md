@@ -279,3 +279,9 @@ infra-dev+tricium@chromium.org, or file a bug against `Infra>LUCI>BuildService>P
 Please CC gbiv@chromium.org and dcheng@chromium.org on any of these.
 
 Discoveries? Update the doc!
+
+## Related Documentation
+
+- [Modern C++ Features](modern-cpp-features.md) - C++ standards and features approved for use in Chromium
+- [Clang Format](clang_format.md) - Automated code formatting for C++
+- [Code Reviews](code_reviews.md) - Code review process including clang-tidy integration
