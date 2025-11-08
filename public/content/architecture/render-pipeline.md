@@ -23,6 +23,7 @@ Chromium's render pipeline transforms HTML, CSS and JavaScript into pixels on yo
   - **Viz Display Compositor**: unified GPU-accelerated compositing architecture  
   - **SkiaRenderer**: advanced Skia-based rendering backend  
   - **Out-of-Process Rasterization (OOP-R)**: rasterization moved to GPU process  
+  - **Direct Rendering Display Compositor (DrDc)**: dual GPU threading for enhanced performance
   - **Canvas2D in GPU Process**: hardware-accelerated canvas rendering
 
 *(Link back to [Architecture → Process Model](process-model.md) for IPC & sandbox context.)*
@@ -175,6 +176,9 @@ Display Lists → [OOP Raster] → GPU Textures → Tile Cache
 - **Surface Hierarchy**: Nested surface management for complex layouts  
 - **Display Transform**: Handle device rotation and scaling  
 - **HDR Support**: High dynamic range content rendering  
+
+### DrDc Enhancement (Modern Builds)
+For detailed information about the advanced **Direct Rendering Display Compositor (DrDc)** dual GPU threading architecture that enhances performance beyond traditional Viz compositing, see **[DrDc Architecture](drdc-architecture.md)**.
 
 ### Present & VSync Integration
 - **Frame Scheduling**: Intelligent frame timing based on display capabilities  

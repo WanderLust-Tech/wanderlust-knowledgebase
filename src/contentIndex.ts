@@ -61,6 +61,7 @@ export const contentIndex: ContentNode[] = [
                 children: [
                     { title: "Rendering Architecture Fundamentals", path: "architecture/rendering-architecture-fundamentals" },
                     { title: "Render Pipeline (Modern)", path: "architecture/render-pipeline" },
+                    { title: "Direct Rendering Display Compositor (DrDc)", path: "architecture/drdc-architecture" },
                     { title: "Graphics Layer Tree Creation", path: "architecture/graphics-layer-tree-creation" },
                     { title: "CC Layer Tree Creation", path: "architecture/cc-layer-tree-creation" }
                 ]
@@ -100,7 +101,8 @@ export const contentIndex: ContentNode[] = [
             {
                 title: "Security Research",
                 children: [
-                    { title: "RenderFrameHost UAF Vulnerability Analysis", path: "security/research/renderframehost-uaf-analysis" }
+                    { title: "RenderFrameHost UAF Vulnerability Analysis", path: "security/research/renderframehost-uaf-analysis" },
+                    { title: "V8 SuperIC Type Confusion Vulnerability Analysis", path: "security/research/v8-superic-type-confusion-analysis" }
                 ]
             }
         ]

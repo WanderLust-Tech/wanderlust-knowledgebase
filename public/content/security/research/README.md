@@ -13,3 +13,4 @@ We publish these notes to
 
 ### Vulnerability Analysis
 - **[RenderFrameHost Use-After-Free Vulnerability Analysis](renderframehost-uaf-analysis.md)** - Comprehensive analysis of CVE-2020-6416, demonstrating browser sandbox escape through Mojo interface lifetime mismanagement
+- **[V8 SuperIC Type Confusion Vulnerability Analysis](v8-superic-type-confusion-analysis.md)** - Advanced analysis of CVE-2022-1134 and the SuperIC vulnerability trilogy, covering V8 inline cache exploitation, JavaScript inheritance patterns, and sophisticated V8-Blink interaction attacks

@@ -52,7 +52,7 @@ Chromium's sophisticated architecture has evolved significantly:
 ### Core Processes
 - **Browser Process**: Central coordinator with enhanced UI management and service orchestration
 - **Renderer Processes**: Site-isolated content rendering with strict security boundaries
-- **GPU Process**: Unified Viz compositor with Out-of-Process Rasterization (OOP-R)
+- **GPU Process**: Unified Viz compositor with Out-of-Process Rasterization (OOP-R) and DrDc dual threading
 - **Network Service**: Dedicated network process with HTTP/3 and QUIC support
 
 ### Modern Service Ecosystem
