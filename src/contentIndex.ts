@@ -57,6 +57,7 @@ export const contentIndex: ContentNode[] = [
             { title: "Browser Components", path: "architecture/browser-components" },
             { title: "IPC Internals", path: "architecture/ipc-internals" },
             { title: "UI Design Principles", path: "architecture/ui-design-principles" },
+            { title: "UI Library Fundamentals", path: "architecture/ui-library-fundamentals" },
             { title: "UI Framework & Aura Architecture", path: "architecture/ui-framework-aura" },
             {
                 title: "Rendering System",

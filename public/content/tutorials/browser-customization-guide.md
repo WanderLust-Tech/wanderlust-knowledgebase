@@ -6,7 +6,7 @@ Learn how to create a differentiated Chromium-based browser by studying real-wor
 
 **Duration**: 60 minutes  
 **Difficulty**: Intermediate to Advanced  
-**Prerequisites**: Understanding of Chromium architecture and build system
+**Prerequisites**: Understanding of Chromium architecture and build system. For UI customization sections, familiarity with [UI Library Fundamentals](../architecture/ui-library-fundamentals.md) is recommended.
 
 ### **What You'll Learn**
 
@@ -551,5 +551,11 @@ class PrivacyAnalytics {
 - Privacy audit and compliance verification tools
 
 ---
+
+## Related Documentation
+
+- [UI Library Fundamentals](../architecture/ui-library-fundamentals.md) - Essential concepts for UI customization work
+- [UI Framework & Aura Architecture](../architecture/ui-framework-aura.md) - Advanced UI rendering and hardware acceleration
+- [Browser Components](../architecture/browser-components.md) - High-level browser architecture understanding
 
 **Next Tutorial**: [Advanced IPC Customization](./advanced-ipc-customization.md) - Learn how to implement custom inter-process communication for unique browser features.

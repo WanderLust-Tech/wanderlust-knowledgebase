@@ -2,6 +2,8 @@
 
 Chromium's user interface framework evolved from traditional DirectUI patterns to a sophisticated hardware-accelerated system built around the Aura architecture. This document explores the technical details of how Chrome's browser interface is rendered, managed, and optimized for performance across different platforms.
 
+> **Prerequisites**: This document assumes familiarity with Chromium's fundamental UI concepts. For an introduction to Widget, View, WidgetDelegate, and basic window management, see [UI Library Fundamentals](ui-library-fundamentals.md).
+
 ## Overview
 
 Chrome's UI framework represents a significant departure from traditional DirectUI implementations, introducing hardware acceleration support while maintaining the benefits of custom-drawn interfaces. The Aura framework serves as the foundation for this system, providing a layered architecture that enables both software and hardware-accelerated rendering paths.
@@ -1062,10 +1064,12 @@ Understanding this framework is essential for developers working on Chrome's use
 
 ## Related Documentation
 
+- [UI Library Fundamentals](ui-library-fundamentals.md) - Essential Widget, View, and WidgetDelegate concepts prerequisite to understanding Aura
 - [UI Design Principles for Browser Development](ui-design-principles.md) - Mathematical foundations and design principles that complement this technical framework
 - [Render Pipeline](render-pipeline.md) - Web content rendering pipeline (different from UI framework)
 - [Browser Components](browser-components.md) - High-level browser component architecture
 - [Native OS Notifications Integration](../features/native-os-notifications.md) - Platform integration examples using similar patterns
+- [Browser Customization Guide](../tutorials/browser-customization-guide.md) - Practical examples of customizing Chromium UI
 
 ---
 
