@@ -500,6 +500,8 @@ bool CompositedLayerMapping::updateSquashingLayerAssignment(RenderLayer* squashe
 
 ### Core Architecture
 - [Render Pipeline](render-pipeline.md) - Overall rendering pipeline context
+- [Rendering Architecture Fundamentals](rendering-architecture-fundamentals.md) - Complete browser architecture analysis
+- [CC Layer Tree Creation](cc-layer-tree-creation.md) - How CC module creates Layer Tree from Graphics Layers
 - [Process Model](process-model.md) - Multi-process architecture
 - [Browser Components](browser-components.md) - Component interaction overview
 

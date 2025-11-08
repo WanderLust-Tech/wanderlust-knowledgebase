@@ -1318,5 +1318,6 @@ function avoidLayoutThrashing() {
 - [Browser Components](browser-components.md) - Cross-process service coordination
 - [IPC Internals](ipc-internals.md) - Inter-process communication mechanisms
 - [V8 Compiler Internals](../modules/v8-compiler-internals.md) - JavaScript engine deep dive
-- [Graphics Layer Tree Creation](graphics-layer-tree-creation.md) - Advanced layer management
+- [Graphics Layer Tree Creation](graphics-layer-tree-creation.md) - WebKit Graphics Layer Tree creation process
+- [CC Layer Tree Creation](cc-layer-tree-creation.md) - CC module Layer Tree creation and mapping
 - [Task Posting Patterns](task-posting-patterns.md) - Threading and task coordination

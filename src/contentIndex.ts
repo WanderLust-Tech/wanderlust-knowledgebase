@@ -61,7 +61,8 @@ export const contentIndex: ContentNode[] = [
                 children: [
                     { title: "Rendering Architecture Fundamentals", path: "architecture/rendering-architecture-fundamentals" },
                     { title: "Render Pipeline (Modern)", path: "architecture/render-pipeline" },
-                    { title: "Graphics Layer Tree Creation", path: "architecture/graphics-layer-tree-creation" }
+                    { title: "Graphics Layer Tree Creation", path: "architecture/graphics-layer-tree-creation" },
+                    { title: "CC Layer Tree Creation", path: "architecture/cc-layer-tree-creation" }
                 ]
             },
             {
