@@ -1093,6 +1093,7 @@ This architectural foundation enables Chromium to maintain its position as the w
 - [Process Model](process_model_and_site_isolation.md) - Multi-process implementation and site isolation
 - [IPC Internals](ipc-internals.md) - Inter-process communication patterns and Mojo framework
 - [Browser Components](browser-components.md) - High-level component architecture and relationships
+- [UI Design Principles](ui-design-principles.md) - Mathematical foundations and design principles for browser interface development
 
 #### Security and Sandboxing
 - [Sandboxing](sandbox.md) - The Sandboxing architecture and Windows implementation of sandboxing

@@ -154,3 +154,8 @@ Chrome uses short and long delays in various UI:
     [`InputEventActivationProtector`](ui/views/input_event_activation_protector.h)
     is a helper class that ignores UI events that happen within 500ms of the
     sensitive UI being displayed.
+
+## See Also
+
+- [UI Design Principles for Browser Development](../architecture/ui-design-principles.md) - Mathematical foundations and design principles that complement security considerations
+- [URL Display Guidelines](url_display_guidelines/) - Specific guidance for displaying URLs securely in browser UI

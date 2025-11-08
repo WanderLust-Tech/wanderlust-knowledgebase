@@ -359,3 +359,11 @@ chrome://system/              # Comprehensive system information
 - Performance is measured through Core Web Vitals - optimize for user experience
 - Privacy is paramount - implement privacy-by-design principles
 - Accessibility is essential - ensure inclusive design from the ground up
+
+---
+
+## See Also
+
+- [UI Design Principles for Browser Development](ui-design-principles.md) - Mathematical foundations and design principles for browser interface components
+- [Security Considerations for Browser UI](../security/security-considerations-for-browser-ui.md) - Security implications of UI design decisions
+- [IPC Internals](ipc-internals.md) - Understanding inter-process communication between browser components

@@ -992,6 +992,7 @@ The architecture continues to evolve rapidly, embracing cutting-edge technologie
 **Related Documentation**:
 - [Process Model Architecture](./process-model.md) - Multi-process architecture details and process isolation
 - [IPC Internals](./ipc-internals.md) - Mojo communication patterns and service coordination
+- [UI Design Principles for Browser Development](./ui-design-principles.md) - Mathematical foundations and design principles for browser interface architecture
 - [Security Architecture](../security/security-model.md) - Security boundaries and sandboxing mechanisms
 - [Performance Optimization](../modules/performance.md) - Performance best practices and optimization techniques
 - [Service Development Guide](../apis/servicification.md) - Building and integrating services
