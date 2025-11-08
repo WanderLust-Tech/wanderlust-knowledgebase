@@ -57,6 +57,7 @@ export const contentIndex: ContentNode[] = [
             { title: "Browser Components", path: "architecture/browser-components" },
             { title: "IPC Internals", path: "architecture/ipc-internals" },
             { title: "UI Design Principles", path: "architecture/ui-design-principles" },
+            { title: "UI Framework & Aura Architecture", path: "architecture/ui-framework-aura" },
             {
                 title: "Rendering System",
                 children: [
@@ -152,6 +153,16 @@ export const contentIndex: ContentNode[] = [
                 children: [
                     { title: "Extension API System Architecture", path: "features/extension-api-system" },
                     { title: "Native Messaging API: Web-to-App Communication", path: "features/native-messaging-api" }
+                ]
+            },
+            {
+                title: "Platform Integration Features",
+                children: [
+                    {
+                        title: "Native OS Notifications Integration",
+                        path: "features/native-os-notifications",
+                        description: "Cross-platform integration with native OS notification systems including Windows Action Center and macOS Notification Center"
+                    }
                 ]
             },
             {

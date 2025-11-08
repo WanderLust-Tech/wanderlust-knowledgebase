@@ -34,6 +34,23 @@ A comprehensive guide to implementing bidirectional communication between Chromi
 - Managing enterprise deployment with system-level vs user-level registration
 - Mastering advanced extension communication patterns
 
+## Platform Integration Features
+
+### [Native OS Notifications Integration](native-os-notifications.md)
+A comprehensive analysis of Chrome's native OS notifications integration providing seamless cross-platform notification experiences. This feature implementation covers:
+
+- **Cross-Platform Architecture**: Windows Action Center, macOS Notification Center, and Linux FreeDesktop.org integration
+- **Development History**: Evolution from initial resistance to full implementation with technical challenges and solutions
+- **Platform-Specific Implementation**: UWP integration, toast notifications, and native event handling
+- **User Experience Benefits**: Notification persistence, system-wide management, and Focus Assist integration
+- **Security and Privacy**: Notification source verification, content sanitization, and privacy protection
+
+**Key Learning Outcomes:**
+- Understanding platform-specific API integration challenges and solutions
+- Learning cross-platform notification system architecture patterns
+- Mastering native OS integration while maintaining web API compatibility
+- Implementing secure notification handling with proper privacy considerations
+
 ## Performance & Web Acceleration Features
 
 ### [Web Prerendering: Predictive Page Loading](web-prerendering.md)

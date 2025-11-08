@@ -307,3 +307,7 @@ If you believe you have found a bug in Chrome’s implementation of SW, please
 template](https://bugs.chromium.org/p/chromium/issues/entry?template=Security%20Bug).
 The Chrome Security Team will triage it within 1 or 2 business days. Good bug
 reports come with minimal test cases that demonstrate the problem!
+
+## Related Documentation
+
+- [Native OS Notifications Integration](../features/native-os-notifications.md) - Security considerations for native notification systems and push notification implementation

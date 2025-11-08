@@ -75,3 +75,7 @@ application name.
  name and icon for a PWA. So, the file open context menu item for a PWA on
  Windows 7 gets its name from the launcher app created for the PWA, and uses a
  generic PWA icon.
+
+## Related Documentation
+
+- [Native OS Notifications Integration](../../features/native-os-notifications.md) - Cross-platform notification system integration including Windows Action Center support for PWAs
