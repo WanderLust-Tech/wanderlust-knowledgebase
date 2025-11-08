@@ -2,6 +2,8 @@
 
 Chromium's render pipeline transforms HTML, CSS and JavaScript into pixels on your screen. In this article we'll cover each major stage, the threads involved, and how Chromium optimizes for smooth, high-performance rendering in modern versions (v134+).
 
+> **📚 Comprehensive Reference**: For deep technical details including browser architecture evolution, JavaScript engine comparisons, and the complete 13-stage rendering pipeline, see **[Rendering Architecture Fundamentals](rendering-architecture-fundamentals.md)**.
+
 ---
 
 ## 1. Overview & Motivation
