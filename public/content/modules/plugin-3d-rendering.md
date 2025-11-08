@@ -22,6 +22,8 @@ Chromium's plugin system provides sophisticated support for 3D rendering through
 
 This document provides a detailed analysis of how plugins execute 3D rendering in Chromium, focusing on the interaction processes between Chromium and plugins, including how Chromium manipulates plugins and how plugins call Chromium-provided interfaces.
 
+> **Note**: This document focuses specifically on 3D rendering capabilities within plugins. For comprehensive coverage of the plugin architecture, process startup, and PPAPI system, see [Plugin Architecture & Process Management](plugin-architecture.md).
+
 ## Plugin 3D Rendering vs WebGL
 
 ### Native Plugin Rendering
@@ -363,6 +365,7 @@ Cleanup:     Plugin Destruction → Proxy Cleanup → GPU Cleanup
 - [Render Pipeline](../architecture/render-pipeline.md) - Graphics rendering pipeline
 
 ### Core Modules
+- [Plugin Architecture & Process Management](./plugin-architecture.md) - Comprehensive plugin system architecture
 - [JavaScript Engine (V8)](./javascript-v8.md) - JavaScript engine integration
 - [Networking & HTTP](./networking-http.md) - Network layer architecture
 

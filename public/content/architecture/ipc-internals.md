@@ -365,5 +365,6 @@ Chromium's modern Mojo IPC system represents a significant evolution from legacy
 The transition to Mojo has enabled Chromium's sophisticated multi-process architecture while maintaining security, performance, and maintainability at scale. For developers working with Chromium, understanding Mojo IPC is essential for effective cross-process communication and service development.
 
 ### Related Documentation
+- [Plugin Architecture & Process Management](../modules/plugin-architecture.md) - Comprehensive plugin system architecture and IPC communication
 - [Plugin 3D Rendering Architecture](../modules/plugin-3d-rendering.md) - Detailed analysis of IPC communication for plugin 3D rendering workflows
 - [Advanced Mojo IPC & Security Research](../security/advanced-mojo-ipc-security.md) - In-depth analysis of Mojo security implications and vulnerability research

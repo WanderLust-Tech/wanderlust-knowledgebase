@@ -113,6 +113,7 @@ export const contentIndex: ContentNode[] = [
         children: [
             { title: "JavaScript Engine (V8)", path: "modules/javascript-v8" },
             { title: "V8 Compiler Internals", path: "modules/v8-compiler-internals" },
+            { title: "Plugin Architecture & Process Management", path: "modules/plugin-architecture" },
             { title: "Plugin 3D Rendering Architecture", path: "modules/plugin-3d-rendering" },
             { title: "Networking & HTTP", path: "modules/networking-http" },
             {

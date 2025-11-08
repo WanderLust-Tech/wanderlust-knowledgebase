@@ -172,10 +172,11 @@ Chromium employs sophisticated patterns to prevent memory safety vulnerabilities
 ## 12. Next Steps
 
 1. **Advanced Security Research**: [Advanced Mojo IPC & Security Research](advanced-mojo-ipc-security.md) - Deep dive into Mojo vulnerabilities and exploitation techniques
-2. Read **Debugging → Debugging Tools** to learn how to trace sandbox violations.  
-3. Explore **Modules → Networking (HTTP)** for TLS handshake internals.  
-4. Dive into **Architecture → Process Model** to see how sandboxed processes communicate.  
-5. Learn about **Design Patterns → Observer Pattern** for memory-safe observer implementations.
-6. Study **Modules → V8 Compiler Internals** for JavaScript engine security and JIT compilation vulnerabilities.
+2. **Plugin Security**: [Plugin Architecture & Process Management](../modules/plugin-architecture.md) - Multi-process plugin sandboxing and Native Client security
+3. Read **Debugging → Debugging Tools** to learn how to trace sandbox violations.  
+4. Explore **Modules → Networking (HTTP)** for TLS handshake internals.  
+5. Dive into **Architecture → Process Model** to see how sandboxed processes communicate.  
+6. Learn about **Design Patterns → Observer Pattern** for memory-safe observer implementations.
+7. Study **Modules → V8 Compiler Internals** for JavaScript engine security and JIT compilation vulnerabilities.
 
 ---
