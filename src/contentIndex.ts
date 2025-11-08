@@ -184,6 +184,11 @@ export const contentIndex: ContentNode[] = [
                         path: "features/privacy-budget",
                         description: "Comprehensive analysis of Google's Privacy Budget proposal for combating browser fingerprinting"
                     },
+                    {
+                        title: "Application Isolation and Storage Partitioning",
+                        path: "features/application-isolation",
+                        description: "Evolution from experimental isolated apps to modern storage partitioning and application security architecture"
+                    },
                     { title: "DNS-over-HTTPS UI Implementation", path: "features/dns-over-https-ui" }
                 ]
             }
