@@ -3,7 +3,8 @@
 [TOC]
 
 Note: See [Threading and Tasks FAQ](threading_and_tasks_faq.md) for more
-examples, and [Threading Model Implementation Analysis](threading-implementation.md)
+examples, [Task Posting Patterns](task-posting-patterns.md) for practical implementation
+guidance, and [Threading Model Implementation Analysis](threading-implementation.md)
 for detailed implementation internals.
 
 ## Overview

@@ -6,7 +6,7 @@
 
 This document provides an in-depth technical analysis of Chromium's multithreading model implementation, focusing on the low-level design patterns, core classes, and execution mechanisms that enable Chrome's asynchronous, task-based threading architecture.
 
-While the [Threading and Tasks in Chrome](threading_and_tasks.md) document covers the modern API and usage patterns, this document examines the foundational implementation details, design philosophy, and internal mechanisms that make Chromium's threading model possible.
+While the [Threading and Tasks in Chrome](threading_and_tasks.md) document covers the modern API and usage patterns, and [Task Posting Patterns](task-posting-patterns.md) provides practical implementation examples, this document examines the foundational implementation details, design philosophy, and internal mechanisms that make Chromium's threading model possible.
 
 ## Design Philosophy
 
