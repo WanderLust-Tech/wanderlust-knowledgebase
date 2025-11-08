@@ -147,6 +147,12 @@ export const contentIndex: ContentNode[] = [
         description: "Chrome feature implementations and development case studies",
         children: [
             {
+                title: "Extension & API Features",
+                children: [
+                    { title: "Extension API System Architecture", path: "features/extension-api-system" }
+                ]
+            },
+            {
                 title: "Privacy & Security Features",
                 children: [
                     { title: "DNS-over-HTTPS UI Implementation", path: "features/dns-over-https-ui" }

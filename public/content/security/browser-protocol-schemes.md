@@ -261,7 +261,7 @@ These schemes represent the boundary between web content and browser internals, 
 
 ## References
 
-- [Chrome Extension Security Model](../development/extension-security.md)
+- [Extension API System Architecture](../features/extension-api-system.md) - Complete extension API implementation guide
 - [Content Security Policy Guidelines](web-platform-security-guidelines.md)
 - [Cross-Origin Request Security](origin-vs-url.md)
 

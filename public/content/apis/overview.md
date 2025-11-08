@@ -41,5 +41,6 @@ If you're new to Chromium's service architecture, start with [Mojo & Services](m
 - [Core Architecture](../architecture/overview) - Understanding Chromium's overall design
 - [Process Model](../architecture/process-model) - How processes are organized and isolated
 - [Security Model](../security/security-model) - Security architecture and considerations
+- [Extension API System](../features/extension-api-system) - Extension API architecture and custom implementation
 - [Testing & QA](../development/testing/testing_in_chromium) - Testing methodologies
 - [Core Modules](../modules/javascript-v8) - How modules interact with services

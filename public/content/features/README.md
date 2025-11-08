@@ -2,6 +2,23 @@
 
 This section contains detailed implementation case studies and documentation for specific Chrome features, providing insights into the development process, architectural decisions, and best practices.
 
+## Extension & API Features
+
+### [Extension API System Architecture](extension-api-system.md)
+A comprehensive technical analysis of Chromium's extension API system initialization and architecture. This deep dive covers:
+
+- **Complete Extension System Architecture**: Render process and browser process initialization patterns
+- **API Provider Framework**: ExtensionsAPIProvider pattern and JSON configuration system
+- **Custom Shell Implementation**: Step-by-step guide for implementing custom extension APIs
+- **Security & Sandboxing**: Extension permission validation and security boundaries
+- **Module System Integration**: JavaScript binding generation and module loading
+
+**Key Learning Outcomes:**
+- Understanding Chromium's extension architecture patterns
+- Learning how to extend browser APIs for custom implementations
+- Mastering the provider pattern for API extensibility
+- Code generation from JSON schema definitions
+
 ## Privacy & Security Features
 
 ### [DNS-over-HTTPS UI Implementation](dns-over-https-ui.md)
