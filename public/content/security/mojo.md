@@ -630,6 +630,11 @@ close the frame. The `Receiver` might have a backlog of messages to process
 before it gets the message indicating that the renderer's `Remote` was closed,
 and the `RenderFrameHostImpl` can be destroyed in the meantime.
 
+> **Real-World Example**: For a detailed analysis of this vulnerability pattern in action, 
+> see our [RenderFrameHost UAF Vulnerability Analysis](research/renderframehost-uaf-analysis.md), 
+> which demonstrates how improper lifetime management in the SmsReceiver interface led to 
+> a critical sandbox escape vulnerability.
+
 Similarly, it's not safe to assume that the `Profile` object (and objects owned
 by it; `StoragePartitionImpl`, for instance) will outlive the `Receiver`. This
 has been observed to be true for at least incognito windows, where a renderer
