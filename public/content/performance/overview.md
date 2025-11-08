@@ -32,6 +32,7 @@ Performance is critical to Chromium's success. This section covers the tools, te
 - **Memory Optimization**: Reducing memory footprint and allocation overhead
 - **Cache Optimization**: Improving data locality and cache performance
 - **Network Optimization**: Reducing latency and bandwidth usage
+- **Predictive Loading**: Advanced prerendering and prefetching strategies (see [Web Prerendering](../features/web-prerendering.md))
 
 ### **Measurement & Analysis**
 - **Benchmarking**: Establishing performance baselines

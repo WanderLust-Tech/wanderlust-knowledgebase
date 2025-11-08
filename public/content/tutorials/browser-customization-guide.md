@@ -533,6 +533,7 @@ class PrivacyAnalytics {
 ### **Related Documentation**
 - [Chromium Architecture Overview](../architecture/overview.md) - Understanding the foundation
 - [Extension API System](../features/extension-api-system.md) - Building compatible extension support
+- [Privacy Budget](../features/privacy-budget.md) - Advanced anti-fingerprinting technology and implementation strategies
 - [Privacy and Security](../security/security-model.md) - Implementing security best practices
 - [Build System Guide](../getting-started/setup-build.md) - Custom build configurations
 

@@ -29,7 +29,7 @@ Chromium v134+ defines two fundamental navigation types based on document lifecy
 A _cross-document_ navigation creates a new document to replace an existing one, triggering a complete document lifecycle reset. This includes:
 - **Full resource loading** with network requests and parsing
 - **Process isolation** enforcement and security boundary checks
-- **Performance optimizations** including preloading and caching strategies
+- **Performance optimizations** including preloading and caching strategies (see [Web Prerendering](../features/web-prerendering.md))
 - **Memory management** with proper cleanup of previous document resources
 
 ### Same-Document Navigations

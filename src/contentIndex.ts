@@ -154,8 +154,23 @@ export const contentIndex: ContentNode[] = [
                 ]
             },
             {
+                title: "Performance & Web Acceleration Features",
+                children: [
+                    {
+                        title: "Web Prerendering: Predictive Page Loading",
+                        path: "features/web-prerendering",
+                        description: "Comprehensive technical analysis of Chromium's prerendering technology for instant page loads"
+                    }
+                ]
+            },
+            {
                 title: "Privacy & Security Features",
                 children: [
+                    { 
+                        title: "Privacy Budget: Anti-Fingerprinting Technology", 
+                        path: "features/privacy-budget",
+                        description: "Comprehensive analysis of Google's Privacy Budget proposal for combating browser fingerprinting"
+                    },
                     { title: "DNS-over-HTTPS UI Implementation", path: "features/dns-over-https-ui" }
                 ]
             }

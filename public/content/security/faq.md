@@ -184,6 +184,8 @@ Chrome may increase an origin's budget when it detects that a person is using
 the origin heavily. As with passive fingerprinting, our goal is to set the
 default budget below the threshold of usefulness for fingerprinting.
 
+> **For detailed technical analysis** of Privacy Budget implementation, challenges, and industry response, see our comprehensive [Privacy Budget documentation](../features/privacy-budget.md).
+
 These are both long-term goals. As of this writing (August 2019) we do not
 expect that Chrome will immediately achieve them.
 

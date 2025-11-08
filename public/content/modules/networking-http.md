@@ -168,7 +168,16 @@ NetworkDelegate
 
 Intercept headers, auth events in NetworkService.
 
-12. Next Steps
+## 12. Network Performance Optimization
+
+Advanced networking strategies in Chromium:
+
+- **Resource Prioritization**: Critical path optimization and request scheduling
+- **Predictive Loading**: Prefetching and prerendering for instant page loads (see [Web Prerendering](../features/web-prerendering.md))
+- **Connection Reuse**: HTTP/2 multiplexing and connection pooling
+- **Cache Optimization**: Intelligent caching strategies and validation
+
+## 13. Next Steps
 Deep dive: Modules → Storage & Cache to see how responses are stored.
 
 Explore Security → Security Model for TLS sandbox details.

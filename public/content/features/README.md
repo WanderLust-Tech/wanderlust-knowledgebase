@@ -34,7 +34,39 @@ A comprehensive guide to implementing bidirectional communication between Chromi
 - Managing enterprise deployment with system-level vs user-level registration
 - Mastering advanced extension communication patterns
 
+## Performance & Web Acceleration Features
+
+### [Web Prerendering: Predictive Page Loading](web-prerendering.md)
+A comprehensive technical analysis of Chromium's prerendering technology for delivering near-instantaneous page loads through predictive background rendering. This implementation guide covers:
+
+- **Prerendering Architecture**: Complete background page creation and resource loading pipeline
+- **Performance Optimization**: Implementation strategies achieving up to 100% load time improvements
+- **Resource Management**: Memory, CPU, and network constraint handling with intelligent expiration
+- **Developer Integration**: Page Visibility API usage, testing tools, and optimization best practices
+- **Modern Evolution**: Transition from `<link rel="prerender">` to Speculation Rules API
+
+**Key Learning Outcomes:**
+- Understanding predictive loading strategies and performance measurement
+- Implementing background page rendering with proper resource management  
+- Mastering prerender detection, optimization, and enterprise deployment
+- Evaluating trade-offs between performance gains and resource consumption
+
 ## Privacy & Security Features
+
+### [Privacy Budget: Anti-Fingerprinting Technology](privacy-budget.md)
+A comprehensive analysis of Google's Privacy Budget proposal for combating browser fingerprinting through quantifiable privacy limits. This technical documentation covers:
+
+- **Privacy Budget Core Concepts**: Quota-based information exposure limits and entropy calculation
+- **Technical Architecture**: Implementation strategies, telemetry collection, and enforcement mechanisms
+- **Fingerprinting Surface Analysis**: Passive and active fingerprinting identification and measurement
+- **Industry Challenges**: Browser compatibility issues, correlation problems, and implementation paradoxes
+- **Alternative Approaches**: Client Hints integration, differential privacy, and cross-browser perspectives
+
+**Key Learning Outcomes:**
+- Understanding information theory applications in privacy engineering
+- Learning fingerprinting detection and measurement techniques
+- Mastering privacy-preserving API design patterns
+- Evaluating trade-offs between privacy protection and web functionality
 
 ### [DNS-over-HTTPS UI Implementation](dns-over-https-ui.md)
 A comprehensive analysis of the DoH (DNS-over-HTTPS) feature implementation based on the original Chrome M71 code review. This case study demonstrates:

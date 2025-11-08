@@ -47,6 +47,11 @@ Our custom Chromium implementation follows these core security principles:
 - **Same-Origin Policy**: Controlling cross-origin resource access
 - **Subresource Integrity**: Ensuring resource authenticity
 
+### Privacy Protection
+- **[Privacy Budget](../features/privacy-budget.md)**: Anti-fingerprinting through quantifiable privacy limits
+- **Fingerprinting Mitigation**: Advanced privacy protection mechanisms
+- **User Consent Systems**: Transparent privacy controls and data protection
+
 ## Security Threats and Mitigations
 
 ### Common Attack Vectors
