@@ -54,11 +54,15 @@ Our custom Chromium implementation follows these core security principles:
 - **Cross-Site Request Forgery (CSRF)**: Protected by SameSite cookies and tokens
 - **Code Injection**: Prevented through sandboxing and input validation
 - **Man-in-the-Middle**: Blocked by certificate pinning and HSTS
+- **Use-After-Free Vulnerabilities**: Memory safety issues that can lead to sandbox escape
 
 ### Browser-Specific Security
 - **Extension Security**: Secure extension architecture and permissions
 - **Download Protection**: Scanning and validation of downloaded files
 - **Safe Browsing**: Protection against malicious websites and downloads
+
+### Security Research
+- **[RenderFrameHost UAF Analysis](research/renderframehost-uaf-analysis.md)**: Real-world vulnerability analysis demonstrating browser sandbox escape techniques
 
 ## Integration with Browser Architecture
 

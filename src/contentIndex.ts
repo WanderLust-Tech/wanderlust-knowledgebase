@@ -96,7 +96,13 @@ export const contentIndex: ContentNode[] = [
         children: [
             { title: "Security Model Overview", path: "security/security-model" },
             { title: "Advanced Mojo IPC & Security Research", path: "security/advanced-mojo-ipc-security" },
-            { title: "Sandbox Architecture", path: "architecture/security/sandbox-architecture" }
+            { title: "Sandbox Architecture", path: "architecture/security/sandbox-architecture" },
+            {
+                title: "Security Research",
+                children: [
+                    { title: "RenderFrameHost UAF Vulnerability Analysis", path: "security/research/renderframehost-uaf-analysis" }
+                ]
+            }
         ]
     },
 
