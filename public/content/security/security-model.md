@@ -94,11 +94,39 @@ Chromium runs its renderers and helper processes in strict OS sandboxes:
   - HPKP deprecated but still present in some code paths.  
 - **OCSP & CRL Sets**  
   - Stapled OCSP responses validated in `net/ocsp/`.  
-  - Chrome uses “CRLSet” updates via Safe Browsing service.
+  - Chrome uses "CRLSet" updates via Safe Browsing service.
 
 ---
 
-## 8. Safe Browsing & Malware Protection
+## 8. Memory Safety & Use-After-Free Prevention
+
+Chromium employs sophisticated patterns to prevent memory safety vulnerabilities:
+
+- **CheckedObserver Pattern**  
+  - Prevents Use-After-Free (UAF) bugs in observer patterns by transforming potential crashes into deterministic CHECK() failures.  
+  - Implemented in `base/checked_observer.h` with automatic cleanup in observer destructors.  
+  - See **Design Patterns → Observer Pattern** for comprehensive implementation details.
+
+- **WeakPtr & Weak References**  
+  - Automatic null detection for deleted objects prevents stale pointer dereferences.  
+  - Used extensively in callback patterns and async operations.
+
+- **Smart Pointers & RAII**  
+  - `std::unique_ptr`, `std::shared_ptr`, and Chromium's `scoped_refptr` for automatic resource management.  
+  - Scoped resource holders like `ScopedObserverRegistration` ensure proper cleanup.
+
+- **MiraclePtr Protection**  
+  - Advanced memory safety system for detecting and preventing exploitation of use-after-free bugs.  
+  - Provides deterministic protection against UAF exploitation in production builds.
+
+- **Key Files**  
+  - `base/checked_observer.h` - CheckedObserver implementation  
+  - `base/memory/weak_ptr.h` - WeakPtr system  
+  - `base/memory/` - Smart pointer implementations
+
+---
+
+## 9. Safe Browsing & Malware Protection
 
 - **Phishing & Malware Lists**  
   - Maintained by Google; downloaded to browser periodically.  
@@ -109,7 +137,7 @@ Chromium runs its renderers and helper processes in strict OS sandboxes:
 
 ---
 
-## 9. Extension Security
+## 10. Extension Security
 
 - **Isolated Worlds**  
   - Content scripts run in separate V8 contexts with limited DOM access.  
@@ -120,7 +148,7 @@ Chromium runs its renderers and helper processes in strict OS sandboxes:
 
 ---
 
-## 10. Developer Tools & Auditing
+## 11. Developer Tools & Auditing
 
 - **chrome://security** (future) and `chrome://sandbox` pages  
 - **chrome://webrtc-internals** for inspecting WebRTC security parameters  
@@ -146,5 +174,7 @@ Chromium runs its renderers and helper processes in strict OS sandboxes:
 1. Read **Debugging → Debugging Tools** to learn how to trace sandbox violations.  
 2. Explore **Modules → Networking (HTTP)** for TLS handshake internals.  
 3. Dive into **Architecture → Process Model** to see how sandboxed processes communicate.  
+4. Learn about **Design Patterns → Observer Pattern** for memory-safe observer implementations.
+5. Study **Modules → V8 Compiler Internals** for JavaScript engine security and JIT compilation vulnerabilities.
 
 ---

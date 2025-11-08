@@ -1563,7 +1563,623 @@ class ModernPrefService {
 
 ---
 
-## 8. Observer Pattern Summary (v134+)
+## 7. CheckedObserver Pattern - Memory Safety Enhancement
+
+### 7.1. Overview
+
+The `base::CheckedObserver` pattern is a critical memory safety enhancement introduced to prevent Use-After-Free (UAF) vulnerabilities in observer patterns. This pattern transforms potential UAF crashes when attempting to notify a deleted observer into deterministic `CHECK()` failures, making debugging significantly easier and preventing potential security exploits.
+
+### 7.2. The UAF Problem in Observer Patterns
+
+Traditional observer patterns in large codebases like Chromium are susceptible to UAF vulnerabilities:
+
+```cpp
+// Problematic traditional pattern
+class UnsafeSubject {
+ private:
+  std::vector<Observer*> observers_;  // Raw pointers - dangerous!
+  
+ public:
+  void NotifyObservers() {
+    for (Observer* observer : observers_) {
+      observer->OnEvent();  // UAF if observer was deleted!
+    }
+  }
+};
+
+class Observer {
+ public:
+  ~Observer() {
+    // If observer is deleted without removing from subject,
+    // future notifications will cause UAF
+  }
+};
+```
+
+**Problems with this approach:**
+- **Late Detection**: UAF bugs often only manifest under high memory pressure
+- **Misattributed Crashes**: Stack traces point to the notification site, not the root cause
+- **Timing Dependencies**: Bugs slip through until Chrome runs long enough for memory to be fragmented
+- **Security Risk**: UAF vulnerabilities can potentially be exploited
+
+### 7.3. CheckedObserver Solution
+
+`base::CheckedObserver` provides WeakPtr-like semantics for observer interfaces through a virtual destructor mechanism:
+
+```cpp
+// Safe CheckedObserver implementation
+class base::CheckedObserver {
+ public:
+  CheckedObserver() = default;
+  
+  // Virtual destructor provides notification opportunity
+  virtual ~CheckedObserver() {
+    // Automatically notifies all CheckedObserverLists
+    // that this observer is being destroyed
+    CheckedObserverImpl::NotifyObserverDestroyed(this);
+  }
+  
+  // Non-copyable to prevent accidental duplication
+  CheckedObserver(const CheckedObserver&) = delete;
+  CheckedObserver& operator=(const CheckedObserver&) = delete;
+  
+ private:
+  // Internal implementation details managed by framework
+  mutable CheckedObserverImpl impl_;
+};
+
+// Safe observer list that works with CheckedObserver
+template<typename T>
+class base::ObserverList {
+ public:
+  // Default behavior now requires CheckedObserver inheritance
+  static_assert(std::is_base_of_v<CheckedObserver, T>,
+               "Observers should inherit from base::CheckedObserver. "
+               "Use ObserverList<T>::Unchecked for raw pointers.");
+  
+  void AddObserver(T* observer) {
+    DCHECK(observer);
+    CheckedObserverAdapter adapter(observer);
+    observer_adapters_.push_back(adapter);
+  }
+  
+  void RemoveObserver(T* observer) {
+    auto it = std::find_if(observer_adapters_.begin(), observer_adapters_.end(),
+                          [observer](const auto& adapter) {
+                            return adapter.GetObserver() == observer;
+                          });
+    if (it != observer_adapters_.end()) {
+      observer_adapters_.erase(it);
+    }
+  }
+  
+  template<typename Method, typename... Args>
+  void NotifyObservers(Method method, Args&&... args) {
+    // Create a snapshot to handle concurrent modifications
+    auto adapters_copy = observer_adapters_;
+    
+    for (auto& adapter : adapters_copy) {
+      if (T* observer = adapter.GetObserver()) {
+        // Observer is still valid
+        (observer->*method)(std::forward<Args>(args)...);
+      } else {
+        // Observer was deleted - CHECK() will fire with clear message
+        CHECK(false) << "Attempting to notify deleted observer. "
+                    << "Observer was destroyed without proper cleanup.";
+      }
+    }
+    
+    // Clean up any deleted observers
+    CleanupDeletedObservers();
+  }
+  
+  // Legacy support for unchecked raw pointers
+  using Unchecked = base::ObserverList<T, false>;
+  
+ private:
+  void CleanupDeletedObservers() {
+    observer_adapters_.erase(
+        std::remove_if(observer_adapters_.begin(), observer_adapters_.end(),
+                      [](const auto& adapter) {
+                        return adapter.GetObserver() == nullptr;
+                      }),
+        observer_adapters_.end());
+  }
+  
+  std::vector<CheckedObserverAdapter<T>> observer_adapters_;
+};
+```
+
+### 7.4. CheckedObserver Implementation Example
+
+Here's how to implement a safe observer pattern using CheckedObserver:
+
+```cpp
+// Safe observer interface
+class DownloadObserver : public base::CheckedObserver {
+ public:
+  ~DownloadObserver() override = default;
+  
+  virtual void OnDownloadStarted(const std::string& download_id) {}
+  virtual void OnDownloadProgress(const std::string& download_id, 
+                                 int percent) {}
+  virtual void OnDownloadCompleted(const std::string& download_id) {}
+  virtual void OnDownloadFailed(const std::string& download_id,
+                               const std::string& error) {}
+};
+
+// Safe subject implementation
+class DownloadManager {
+ public:
+  DownloadManager() = default;
+  ~DownloadManager() = default;
+  
+  void AddObserver(DownloadObserver* observer) {
+    observers_.AddObserver(observer);
+  }
+  
+  void RemoveObserver(DownloadObserver* observer) {
+    observers_.RemoveObserver(observer);
+  }
+  
+  void StartDownload(const std::string& url) {
+    std::string download_id = GenerateDownloadId();
+    
+    // Safe notification - will CHECK() if any observer was deleted
+    observers_.NotifyObservers(&DownloadObserver::OnDownloadStarted, 
+                              download_id);
+    
+    // Start the download asynchronously...
+    StartDownloadInternal(download_id, url);
+  }
+  
+ private:
+  void OnDownloadProgressUpdate(const std::string& download_id, int percent) {
+    // Safe progress notifications
+    observers_.NotifyObservers(&DownloadObserver::OnDownloadProgress,
+                              download_id, percent);
+  }
+  
+  void OnDownloadComplete(const std::string& download_id) {
+    // Safe completion notification
+    observers_.NotifyObservers(&DownloadObserver::OnDownloadCompleted,
+                              download_id);
+  }
+  
+  base::ObserverList<DownloadObserver> observers_;
+  // ... other implementation details
+};
+
+// Safe observer implementation
+class DownloadStatusDisplay : public DownloadObserver {
+ public:
+  DownloadStatusDisplay(DownloadManager* manager) : manager_(manager) {
+    // Register with manager
+    manager_->AddObserver(this);
+  }
+  
+  ~DownloadStatusDisplay() override {
+    // Cleanup happens automatically via CheckedObserver destructor
+    // But explicit cleanup is still good practice:
+    if (manager_) {
+      manager_->RemoveObserver(this);
+    }
+  }
+  
+  void OnDownloadStarted(const std::string& download_id) override {
+    std::cout << "Download started: " << download_id << std::endl;
+  }
+  
+  void OnDownloadProgress(const std::string& download_id, int percent) override {
+    std::cout << "Download " << download_id << " progress: " 
+              << percent << "%" << std::endl;
+  }
+  
+  void OnDownloadCompleted(const std::string& download_id) override {
+    std::cout << "Download completed: " << download_id << std::endl;
+  }
+  
+ private:
+  DownloadManager* manager_;
+};
+```
+
+### 7.5. Migration Strategy
+
+When migrating existing observer patterns to CheckedObserver:
+
+```cpp
+// Step 1: Make observer inherit from CheckedObserver
+class MyObserver : public base::CheckedObserver {  // Add base class
+ public:
+  ~MyObserver() override = default;  // Make destructor virtual
+  
+  // ... observer methods remain unchanged
+};
+
+// Step 2: Update ObserverList declaration (if needed)
+class MySubject {
+ private:
+  // Old: base::ObserverList<MyObserver>::Unchecked observers_;
+  base::ObserverList<MyObserver> observers_;  // New: checked by default
+};
+
+// Step 3: Handle any remaining unchecked observers
+class LegacyObserver {
+  // Some observers may not be ready for CheckedObserver yet
+};
+
+class MySubject {
+ private:
+  // Keep using unchecked for legacy observers
+  base::ObserverList<LegacyObserver>::Unchecked legacy_observers_;
+  
+  // Use checked for new observers
+  base::ObserverList<MyObserver> modern_observers_;
+};
+```
+
+### 7.6. Benefits and Trade-offs
+
+**Benefits:**
+- **Immediate Detection**: UAF bugs become deterministic CHECK() failures
+- **Better Stack Traces**: Clear indication of the problematic notification
+- **Easier Debugging**: Failures point to the actual problem, not symptoms
+- **Security Improvement**: Prevents potential UAF exploits
+- **Minimal Code Changes**: Easy migration path for existing code
+
+**Trade-offs:**
+- **Virtual Destructor Overhead**: Small performance cost for virtual destructor calls
+- **Memory Overhead**: Slight increase in observer object size
+- **Compilation Errors**: Template errors when using raw pointers with checked lists
+- **Migration Complexity**: Large codebases require systematic migration
+
+### 7.7. Common Patterns and Best Practices
+
+```cpp
+// Pattern 1: RAII Observer Registration
+class SafeObserverRegistration {
+ public:
+  SafeObserverRegistration(Subject* subject, Observer* observer)
+      : subject_(subject), observer_(observer) {
+    if (subject_ && observer_) {
+      subject_->AddObserver(observer_);
+    }
+  }
+  
+  ~SafeObserverRegistration() {
+    if (subject_ && observer_) {
+      subject_->RemoveObserver(observer_);
+    }
+  }
+  
+  // Make non-copyable
+  SafeObserverRegistration(const SafeObserverRegistration&) = delete;
+  SafeObserverRegistration& operator=(const SafeObserverRegistration&) = delete;
+  
+ private:
+  Subject* subject_;
+  Observer* observer_;
+};
+
+// Pattern 2: Observer with automatic cleanup
+class AutoCleanupObserver : public base::CheckedObserver {
+ public:
+  AutoCleanupObserver() = default;
+  
+  ~AutoCleanupObserver() override {
+    // Cleanup all registrations
+    for (auto& subject : subjects_) {
+      if (subject) {
+        subject->RemoveObserver(this);
+      }
+    }
+  }
+  
+  void ObserveSubject(Subject* subject) {
+    if (subject) {
+      subject->AddObserver(this);
+      subjects_.push_back(subject);
+    }
+  }
+  
+ private:
+  std::vector<Subject*> subjects_;
+};
+
+// Pattern 3: Conditional observer cleanup
+class ConditionalObserver : public base::CheckedObserver {
+ public:
+  explicit ConditionalObserver(bool auto_cleanup = true)
+      : auto_cleanup_(auto_cleanup) {}
+  
+  ~ConditionalObserver() override {
+    if (auto_cleanup_ && subject_) {
+      subject_->RemoveObserver(this);
+    }
+  }
+  
+  void StartObserving(Subject* subject) {
+    subject_ = subject;
+    if (subject_) {
+      subject_->AddObserver(this);
+    }
+  }
+  
+  void StopObserving() {
+    if (subject_) {
+      subject_->RemoveObserver(this);
+      subject_ = nullptr;
+    }
+  }
+  
+ private:
+  bool auto_cleanup_;
+  Subject* subject_ = nullptr;
+};
+```
+
+### 7.8. Testing CheckedObserver Patterns
+
+```cpp
+// Test helper for CheckedObserver patterns
+class CheckedObserverTest : public testing::Test {
+ protected:
+  class TestObserver : public base::CheckedObserver {
+   public:
+    MOCK_METHOD(void, OnTestEvent, (int value), ());
+  };
+  
+  class TestSubject {
+   public:
+    void AddObserver(TestObserver* observer) {
+      observers_.AddObserver(observer);
+    }
+    
+    void RemoveObserver(TestObserver* observer) {
+      observers_.RemoveObserver(observer);
+    }
+    
+    void NotifyEvent(int value) {
+      observers_.NotifyObservers(&TestObserver::OnTestEvent, value);
+    }
+    
+   private:
+    base::ObserverList<TestObserver> observers_;
+  };
+  
+  TestSubject subject_;
+  std::unique_ptr<TestObserver> observer_;
+  
+  void SetUp() override {
+    observer_ = std::make_unique<TestObserver>();
+    subject_.AddObserver(observer_.get());
+  }
+  
+  void TearDown() override {
+    if (observer_) {
+      subject_.RemoveObserver(observer_.get());
+    }
+  }
+};
+
+// Test that deleted observer causes CHECK failure
+TEST_F(CheckedObserverTest, DeletedObserverCausesCHECK) {
+  // Set up expectation
+  EXPECT_CALL(*observer_, OnTestEvent(42)).Times(1);
+  
+  // First notification should work
+  subject_.NotifyEvent(42);
+  
+  // Delete observer without removing from subject
+  observer_.reset();
+  
+  // This should cause a CHECK failure
+  EXPECT_CHECK_DEATH({
+    subject_.NotifyEvent(43);
+  }, "Attempting to notify deleted observer");
+}
+
+// Test proper cleanup prevents CHECK failure
+TEST_F(CheckedObserverTest, ProperCleanupPreventsFailure) {
+  EXPECT_CALL(*observer_, OnTestEvent(42)).Times(1);
+  
+  // First notification should work
+  subject_.NotifyEvent(42);
+  
+  // Properly remove observer before deletion
+  subject_.RemoveObserver(observer_.get());
+  observer_.reset();
+  
+  // This should not cause any failure
+  subject_.NotifyEvent(43);  // Should be safe
+}
+```
+
+### 7.9. Real-World Migration Example
+
+Here's how Chromium migrated existing observer patterns:
+
+```cpp
+// Before: Traditional observer pattern (unsafe)
+class WebContentsObserver {
+ public:
+  virtual ~WebContentsObserver() {
+    // Manual cleanup required - error-prone
+    if (web_contents_) {
+      web_contents_->RemoveObserver(this);
+    }
+  }
+  
+  virtual void DidStartNavigation(NavigationHandle* handle) {}
+  virtual void DidFinishNavigation(NavigationHandle* handle) {}
+};
+
+class WebContents {
+ private:
+  base::ObserverList<WebContentsObserver>::Unchecked observers_;  // Unsafe!
+};
+
+// After: CheckedObserver pattern (safe)
+class WebContentsObserver : public base::CheckedObserver {  // Now inherits from CheckedObserver
+ public:
+  explicit WebContentsObserver(WebContents* web_contents)
+      : web_contents_(web_contents) {
+    if (web_contents_) {
+      web_contents_->AddObserver(this);
+    }
+  }
+  
+  ~WebContentsObserver() override {
+    // CheckedObserver destructor automatically handles cleanup
+    // Manual cleanup still recommended for clarity:
+    if (web_contents_) {
+      web_contents_->RemoveObserver(this);
+    }
+  }
+  
+  // Observer methods remain unchanged
+  virtual void DidStartNavigation(NavigationHandle* handle) {}
+  virtual void DidFinishNavigation(NavigationHandle* handle) {}
+
+ protected:
+  WebContents* web_contents() const { return web_contents_; }
+  
+ private:
+  WebContents* web_contents_;
+};
+
+class WebContents {
+ public:
+  void AddObserver(WebContentsObserver* observer) {
+    observers_.AddObserver(observer);
+  }
+  
+  void RemoveObserver(WebContentsObserver* observer) {
+    observers_.RemoveObserver(observer);
+  }
+  
+ private:
+  base::ObserverList<WebContentsObserver> observers_;  // Now safe by default!
+  
+  void NotifyDidStartNavigation(NavigationHandle* handle) {
+    // Will CHECK() if any observer was improperly deleted
+    observers_.NotifyObservers(&WebContentsObserver::DidStartNavigation, handle);
+  }
+};
+```
+
+### 7.10. Debugging CheckedObserver Issues
+
+When CheckedObserver CHECK() failures occur:
+
+```cpp
+// Typical CHECK failure message:
+// CHECK failed: Attempting to notify deleted observer. 
+// Observer was destroyed without proper cleanup.
+//   at ../../base/observer_list.h:123
+//   at WebContents::NotifyDidStartNavigation()
+//   at WebContents::StartNavigation()
+
+// Debugging steps:
+// 1. Identify the observer type from the stack trace
+// 2. Look for recent destruction of that observer type
+// 3. Check if RemoveObserver() was called in destructor
+// 4. Verify observer lifetime vs. subject lifetime
+
+// Common debugging patterns:
+class DebuggableObserver : public base::CheckedObserver {
+ public:
+  DebuggableObserver(const std::string& debug_name) 
+      : debug_name_(debug_name) {
+    VLOG(1) << "Creating observer: " << debug_name_;
+  }
+  
+  ~DebuggableObserver() override {
+    VLOG(1) << "Destroying observer: " << debug_name_;
+    // CheckedObserver destructor will log if observer lists still contain this
+  }
+  
+ private:
+  std::string debug_name_;
+};
+```
+
+The CheckedObserver pattern represents a significant improvement in memory safety for Chromium's observer patterns, transforming hard-to-debug UAF vulnerabilities into immediately detectable programming errors.
+
+---
+
+## 8. Real-World Examples from Chromium v134+
+
+### 8.1. WebContents Observer
+
+Modern web contents observer with enhanced security and privacy events:
+
+```cpp
+// Simplified WebContentsObserver for v134+ with CheckedObserver
+class WebContentsObserver : public base::CheckedObserver {
+ public:
+  explicit WebContentsObserver(content::WebContents* web_contents)
+      : web_contents_(web_contents) {
+    if (web_contents_) {
+      web_contents_->AddObserver(this);
+    }
+  }
+  
+  ~WebContentsObserver() override {
+    if (web_contents_) {
+      web_contents_->RemoveObserver(this);
+    }
+  }
+  
+  // Navigation events with enhanced context
+  virtual void DidStartNavigation(content::NavigationHandle* handle) {}
+  virtual void DidFinishNavigation(content::NavigationHandle* handle) {}
+  virtual void DidFailNavigation(content::NavigationHandle* handle,
+                                const net::Error& error) {}
+  
+  // Modern security and privacy events  
+  virtual void OnSecurityStateChanged() {}
+  virtual void OnPrivacySandboxSettingChanged() {}
+  virtual void OnPermissionStatusChanged() {}
+  
+ protected:
+  content::WebContents* web_contents() const { return web_contents_; }
+  
+ private:
+  content::WebContents* web_contents_;
+};
+```
+
+### 8.2. Preference Observer
+
+Advanced preference observation with hierarchical change tracking:
+
+```cpp
+// Modern preference observer with CheckedObserver base
+class PrefObserver : public base::CheckedObserver {
+ public:
+  ~PrefObserver() override = default;
+  
+  // Enhanced preference change notification
+  virtual void OnPreferenceChanged(const std::string& pref_name,
+                                  const base::Value& old_value,
+                                  const base::Value& new_value) {}
+  
+  // Batch preference changes
+  virtual void OnPreferencesBatchChanged(
+      const std::map<std::string, std::pair<base::Value, base::Value>>& changes) {
+    // Default implementation calls individual notifications
+    for (const auto& [pref_name, values] : changes) {
+      OnPreferenceChanged(pref_name, values.first, values.second);
+    }
+  }
+};
+```
+
+---
+
+## 9. Observer Pattern Summary (v134+)
 
 ### Key Advantages
 - **Decoupled Architecture**: Subjects and observers remain loosely coupled
@@ -1573,19 +2189,29 @@ class ModernPrefService {
 - **Flexibility**: Dynamic subscription and unsubscription
 
 ### Modern Enhancements (v134+)
-- **Memory Safety**: Automatic cleanup using weak pointers and RAII
+- **Memory Safety**: Automatic cleanup using weak pointers, CheckedObserver, and RAII
 - **Thread Safety**: Safe cross-thread notification mechanisms
 - **Performance**: Optimized notification with batching and filtering
 - **Service Integration**: Seamless Mojo IPC for cross-process observation
 - **Error Handling**: Robust error propagation and recovery
+- **UAF Prevention**: CheckedObserver pattern eliminates use-after-free vulnerabilities
 
 ### Best Practices
-1. **Use weak pointers** to prevent memory leaks and dangling references
-2. **Implement proper cleanup** in destructors and scope guards
-3. **Consider batching** for high-frequency events to improve performance
-4. **Apply filtering** to reduce unnecessary notifications
-5. **Test thoroughly** with mock observers and comprehensive scenarios
-6. **Document event contracts** clearly for maintainable code
-7. **Handle edge cases** like observer removal during notification
+1. **Inherit from CheckedObserver** to prevent UAF vulnerabilities
+2. **Use weak pointers** to prevent memory leaks and dangling references
+3. **Implement proper cleanup** in destructors and scope guards
+4. **Consider batching** for high-frequency events to improve performance
+5. **Apply filtering** to reduce unnecessary notifications
+6. **Test thoroughly** with mock observers and comprehensive scenarios
+7. **Document event contracts** clearly for maintainable code
+8. **Handle edge cases** like observer removal during notification
+9. **Migrate systematically** from raw pointer observer patterns to CheckedObserver
 
-The Observer pattern continues to be essential in modern Chromium architecture, providing the foundation for event-driven communication across the complex browser ecosystem while maintaining performance, security, and maintainability standards.
+### CheckedObserver Migration Checklist
+- [ ] Make observer classes inherit from `base::CheckedObserver`
+- [ ] Update `ObserverList<T>::Unchecked` to `ObserverList<T>`
+- [ ] Ensure virtual destructors in observer base classes
+- [ ] Test for CHECK() failures in existing code
+- [ ] Document any remaining unchecked observer lists with justification
+
+The Observer pattern, enhanced with CheckedObserver safety mechanisms, continues to be essential in modern Chromium architecture. It provides the foundation for event-driven communication across the complex browser ecosystem while maintaining performance, security, and maintainability standards. The CheckedObserver pattern specifically addresses one of the most challenging aspects of large-scale C++ development: preventing use-after-free vulnerabilities in observer relationships.

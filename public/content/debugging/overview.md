@@ -7,6 +7,7 @@ Welcome to the Debugging section! This comprehensive guide helps developers debu
 This section provides essential debugging tools and techniques:
 
 - **[Chrome Internals URLs](chrome-internals-urls.md)**: Access internal Chrome debugging pages and diagnostic tools
+- **[Command Line Switches](command-line-switches.md)**: Comprehensive guide to Chrome command line flags for debugging and development
 - **[Crash Reports](crash-reports.md)**: Understanding, generating, and analyzing crash reports
 - **[Debugging Tools](debugging-tools.md)**: Essential tools and techniques for effective debugging
 

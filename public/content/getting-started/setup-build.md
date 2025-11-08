@@ -131,6 +131,7 @@ Out-of-memory during build	Lower -j jobs or increase swap space
 
 ## 8. Next Steps
 
+- **Optimization**: Learn about [Build Performance & Optimization](build-performance-optimization.md) for faster builds
 - Dive into Project Layout: see how src/ is organized
 - Explore Architecture → Process Model: understand multi-process design
 - Try a Debug Build and play with logging flags

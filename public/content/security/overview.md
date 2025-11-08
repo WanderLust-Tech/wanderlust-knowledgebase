@@ -7,6 +7,8 @@ Welcome to the Security section! This area covers the comprehensive security mod
 This section provides essential security information:
 
 - **[Security Model](security-model.md)**: Comprehensive overview of browser security architecture and principles
+- **[Browser Protocol Schemes](browser-protocol-schemes.md)**: Chrome internal schemes, CSP implications, and security considerations
+- **[Web Platform Security Guidelines](web-platform-security-guidelines.md)**: Security guidelines for web platform features
 - **Sandboxing**: Process isolation and security boundaries
 - **Permission Management**: User permission systems and access controls
 - **Security Updates**: Keeping the browser secure with regular updates
@@ -41,6 +43,7 @@ Our custom Chromium implementation follows these core security principles:
 
 ### Content Security
 - **Content Security Policy (CSP)**: Preventing code injection attacks
+- **[Browser Protocol Schemes](browser-protocol-schemes.md)**: Chrome internal schemes and CSP implications
 - **Same-Origin Policy**: Controlling cross-origin resource access
 - **Subresource Integrity**: Ensuring resource authenticity
 

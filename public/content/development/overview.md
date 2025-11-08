@@ -41,6 +41,7 @@ Effective Chromium development requires mastering a comprehensive set of tools, 
 - Clang (compiler and toolchain)
 - Code review system
 - Build system (GN/Ninja)
+- [Command Line Switches](../debugging/command-line-switches) (debugging and testing)
 
 ### **Code Quality Tools**
 - ClangFormat (formatting)

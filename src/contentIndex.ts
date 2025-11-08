@@ -29,6 +29,7 @@ export const contentIndex: ContentNode[] = [
         description: "Essential setup and orientation for new developers",
         children: [
             { title: "Setup & Build Overview", path: "getting-started/setup-build" },
+            { title: "Build Performance & Optimization", path: "getting-started/build-performance-optimization" },
             { title: "Project Layout", path: "getting-started/project-layout" },
             { title: "Code Directory Structure", path: "getting-started/code-directory-structure" },
             {
@@ -88,6 +89,8 @@ export const contentIndex: ContentNode[] = [
         description: "Deep dive into key Chromium subsystems",
         children: [
             { title: "JavaScript Engine (V8)", path: "modules/javascript-v8" },
+            { title: "V8 Compiler Internals", path: "modules/v8-compiler-internals" },
+            { title: "Plugin 3D Rendering Architecture", path: "modules/plugin-3d-rendering" },
             { title: "Networking & HTTP", path: "modules/networking-http" },
             {
                 title: "Storage & Caching System",

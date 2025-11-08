@@ -1101,6 +1101,8 @@ This architectural foundation enables Chromium to maintain its position as the w
 
 #### Performance and Threading
 - [Threading](threading.md) - Preferred ways to use threading and library support for concurrency
+- [Threading and Tasks](threading_and_tasks.md) - Modern task-based threading patterns and APIs
+- [Threading Model Implementation](threading-implementation.md) - In-depth analysis of Chromium's threading implementation internals
 - [GPU Synchronization](gpu_synchronization.md) - Mechanisms for sequencing GPU drawing operations across contexts or processes
 - [Render Pipeline](render-pipeline.md) - Rendering architecture and performance optimization
 

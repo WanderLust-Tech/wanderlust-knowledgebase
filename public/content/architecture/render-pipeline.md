@@ -324,3 +324,6 @@ DevTools → Rendering → Paint flashing + Layer borders
 - Use modern CSS containment for performance optimization
 - Leverage GPU acceleration through proper layer promotion
 - Profile regularly with DevTools Performance panel and Core Web Vitals metrics
+
+**Related Deep-Dive Documentation:**
+- [Chromium Compositor (cc) - Technical Deep Dive](chromium-compositor-cc.md) - Detailed technical analysis of the cc component architecture, layer management, and compositor internals

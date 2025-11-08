@@ -160,7 +160,12 @@ Flags & Experiments
 
 Feature-flag new JS proposals before standardization.
 
-10. Next Steps
+## 10. Next Steps
+
+**Advanced Internals**: [V8 Compiler Internals](v8-compiler-internals.md) - Deep dive into compilation pipeline, optimizations, and security
+
+**3D Rendering**: [Plugin 3D Rendering Architecture](plugin-3d-rendering.md) - Learn how native plugins provide high-performance 3D rendering as an alternative to WebGL
+
 Read Modules → Storage & Cache to see how JS resources (scripts, modules) are cached.
 
 Explore Debugging → Debugging Tools for end-to-end JS debugging setups.

@@ -125,6 +125,8 @@ used when committed.
 ### General Development
 *   [Contributing to Chromium](contributing.md) - Reference workflow process for
     contributing to the Chromium code base.
+*   [Command Line Switches](debugging/command-line-switches.md) - Comprehensive 
+    guide to Chrome command line flags for debugging and development
 *   [Commit Checklist](commit_checklist.md) - Streamlined checklist to go
     through before uploading CLs on Gerrit.
 *   [Code Reviews](code_reviews.md) - Code review requirements and guidelines
@@ -342,6 +344,9 @@ used when committed.
 *   [chrome-untrusted:// FAQ](webui/chrome_untrusted.md) - Explainer on the
     usage of the `chrome-untrusted://` scheme for hosting WebUIs that handle
     untrustworthy content.
+*   [Browser Protocol Schemes](security/browser-protocol-schemes.md) - Chrome 
+    internal schemes (chrome://, chrome-extension://, etc.), CSP implications, 
+    and security considerations.
 
 ### Media
 *   [Audio Focus Handling](media/audio_focus.md) - How multiple MediaSession

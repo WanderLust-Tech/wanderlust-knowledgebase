@@ -56,6 +56,7 @@ The tutorial includes downloadable scripts for:
 ## Related Content
 
 - **Documentation**: [Setup & Build Overview](/getting-started/setup-build)
+- **Optimization**: [Build Performance & Optimization](/getting-started/build-performance-optimization)
 - **Next Tutorial**: [Chromium Architecture Deep Dive](/video-tutorials/chromium-architecture-overview)
 - **Troubleshooting**: [Build Instructions by Platform](/getting-started/setup-build)
 

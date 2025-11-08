@@ -363,3 +363,6 @@ Chromium's modern Mojo IPC system represents a significant evolution from legacy
 - **Future-Proof Architecture**: Extensible design for emerging web platform features
 
 The transition to Mojo has enabled Chromium's sophisticated multi-process architecture while maintaining security, performance, and maintainability at scale. For developers working with Chromium, understanding Mojo IPC is essential for effective cross-process communication and service development.
+
+### Related Documentation
+- [Plugin 3D Rendering Architecture](../modules/plugin-3d-rendering.md) - Detailed analysis of IPC communication for plugin 3D rendering workflows
