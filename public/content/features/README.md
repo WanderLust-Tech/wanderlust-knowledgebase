@@ -19,6 +19,21 @@ A comprehensive technical analysis of Chromium's extension API system initializa
 - Mastering the provider pattern for API extensibility
 - Code generation from JSON schema definitions
 
+### [Native Messaging API: Web-to-App Communication](native-messaging-api.md)
+A comprehensive guide to implementing bidirectional communication between Chromium extensions and native applications. This technical documentation covers:
+
+- **Complete Native Messaging Architecture**: Protocol specifications and implementation patterns
+- **Host Executable Development**: Cross-platform implementation with security considerations
+- **Registration and Deployment**: Platform-specific host registration and Enterprise policies
+- **Extension Integration**: Advanced connection patterns and error handling
+- **Security Framework**: Input validation, sandboxing, and vulnerability prevention
+
+**Key Learning Outcomes:**
+- Understanding native messaging protocol and security model
+- Implementing robust host executables with proper error handling
+- Managing enterprise deployment with system-level vs user-level registration
+- Mastering advanced extension communication patterns
+
 ## Privacy & Security Features
 
 ### [DNS-over-HTTPS UI Implementation](dns-over-https-ui.md)

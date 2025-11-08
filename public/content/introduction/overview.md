@@ -197,6 +197,7 @@ chrome://components/       # Component status and versions
 - **Upstream Compatibility**: Maintain compatibility with Chromium updates
 - **Performance**: Profile and optimize custom features for production use
 - **Security**: Implement security reviews for all custom functionality
+- **Implementation Guide**: Follow our [comprehensive browser customization tutorial](../tutorials/browser-customization-guide.md) with real-world examples
 
 ---
 
@@ -207,3 +208,4 @@ chrome://components/       # Component status and versions
 - 🏗️ [Architecture Overview](../architecture/browser-components.md)
 - 🔧 [Development Guide](../getting-started/project-layout.md)
 - 🛡️ [Security Model](../security/security-model.md)
+- 🎨 [Browser Customization Tutorial](../tutorials/browser-customization-guide.md)

@@ -1116,6 +1116,9 @@ This architectural foundation enables Chromium to maintain its position as the w
 - [Contributing Guidelines](../contributing/contributing.md) - Development workflows and contribution guidelines
 - [Debugging Tools](../debugging/debugging-tools.md) - Comprehensive debugging and diagnostic tools
 
+#### Browser Implementation and Customization
+- [Browser Customization Guide](../tutorials/browser-customization-guide.md) - Complete tutorial for creating custom Chromium-based browsers with real-world examples
+
 ---
 
 *This architecture overview integrates with the broader Chromium design documentation available in the [Chromium source tree](https://chromium.googlesource.com/chromium/src/+/main/docs/). Many documents have been imported and enhanced from the original [Project site](https://www.chromium.org/developers/design-documents) with v134+ updates and modernization.*

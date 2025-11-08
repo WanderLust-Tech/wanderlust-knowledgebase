@@ -149,7 +149,8 @@ export const contentIndex: ContentNode[] = [
             {
                 title: "Extension & API Features",
                 children: [
-                    { title: "Extension API System Architecture", path: "features/extension-api-system" }
+                    { title: "Extension API System Architecture", path: "features/extension-api-system" },
+                    { title: "Native Messaging API: Web-to-App Communication", path: "features/native-messaging-api" }
                 ]
             },
             {
@@ -357,7 +358,12 @@ export const contentIndex: ContentNode[] = [
         children: [
             { title: "Learning Hub", path: "tutorials/overview" },
             { title: "Tutorial System Demo", path: "tutorials/tutorial-system-demo" },
-            { title: "Chromium Development Tutorials", path: "tutorials/interactive-chromium-tutorials" }
+            { title: "Chromium Development Tutorials", path: "tutorials/interactive-chromium-tutorials" },
+            { 
+                title: "Browser Customization Guide", 
+                path: "tutorials/browser-customization-guide",
+                description: "Complete guide to creating custom Chromium-based browsers with real-world examples"
+            }
         ]
     },
 

@@ -262,6 +262,7 @@ These schemes represent the boundary between web content and browser internals, 
 ## References
 
 - [Extension API System Architecture](../features/extension-api-system.md) - Complete extension API implementation guide
+- [Native Messaging API](../features/native-messaging-api.md) - Web-to-app communication through extensions
 - [Content Security Policy Guidelines](web-platform-security-guidelines.md)
 - [Cross-Origin Request Security](origin-vs-url.md)
 

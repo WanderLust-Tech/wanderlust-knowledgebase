@@ -616,6 +616,12 @@ IN_PROC_BROWSER_TEST_F(ExtensionAPIIntegrationTest, CustomAPIWorks) {
 ### Development
 - [Testing in Chromium](../development/testing/testing_in_chromium.md) - Testing strategies and frameworks
 
+### Extension Features
+- [Native Messaging API](native-messaging-api.md) - Web-to-app communication through native messaging hosts
+
+### Browser Implementation
+- [Browser Customization Guide](../tutorials/browser-customization-guide.md) - Complete tutorial for implementing custom browsers with extension compatibility
+
 ---
 
 *This document provides a comprehensive guide to Chromium's extension API system. For additional implementation examples and updates, refer to the Chromium source code and the original [blog post by Jacobo Aragunde](https://blogs.igalia.com/jaragunde/2019/11/initialization-of-the-chromium-extension-api-system/).*
