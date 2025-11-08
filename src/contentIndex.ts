@@ -56,7 +56,8 @@ export const contentIndex: ContentNode[] = [
             { title: "Module Layering", path: "architecture/module-layering" },
             { title: "Browser Components", path: "architecture/browser-components" },
             { title: "IPC Internals", path: "architecture/ipc-internals" },
-            { title: "Render Pipeline", path: "architecture/render-pipeline" }
+            { title: "Render Pipeline", path: "architecture/render-pipeline" },
+            { title: "Graphics Layer Tree Creation", path: "architecture/graphics-layer-tree-creation" }
         ]
     },
 
