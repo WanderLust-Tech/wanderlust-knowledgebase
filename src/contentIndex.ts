@@ -158,7 +158,8 @@ export const contentIndex: ContentNode[] = [
                 children: [
                     { title: "Rust in Chromium", path: "development/rust" },
                     { title: "Rust Unsafe Guidelines", path: "development/rust-unsafe" },
-                    { title: "Rust Community Perspectives", path: "development/rust-community-perspectives" }
+                    { title: "Rust Community Perspectives", path: "development/rust-community-perspectives" },
+                    { title: "Smart Pointer Implementation", path: "development/smart-pointer-implementation" }
                 ]
             },
             {
