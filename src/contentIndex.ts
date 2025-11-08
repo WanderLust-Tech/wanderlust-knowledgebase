@@ -184,6 +184,7 @@ export const contentIndex: ContentNode[] = [
         description: "Tools, processes, and best practices for Chromium development",
         children: [
             { title: "Development Overview", path: "development/overview" },
+            { title: "Browser Industry Economics", path: "development/browser-industry-economics" },
             { title: "Git Cookbook", path: "development/git_cookbook" },
             { title: "Git Tips", path: "development/git_tips" },
             { title: "Git Submodules", path: "development/git_submodules" },
@@ -363,7 +364,8 @@ export const contentIndex: ContentNode[] = [
         title: "Contributing to Chromium",
         description: "Guidelines and processes for contributing to the Chromium project",
         children: [
-            { title: "Contributing Guide", path: "contributing/contributing" }
+            { title: "Contributing Guide", path: "contributing/contributing" },
+            { title: "Web Standards Participation", path: "contributing/standards-participation" }
         ]
     },
 

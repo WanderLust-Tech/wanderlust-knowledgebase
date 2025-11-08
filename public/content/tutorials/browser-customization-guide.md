@@ -532,6 +532,7 @@ class PrivacyAnalytics {
 
 ### **Related Documentation**
 - [Chromium Architecture Overview](../architecture/overview.md) - Understanding the foundation
+- [Browser Industry Economics](../development/browser-industry-economics.md) - Industry analysis and strategic considerations for browser development
 - [Extension API System](../features/extension-api-system.md) - Building compatible extension support
 - [Privacy Budget](../features/privacy-budget.md) - Advanced anti-fingerprinting technology and implementation strategies
 - [Privacy and Security](../security/security-model.md) - Implementing security best practices

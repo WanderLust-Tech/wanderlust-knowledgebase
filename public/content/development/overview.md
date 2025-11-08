@@ -75,6 +75,7 @@ After completing this section, you should be able to:
 
 ## Related Sections
 
+- [Browser Industry Economics](browser-industry-economics) - Strategic considerations and industry analysis for browser development
 - [Testing & QA](testing/testing_in_chromium) - Quality assurance practices
 - [Performance](../performance/profiling) - Performance optimization tools
 - [Contributing](../contributing/contributing) - How to contribute to Chromium
