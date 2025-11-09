@@ -44,28 +44,114 @@ Integration
 
 Under Git workflows you can upload to a Breakpad server or run locally with minidump_stackwalk.
 
-3. Chrome Developer Tools
+## 3. Chrome Developer Tools
+
+Chromium provides multiple DevTools interfaces for different debugging scenarios: standard web content debugging and specialized desktop UI debugging.
+
+### 3.1 Standard DevTools (Web Content)
+
 Accessible via F12 or chrome://inspect, DevTools offers:
 
-Elements & Styles
+**Elements & Styles**
 
 Live DOM/CSS inspection and editing
 
-Console
+**Console**
 
 Runtime errors, logging APIs, and JS REPL
 
-Sources
+**Sources**
 
 Set breakpoints in JS, step through V8 bytecode/native code
 
-Performance
+**Performance**
 
-Record CPU & heap profiles; “flamethrower” view of main-thread tasks
+Record CPU & heap profiles; "flamethrower" view of main-thread tasks
 
-Network
+**Network**
 
 Inspect HTTP headers, payloads, timing breakdowns
+
+### 3.2 UI DevTools (Desktop UI System)
+
+UI DevTools allows inspection of the Chrome desktop UI system itself (not web content) using a DevTools-like interface. This specialized tool helps developers debug native UI components like Views, Windows, and Widgets.
+
+#### Enabling UI DevTools
+
+**Method 1: Command Line Flag**
+```bash
+out/Default/chrome --enable-ui-devtools
+```
+
+To use a custom port:
+```bash
+out/Default/chrome --enable-ui-devtools=9000
+```
+
+**Method 2: Chrome Flags**
+1. Navigate to `chrome://flags`
+2. Enable `ui-debug-tools` feature flag
+3. Restart Chrome
+
+#### Accessing UI DevTools
+
+Once enabled:
+1. Navigate to `chrome://inspect#native-ui`
+2. Click the **Inspect Native UI** button
+3. UI DevTools opens in a separate tab
+
+#### Features & Capabilities
+
+**Elements Tree Inspection**
+- View hierarchical tree of View, Window, and Widget elements
+- Right-click root element → "Expand Recursively" for full tree view
+- Click any element to inspect its properties
+
+**Property Modification**
+- Modify basic element properties in real-time
+- Changes are immediately reflected in the UI
+- Useful for prototyping UI changes and understanding component behavior
+
+**UI Component Analysis**
+- Examine native UI component structure
+- Understand parent-child relationships in Views hierarchy
+- Analyze layout and positioning of desktop UI elements
+
+#### Supported Platforms
+
+UI DevTools works on all desktop platforms:
+- Linux
+- Windows  
+- macOS
+- ChromeOS
+
+#### Common Use Cases
+
+**UI Development & Debugging**
+- Debug layout issues in Chrome's desktop interface
+- Understand component hierarchies during UI development
+- Prototype property changes before implementing code changes
+
+**Quality Assurance**
+- Verify UI element properties in different states
+- Test UI behavior across different platforms
+- Validate accessibility properties of native UI components
+
+**Performance Analysis**
+- Identify unnecessarily complex UI hierarchies
+- Analyze View structure for optimization opportunities
+- Debug UI rendering issues
+
+#### Integration with Development Workflow
+
+UI DevTools integrates seamlessly with standard Chromium development:
+
+```bash
+# Typical debugging session
+out/Default/chrome --enable-ui-devtools --enable-logging=stderr --v=1
+```
+
+This enables both UI DevTools and verbose logging for comprehensive debugging of both UI and backend systems.
 
 4. Tracing & Flame Charts
 4.1 chrome://tracing
