@@ -28,7 +28,12 @@ export const contentIndex: ContentNode[] = [
         title: "Getting Started",
         description: "Essential setup and orientation for new developers",
         children: [
-            { title: "Setup & Build Overview", path: "getting-started/setup-build" },
+            'getting-started/setup-build': {
+      title: 'Setup & Build System',
+      description: 'Comprehensive guide to setting up the Chromium development environment, from source checkout to build system configuration, including extensive troubleshooting for network and SSL issues',
+      category: 'Getting Started',
+      tags: ['setup', 'build', 'development', 'environment', 'gclient', 'gn', 'ninja', 'troubleshooting', 'network', 'ssl']
+    },
             { title: "Build Performance & Optimization", path: "getting-started/build-performance-optimization" },
             { title: "Project Layout", path: "getting-started/project-layout" },
             { title: "Code Directory Structure", path: "getting-started/code-directory-structure" },
@@ -370,7 +375,7 @@ export const contentIndex: ContentNode[] = [
         title: "Debugging & Troubleshooting",
         description: "Tools and techniques for debugging Chromium issues",
         children: [
-            { title: "Debugging Tools Overview", path: "debugging/debugging-tools" },
+            { title: "Debugging Tools Overview", path: "debugging/debugging-tools", description: "Comprehensive guide to Chrome DevTools for web content and UI DevTools for desktop interface debugging, plus additional debugging tools and techniques" },
             { title: "Chrome Internals URLs", path: "debugging/chrome-internals-urls" },
             { title: "Crash Reports Analysis", path: "debugging/crash-reports" }
         ]
