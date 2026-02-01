@@ -76,10 +76,15 @@ export const contentIndex: ContentNode[] = [
             },
             {
                 title: "Threading & Concurrency",
+                description: "Comprehensive analysis of Chromium's task-based threading model and asynchronous communication patterns",
                 children: [
                     { title: "Threading and Tasks in Chrome", path: "architecture/threading_and_tasks" },
                     { title: "Task Posting Patterns", path: "architecture/task-posting-patterns" },
-                    { title: "Threading Implementation", path: "architecture/threading-implementation" }
+                    { 
+                        title: "Threading Model Implementation Analysis", 
+                        path: "architecture/threading-implementation",
+                        description: "Deep dive into MessageLoop, RunLoop, WaitableEvent, and platform-specific threading implementations with detailed source code analysis"
+                    }
                 ]
             }
         ]
