@@ -179,6 +179,26 @@ used when committed.
 *   [User Education](../components/user_education/README.md) - Create
     in-product help (IPH) and tutorials to call out Chromium features
 
+### Accessibility
+*   [Accessibility Overview](accessibility/overview.md) - Core accessibility concepts, 
+    architecture, and multi-process design
+*   [ChromeVox Screen Reader](accessibility/assistive-technologies/chromevox.md) - 
+    Built-in Chrome OS screen reader implementation
+*   [Select-to-Speak](accessibility/assistive-technologies/select-to-speak.md) - 
+    Text-to-speech selection tool for Chrome OS
+*   [Text-to-Speech Architecture](accessibility/assistive-technologies/tts.md) - 
+    Speech synthesis system design and implementation
+*   [Automatic Clicks](accessibility/assistive-technologies/autoclick.md) - 
+    Dwell control for users with motor impairments
+*   [Reader Mode](accessibility/features/reader-mode.md) - Simplified content 
+    reading accessibility feature
+*   [Android Accessibility](accessibility/features/android.md) - Chrome 
+    accessibility implementation on Android
+*   [Accessibility Testing](accessibility/development/testing.md) - 
+    Comprehensive testing framework for accessibility features
+*   [Accessibility Release Notes](accessibility/release-notes/relnotes.md) - 
+    AX-Relnotes process and requirements
+
 ### Testing
 *   [Running and Debugging Web Tests](testing/web_tests.md)
 *   [On disabling tests](testing/on_disabling_tests.md)

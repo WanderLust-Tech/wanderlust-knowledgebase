@@ -50,43 +50,49 @@ Learn about modern Chromium APIs and the Mojo service architecture.
 - Time Investment: 4-5 hours
 - Prerequisites: Understanding of IPC concepts
 
-### **Phase 8: Development Workflow**
+### **Phase 8: Accessibility Architecture**
+Comprehensive accessibility implementation including assistive technologies and inclusive design.
+- Perfect for: Developers working on accessibility features and inclusive design
+- Time Investment: 3-4 hours
+- Prerequisites: Understanding of UI architecture and APIs
+
+### **Phase 9: Development Workflow**
 Master the tools and processes for effective Chromium development.
 - Perfect for: Developers ready to contribute code
 - Time Investment: 6-10 hours
 - Prerequisites: Git experience, C++ knowledge
 
-### **Phase 9: Testing & QA**
+### **Phase 10: Testing & QA**
 Comprehensive testing strategies and quality assurance practices.
 - Perfect for: Developers focused on code quality
 - Time Investment: 8-12 hours
 - Prerequisites: Testing framework experience
 
-### **Phase 10: Performance & Optimization**
+### **Phase 11: Performance & Optimization**
 Learn performance analysis and optimization techniques.
 - Perfect for: Performance-focused developers
 - Time Investment: 4-6 hours
 - Prerequisites: Understanding of system performance
 
-### **Phase 11: Platform-Specific Development**
+### **Phase 12: Platform-Specific Development**
 Platform-specific considerations for different operating systems.
 - Perfect for: Developers targeting specific platforms
 - Time Investment: Varies by platform (2-4 hours each)
 - Prerequisites: Platform-specific development experience
 
-### **Phase 12: Debugging & Troubleshooting**
+### **Phase 13: Debugging & Troubleshooting**
 Tools and techniques for debugging complex Chromium issues.
 - Perfect for: Developers maintaining or fixing bugs
 - Time Investment: 3-4 hours
 - Prerequisites: Debugging experience
 
-### **Phase 13: Contributing to Chromium**
+### **Phase 14: Contributing to Chromium**
 Guidelines for contributing to the open-source Chromium project.
 - Perfect for: Developers ready to contribute upstream
 - Time Investment: 2-3 hours
-- Prerequisites: Phases 1-8 completed
+- Prerequisites: Phases 1-9 completed
 
-### **Phase 14: Interactive Demos & Examples**
+### **Phase 15: Interactive Demos & Examples**
 Hands-on examples and interactive learning tools.
 - Perfect for: All skill levels, anytime
 - Time Investment: Varies (30 minutes - 2 hours per demo)
@@ -108,8 +114,17 @@ Hands-on examples and interactive learning tools.
 1. Introduction
 2. Core Architecture
 3. APIs & Services
-4. Security Architecture
-5. Debugging & Troubleshooting
+4. Accessibility Architecture
+5. Security Architecture
+6. Debugging & Troubleshooting
+
+### **For Accessibility Developers**
+1. Introduction
+2. Core Architecture
+3. APIs & Services
+4. Accessibility Architecture
+5. Testing & QA
+6. Contributing to Chromium
 
 ### **For Performance Engineers**
 1. Introduction
