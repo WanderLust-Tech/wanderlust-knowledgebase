@@ -149,12 +149,6 @@ used when committed.
 *   [Respectful Code Reviews](cr_respect.md) - A guide for code reviewers
 *   [Respectful Changes](cl_respect.md) - A guide for code authors
 *   [Mandatory Code-Review Rollout](code_review_owners.md) - Upcoming policy changes related to code review and OWNERS
-*   [LUCI Migration FAQ](luci_migration_faq.md) - FAQ on Buildbot-to-LUCI
-    builder migration for Chromium
-*   [Tour of Continuous Integration UI](tour_of_luci_ui.md) - A tour of our
-    the user interface for LUCI, our continuous integration system
-*   [Parsing Test Results](parsing_test_results.md) - An introduction for how to
-    understand the results emitted by polygerrit and CI builds.
 *   [Closure Compilation](closure_compilation.md) - The _Closure_ JavaScript
     compiler
 *   [Threading and Tasks in Chrome](threading_and_tasks.md) - How to run tasks
@@ -184,8 +178,6 @@ used when committed.
 *   [Guidelines for considering branch dates in project planning](release_branch_guidance.md) -
     What to do (and not to do) around branch dates when scheduling your project
     work.
-*   [Watchlists](infra/watchlists.md) - Use watchlists to get notified of CLs
-    you are interested in.
 *   [Shutdown](shutdown.md) - Explains the steps of Chrome shutdown, to make it
     easier to determine where to add a new shutdown operation.
 *   [API Keys](api_keys.md) - When you need access to Google APIs for a custom
@@ -193,6 +185,24 @@ used when committed.
     login).
 *   [User Education](../components/user_education/README.md) - Create
     in-product help (IPH) and tutorials to call out Chromium features
+
+### Development Infrastructure 
+*   [Commit Queue (CQ)](infra/cq.md) - Chromium Commit Queue structure, options, 
+    and management for automated testing before code landing
+*   [LUCI Migration FAQ](luci_migration_faq.md) - FAQ on Buildbot-to-LUCI
+    builder migration for Chromium
+*   [Tour of Continuous Integration UI](tour_of_luci_ui.md) - A tour of our
+    the user interface for LUCI, our continuous integration system
+*   [Creating New Builders](infra/new_builder.md) - Setting up new LUCI builders 
+    for Chromium with complete configuration requirements
+*   [Using Trybots](infra/trybot_usage.md) - Automated testing platform for 
+    uncommitted patches across multiple platforms
+*   [Using LED](infra/using_led.md) - Infrastructure tool for manually triggering 
+    builds and debugging waterfall failures
+*   [Watchlists](infra/watchlists.md) - Mechanism for developers to monitor and 
+    get notifications for changes in specific code areas
+*   [Parsing Test Results](parsing_test_results.md) - Understanding results 
+    emitted by polygerrit and CI builds
 
 ### Accessibility
 *   [Accessibility Overview](accessibility/overview.md) - Core accessibility concepts, 
