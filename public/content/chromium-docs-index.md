@@ -260,6 +260,14 @@ used when committed.
     infrastructure.
 *   [GPU Bot Details](gpu/gpu_testing_bot_details.md) - In-depth description of
     how the bots are maintained.
+*   [GPU Pixel Testing with Gold](gpu/gpu_pixel_testing_with_gold.md) - Skia Gold 
+    service integration for GPU pixel testing and image diff management.
+*   [Sync Token Internals](gpu/sync_token_internals.md) - GPU process synchronization 
+    mechanism for coordinating work across multiple command buffers.
+*   [VaAPI](gpu/vaapi.md) - Video Acceleration API tracing and debugging on 
+    Chrome OS for Intel and AMD platforms.
+*   [WebGL Bug Triage](gpu/webgl_bug_triage.md) - WebGL team bug triage rotation 
+    process and procedures for handling user reports.
 
 ### Misc Linux-Specific Docs
 *   [Linux Proxy Config](linux/proxy_config.md) - Network proxy sources on Linux
