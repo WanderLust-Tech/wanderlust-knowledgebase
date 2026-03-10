@@ -86,8 +86,7 @@ used when committed.
 *   [Architecture Overview](architecture/overview.md) - Comprehensive architectural 
     foundations of modern Chromium v134+
 *   [Sandboxing](architecture/sandbox.md) - The Sandboxing architecture, and Windows
-### Design Docs
-*   See [design/README.md](design/README.md)
+    implementation of sandboxing
 *   [Sandboxing FAQ](architecture/sandbox_faq.md) - Frequently asked questions about 
     Chromium sandboxing
 *   [Startup](architecture/startup.md) - How browser processes starts up, on different
