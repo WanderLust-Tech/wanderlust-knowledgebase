@@ -82,8 +82,24 @@ used when committed.
     hide some of the tools used for working on Chromium behind an abstraction
     layer
 
+### Design Docs & Architecture
+*   [Architecture Overview](architecture/overview.md) - Comprehensive architectural 
+    foundations of modern Chromium v134+
+*   [Sandboxing](architecture/sandbox.md) - The Sandboxing architecture, and Windows
 ### Design Docs
 *   See [design/README.md](design/README.md)
+*   [Sandboxing FAQ](architecture/sandbox_faq.md) - Frequently asked questions about 
+    Chromium sandboxing
+*   [Startup](architecture/startup.md) - How browser processes starts up, on different
+    platforms  
+*   [Threading](architecture/threading.md) - Preferred ways to use threading, and 
+    library support for concurrency
+*   [GPU Synchronization](architecture/gpu_synchronization.md) - Mechanisms for 
+    sequencing GPU drawing operations across contexts or processes
+*   [Process Model](architecture/process-model.md) - Multi-process architecture 
+    and security boundaries
+*   [IPC Internals](architecture/ipc-internals.md) - Inter-process communication 
+    systems and message passing
 
 ### Integrated Development Environment (IDE) Set Up Guides
 *   [Android Studio](android_studio.md) - Android Studio for Android builds
@@ -404,6 +420,12 @@ used when committed.
     synthesis engine used on Chrome OS
 *   [VoiceOver](ios/voiceover.md) - Using Apple's VoiceOver feature with
     Chromium on iOS.
+
+### Autofill & Payments
+*   [Chrome/Payments client-side flows](features/autofill-payments/chrome-payments-flows.md) - 
+    Detailed documentation covering the Chrome Downstream (card unmasking) and Chrome 
+    Upstream (upload credit card save) client-side flows with step-by-step processes 
+    and code references
 
 ### Memory
 *   [Memory Overview](memory/README.md)
