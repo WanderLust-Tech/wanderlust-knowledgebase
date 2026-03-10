@@ -426,6 +426,24 @@ used when committed.
     Upstream (upload credit card save) client-side flows with step-by-step processes 
     and code references
 
+### Enterprise Management
+*   [Enterprise Enrollment](features/enterprise/enrollment.md) - Chrome OS device 
+    enrollment processes for organizational management and ownership
+*   [Enterprise Management](features/enterprise/management.md) - Managing enrolled 
+    Chrome OS devices via Google Admin Console
+*   [Enterprise Policies](features/enterprise/policies.md) - Policy configuration 
+    and management across different platforms (Windows, macOS, Linux, Chrome OS)
+*   [Kiosk Mode & Public Sessions](features/enterprise/kiosk_public_session.md) - 
+    Setting up managed guest sessions and single-app kiosk deployments
+*   [SAML Authentication](features/enterprise/saml_authentication.md) - Third-party 
+    identity provider integration for enterprise login
+*   [Active Directory Integration](features/enterprise/active_directory_native_integration.md) - 
+    Native Active Directory management on Chrome OS
+*   [Adding New Policies](features/enterprise/add_new_policy.md) - Developer guide 
+    for implementing new enterprise policies
+*   [Extension Query Tools](features/enterprise/extension_query_script.md) - Python 
+    tools for querying managed extension data
+
 ### Memory
 *   [Memory Overview](memory/README.md)
 *   [Heap Profiling with External Tools](memory/heap_profiling_external.md)
