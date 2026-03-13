@@ -51,6 +51,25 @@ A comprehensive analysis of Chrome's native OS notifications integration providi
 - Mastering native OS integration while maintaining web API compatibility
 - Implementing secure notification handling with proper privacy considerations
 
+## UI & User Experience Features
+
+### [Remote New Tab Page (NTP) System](remote-ntp-system.md)
+A comprehensive implementation of an advanced cloud-hosted New Tab Page with intelligent offline support and rich customization capabilities. This feature documentation covers:
+
+- **Cloud-Native Architecture**: Dynamic content delivery with robust offline functionality
+- **Advanced Caching Strategy**: Multi-layer caching system for optimal performance
+- **Icon Management System**: Intelligent icon processing, optimization, and storage
+- **Theme Synchronization**: Real-time theme updates with system integration
+- **Network Awareness**: WiFi monitoring and adaptive content loading
+- **Search Integration**: Embedded autocomplete with multiple search providers
+- **Mojo API Design**: Cross-process communication for browser integration
+
+**Key Learning Outcomes:**
+- Understanding cloud-hosted browser UI architecture patterns
+- Implementing progressive web app concepts in browser features
+- Mastering offline-first design with graceful degradation
+- Learning advanced caching and performance optimization techniques
+
 ## Performance & Web Acceleration Features
 
 ### [Web Prerendering: Predictive Page Loading](web-prerendering.md)
