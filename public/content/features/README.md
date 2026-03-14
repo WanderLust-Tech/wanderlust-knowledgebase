@@ -53,6 +53,22 @@ A comprehensive analysis of Chrome's native OS notifications integration providi
 
 ## UI & User Experience Features
 
+### [Custom Cache Management System](custom-cache-management.md)
+Advanced browser cache management with custom directory selection and intelligent data clearing policies. This feature implementation covers:
+
+- **Custom Storage Locations**: User-defined cache directory selection with native OS folder dialogs
+- **Granular Data Control**: Fine-grained control over cache, cookies, history, downloads, passwords, and form data
+- **Intelligent Clearing Policies**: Exit-based clearing, selective data types, and background processing
+- **Service Architecture**: ClearDataService and CustomSettingsHandler with observer pattern implementation
+- **Enterprise Support**: Policy-based configuration and organizational deployment features
+- **Security & Privacy**: Secure deletion, permission validation, and audit logging
+
+**Key Learning Outcomes:**
+- Understanding advanced cache management architecture patterns
+- Implementing secure data clearing with user preference integration
+- Building native OS dialog integration for browser settings
+- Learning enterprise policy deployment for browser features
+
 ### [Remote New Tab Page (NTP) System](remote-ntp-system.md)
 A comprehensive implementation of an advanced cloud-hosted New Tab Page with intelligent offline support and rich customization capabilities. This feature documentation covers:
 

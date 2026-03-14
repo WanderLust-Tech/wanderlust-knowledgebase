@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTheme } from '../contexts/ThemeContext';
+import MermaidDiagram from './MermaidDiagram';
 
 interface CodeBlockProps {
   children: string;
@@ -24,6 +25,11 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, inline }) =>
         {children}
       </code>
     );
+  }
+
+  // Handle Mermaid diagrams
+  if (language.toLowerCase() === 'mermaid') {
+    return <MermaidDiagram chart={children} />;
   }
 
   // Copy to clipboard functionality

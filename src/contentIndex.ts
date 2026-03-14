@@ -28,12 +28,7 @@ export const contentIndex: ContentNode[] = [
         title: "Getting Started",
         description: "Essential setup and orientation for new developers",
         children: [
-            'getting-started/setup-build': {
-      title: 'Setup & Build System',
-      description: 'Comprehensive guide to setting up the Chromium development environment, from source checkout to build system configuration, including extensive troubleshooting for network and SSL issues',
-      category: 'Getting Started',
-      tags: ['setup', 'build', 'development', 'environment', 'gclient', 'gn', 'ninja', 'troubleshooting', 'network', 'ssl']
-    },
+            { title: 'Setup & Build System', path: 'getting-started/setup-build' },
             { title: "Build Performance & Optimization", path: "getting-started/build-performance-optimization" },
             { title: "Project Layout", path: "getting-started/project-layout" },
             { title: "Code Directory Structure", path: "getting-started/code-directory-structure" },

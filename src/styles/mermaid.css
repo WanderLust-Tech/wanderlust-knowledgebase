@@ -1,0 +1,86 @@
+/* Mermaid diagram specific styles */
+.mermaid-diagram {
+  @apply flex justify-center items-center min-h-32;
+}
+
+/* Ensure mermaid diagrams are properly contained */
+.mermaid-diagram svg {
+  @apply max-w-full h-auto;
+}
+
+/* Dark theme adjustments for mermaid diagrams */
+.dark .mermaid-diagram svg {
+  /* Override any hardcoded colors that don't work well in dark mode */
+  filter: brightness(0.9) contrast(1.1);
+}
+
+/* Light theme adjustments */
+.mermaid-diagram svg {
+  filter: brightness(1) contrast(1);
+}
+
+/* Mermaid diagram responsive behavior */
+@media (max-width: 768px) {
+  .mermaid-diagram svg {
+    @apply text-xs;
+  }
+}
+
+/* Loading state for mermaid diagrams */
+.mermaid-diagram .loading {
+  @apply flex flex-col items-center justify-center py-8 text-gray-500;
+}
+
+.mermaid-diagram .loading .spinner {
+  @apply animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full mb-3;
+}
+
+/* Error state for mermaid diagrams */
+.mermaid-diagram .error {
+  @apply p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg;
+}
+
+.mermaid-diagram .error-header {
+  @apply flex items-center gap-2 text-red-700 dark:text-red-300 mb-2;
+}
+
+.mermaid-diagram .error-icon {
+  @apply w-5 h-5;
+}
+
+.mermaid-diagram .error-title {
+  @apply font-semibold;
+}
+
+.mermaid-diagram .error-message {
+  @apply text-red-600 dark:text-red-400 text-sm;
+}
+
+.mermaid-diagram .error-details {
+  @apply mt-2;
+}
+
+.mermaid-diagram .error-summary {
+  @apply text-sm text-red-600 dark:text-red-400 cursor-pointer hover:underline;
+}
+
+.mermaid-diagram .error-source {
+  @apply mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs overflow-x-auto;
+}
+
+/* Accessibility improvements */
+.mermaid-diagram svg {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+}
+
+/* Print styles for mermaid diagrams */
+@media print {
+  .mermaid-diagram svg {
+    @apply max-w-full;
+    filter: none !important;
+  }
+  
+  .dark .mermaid-diagram svg {
+    filter: none !important;
+  }
+}
