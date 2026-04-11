@@ -29,7 +29,13 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, inline }) =>
 
   // Handle Mermaid diagrams
   if (language.toLowerCase() === 'mermaid') {
-    return <MermaidDiagram chart={children} />;
+    console.log('CodeBlock: Detected mermaid diagram');
+    console.log('CodeBlock: Raw children:', children);
+    console.log('CodeBlock: Children type:', typeof children);
+    const diagramContent = String(children).replace(/\n$/, '');
+    console.log('CodeBlock: Processed diagram content:', diagramContent);
+    console.log('CodeBlock: Content length:', diagramContent.length);
+    return <MermaidDiagram chart={diagramContent} />;
   }
 
   // Copy to clipboard functionality
@@ -93,11 +99,15 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, inline }) =>
           border: 'none',
           fontSize: '14px',
           lineHeight: '1.5',
+          backgroundColor: theme === 'dark' ? '#1f2937' : undefined,
+          background: theme === 'dark' ? '#1f2937' : undefined,
         }}
         codeTagProps={{
           style: {
             fontSize: '14px',
             fontFamily: 'Monaco, Menlo, "Ubuntu Mono", Consolas, source-code-pro, monospace',
+            backgroundColor: theme === 'dark' ? '#1f2937' : undefined,
+            background: theme === 'dark' ? '#1f2937' : undefined,
           }
         }}
         showLineNumbers={children.split('\n').length > 5} // Show line numbers for longer code blocks

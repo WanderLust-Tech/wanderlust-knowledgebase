@@ -2,6 +2,42 @@
 
 This guide shows you how to fetch, build, and run Chromium from source on **Linux**, **macOS**, or **Windows**.
 
+## Setup Process Overview
+
+The Chromium setup and build process follows these key phases:
+
+```mermaid
+flowchart TD
+    A[Start Setup] --> B{Prerequisites Met?}
+    B -->|No| C[Install Prerequisites]
+    B -->|Yes| D[Install Depot Tools]
+    
+    C --> C1[Install Python 3.8+]
+    C1 --> C2[Install Git 2.25+]
+    C2 --> C3[Ensure 30GB+ disk space]
+    C3 --> D
+    
+    D --> E[Create Working Directory]
+    E --> F[Fetch Chromium Source]
+    F --> G[Run gclient sync]
+    G --> H[Configure Build with GN]
+    H --> I[Build with Ninja]
+    
+    I --> J{Build Success?}
+    J -->|No| K[Check Error Logs]
+    J -->|Yes| L[Run Chromium]
+    
+    K --> M[Apply Fixes]
+    M --> I
+    
+    L --> N[Setup Complete!]
+    
+    style A fill:#e3f2fd
+    style N fill:#c8e6c9
+    style K fill:#ffcdd2
+    style C fill:#fff3e0
+```
+
 ---
 
 ## 1. Prerequisites

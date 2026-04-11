@@ -43,6 +43,45 @@ Ctrl+Shift+B              # Run build task
 Ctrl+Shift+P → "Tasks"    # Access all tasks
 ```
 
+## Debug Workflow Process
+
+The debugging workflow follows a systematic approach for effective troubleshooting:
+
+```mermaid
+flowchart TD
+    A[Issue Identified] --> B{Build Available?}
+    B -->|No| C[Run npm run build]
+    B -->|Yes| D[Check Build Type]
+    
+    C --> D
+    D --> E{Debug or Release?}
+    
+    E -->|Debug Needed| F[Configure Debug Settings]
+    E -->|Release Testing| G[Configure Release Settings]
+    
+    F --> H[Set Breakpoints]
+    G --> H
+    
+    H --> I[Launch Debugger F5]
+    I --> J[Reproduce Issue]
+    J --> K{Issue Found?}
+    
+    K -->|Yes| L[Analyze Stack Trace]
+    K -->|No| M[Enable More Logging]
+    
+    L --> N[Fix Issue]
+    M --> O[Add DVLOG/LOG statements]
+    O --> P[Rebuild and Test]
+    P --> J
+    
+    N --> Q[Verify Fix]
+    Q --> R[Deploy/Commit]
+    
+    style A fill:#ffcdd2
+    style N fill:#c8e6c9
+    style R fill:#e1f5fe
+```
+
 ### Common Logging Commands
 
 ```bash

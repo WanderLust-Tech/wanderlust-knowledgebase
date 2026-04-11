@@ -1,7 +1,43 @@
 # Life of a Navigation
 
 > **Status**: Active | **Last Updated**: December 2024 | **Chromium Version**: v134+  
-> **Document Level**: Intermediate | ## Network Request and Response
+> **Document Level**: Intermediate | 
+
+## Navigation Lifecycle Overview
+
+The Chrome navigation process involves multiple components working together to load and display web pages:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Browser as Browser Process
+    participant Network as Network Service
+    participant Renderer as Renderer Process
+    participant GPU as GPU Process
+    
+    User->>Browser: Navigate to URL
+    Browser->>Browser: Check cache/preload
+    
+    alt Cache Miss
+        Browser->>Network: HTTP Request
+        Network->>Network: DNS Resolution
+        Network->>Network: TCP/TLS Handshake
+        Network-->>Browser: Response Headers
+        Browser->>Browser: Security Check
+        Network-->>Browser: Response Body
+    else Cache Hit
+        Browser->>Browser: Validate cached resource
+    end
+    
+    Browser->>Renderer: Create/Navigate Frame
+    Renderer->>Renderer: Parse HTML/CSS
+    Renderer->>Renderer: Build DOM/Layout
+    Renderer->>GPU: Commit Frame
+    GPU->>GPU: Composite
+    GPU-->>User: Display Page
+```
+
+## Network Request and Response
 
 Chromium v134+ implements sophisticated network handling with enhanced performance, security, and reliability features.
 

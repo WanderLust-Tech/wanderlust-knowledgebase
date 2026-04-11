@@ -148,6 +148,62 @@
   color: #f3f4f6;
 }
 
+/* Dark mode code block styling - high specificity to override SyntaxHighlighter */
+.dark .markdown-body pre[class*="language-"],
+.dark .markdown-body code[class*="language-"],
+.dark div[class*="language-"] pre,
+.dark div[class*="language-"] code,
+.dark pre[class*="language-"] {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+/* Override any syntax highlighter token backgrounds */
+.dark .token.comment,
+.dark .token.prolog,
+.dark .token.doctype,
+.dark .token.cdata {
+  background: transparent !important;
+}
+
+/* Ensure all syntax highlighter containers respect dark mode */
+.dark div[style*="background"] pre,
+.dark div[style*="background-color"] pre {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+}
+
+/* Override inline styles on syntax highlighter components */
+.dark [class*="language-"] {
+  background: #1f2937 !important;
+}
+
+/* Specific override for react-syntax-highlighter containers */
+.dark div[class*="language-"] > div,
+.dark pre[class*="language-"] > div {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+}
+
+/* Additional broad overrides for any remaining white backgrounds in dark mode */
+.dark pre,
+.dark .hljs,
+.dark [class*="hljs"],
+.dark [style*="background-color: rgb(246, 248, 250)"],
+.dark [style*="background-color: #f6f8fa"],
+.dark [style*="background-color: white"],
+.dark [style*="background-color: #ffffff"],
+.dark [style*="background-color: #fff"] {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+}
+
+/* Override any remaining token styles that might have light backgrounds */
+.dark .token {
+  background: transparent !important;
+}
+
 .dark .markdown-body blockquote {
   color: #9ca3af;
   border-left-color: #4b5563;

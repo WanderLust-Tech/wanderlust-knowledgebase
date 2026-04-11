@@ -9,28 +9,42 @@ This article explores the major C++ components that comprise Chromium's **browse
 > **Service-Oriented Multi-Process Design**  
 > The browser process serves as the central coordinator, managing UI, security policies, and service orchestration while delegating specialized work to dedicated service processes.
 
-```text
-┌─────────────────┐    Mojo IPC    ┌──────────────────┐
-│ Browser Process │ ◄─────────────► │ Renderer Process │
-│                 │                │                  │
-│ ┌─────────────┐ │                │ ┌──────────────┐ │
-│ │ UI Manager  │ │                │ │ Blink Engine │ │
-│ │ Service Mgr │ │                │ │ V8 Engine    │ │
-│ │ Security    │ │                │ │ DOM/Layout   │ │
-│ └─────────────┘ │                │ └──────────────┘ │
-└─────────────────┘                └──────────────────┘
-         │ Mojo                               │
-         ▼                                    ▼
-┌─────────────────┐                ┌──────────────────┐
-│ Service         │                │ GPU Process      │
-│ Ecosystem       │                │                  │
-│                 │                │ ┌──────────────┐ │
-│ • Network       │                │ │ Viz Display  │ │
-│ • Audio         │                │ │ Compositor   │ │
-│ • Storage       │                │ │ OOP-R        │ │
-│ • ML/AI         │                │ └──────────────┘ │
-│ • Device        │                └──────────────────┘
-└─────────────────┘
+```mermaid
+graph TB
+    subgraph BP ["Browser Process"]
+        UI[UI Manager]
+        SM[Service Manager]
+        SEC[Security]
+    end
+
+    subgraph RP ["Renderer Process"]
+        BLINK[Blink Engine]
+        V8[V8 Engine]
+        DOM[DOM/Layout]
+    end
+
+    subgraph SE ["Service Ecosystem"]
+        NET[Network Service]
+        AUD[Audio Service]
+        STOR[Storage Service]
+        ML[ML/AI Service]
+        DEV[Device Service]
+    end
+
+    subgraph GPU ["GPU Process"]
+        VIZ[Viz Display Compositor]
+        OOP[Out-of-Process Rasterization]
+    end
+
+    BP <-->|Mojo IPC| RP
+    BP -->|Mojo| SE
+    RP -->|Graphics Commands| GPU
+    SE -->|Resource Loading| GPU
+
+    style BP fill:#e1f5fe
+    style RP fill:#f3e5f5
+    style SE fill:#e8f5e8
+    style GPU fill:#fff3e0
 ```
 
 **Modern Component Locations**: `src/chrome/`, `src/content/`, `src/services/`, `src/components/`, `src/ui/`

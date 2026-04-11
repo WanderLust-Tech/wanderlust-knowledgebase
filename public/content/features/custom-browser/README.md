@@ -23,6 +23,7 @@ This directory contains detailed documentation for all custom features implement
 - **[Vertical Tabs UI](vertical-tabs-ui.md)**: Modern React-based tab interface component
 - **[Custom Settings UI](custom-settings-ui.md)**: Enhanced browser configuration interface
 - **[Custom Download Shelf](custom-download-shelf.md)**: Enhanced download management with visibility control
+- **[Tab Shapes Feature](tab-shapes-feature.md)**: Customizable tab appearance with Round, Rectangle, and Trapezoid options
 
 ### 🆕 Modernized Browser Features (v1.1.0)
 - **[Feature Flag Management](feature-flag-management.md)**: Centralized control over Chromium feature flags with build-time configuration
@@ -67,6 +68,7 @@ Features are organized following Chromium's architecture patterns:
 
 ### 🖥️ User Interface
 - **Vertical Tabs UI**: Alternative tab layout options
+- **Tab Shapes Feature**: Customizable tab appearance (Round, Rectangle, Trapezoid)
 - **Custom Settings UI**: Enhanced browser configuration
 - **Multi-Brand Support**: Configurable browser branding
 - **Custom Download Shelf**: Enhanced download management with additional controls
@@ -93,6 +95,7 @@ Features are organized following Chromium's architecture patterns:
 | [Google API Suppression](google-api-suppression.md) | ✅ Complete | ✅ Full | InfoBar System | ✅ Tested |
 | [Custom Settings UI](custom-settings-ui.md) | ✅ Complete | 🔄 Partial | Settings API | ✅ Tested |
 | [Custom Download Shelf](custom-download-shelf.md) | ✅ Complete | ✅ Full | Browser Layout | ✅ Tested |
+| [Tab Shapes Feature](tab-shapes-feature.md) | ⚠️ Partial | ✅ Full | UI Preferences + Tab Rendering | 🔄 Debug Needed |
 | [Enhanced Omnibox](enhanced-omnibox.md) | 🔄 In Progress | 🔄 Partial | Search API | 🔄 Partial |
 | [Build System Integration](build-system-integration.md) | ✅ Complete | ✅ Full | GN/Ninja | ✅ Tested |
 | **[Feature Flag Management](feature-flag-management.md)** | **✅ Complete** | **✅ Full** | **Build System + Runtime** | **🆕 New** |

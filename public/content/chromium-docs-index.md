@@ -58,22 +58,17 @@ used when committed.
 **Note**: this is not an exhaustive list of all documents.
 
 ### Checking Out and Building
-*   [Linux Build Instructions](linux/build_instructions.md) - Linux
-*   [Mac Build Instructions](mac_build_instructions.md) - MacOS
-*   [Windows Build Instructions](windows_build_instructions.md) - Windows
-*   [Android Build Instructions](android_build_instructions.md) - Android target
-    (on a Linux host)
-*   [Cast Build Instructions](linux/cast_build_instructions.md) - Cast target
-    (on a Linux host)
-*   [Cast for Android Build Instructions](android_cast_build_instructions.md) -
-    Cast for Android (on a Linux host)
-*   [Fuchsia Build Instructions](fuchsia/build_instructions.md) -
-    Fuchsia target (on a Linux host)
-*   [iOS Build Instructions](ios/build_instructions.md) - iOS target (on a MacOS
-    host)
-*   [Chrome OS Build Instructions](chromeos_build_instructions.md) - Chrome OS
-*   [Linux Chromium ARM Recipes](linux/chromium_arm.md) - Recipes for building
-    Chromium for ARM on Linux.
+*   [General Build Setup Guide](getting-started/setup-build.md) - Cross-platform build setup for Linux, macOS, and Windows
+*   [Windows Build Instructions](platforms/windows/windows_build_instructions.md) - Windows-specific build details
+*   [Mac Build Instructions](platforms/mac/mac_build_instructions.md) - macOS-specific build details
+*   [Android Build Instructions](platforms/android/android_build_instructions.md) - Android target (on a Linux host)
+*   [Android Cast Build Instructions](platforms/android/android_cast_build_instructions.md) - Cast for Android (on a Linux host)
+*   [iOS Build Instructions](platforms/ios/ios_build_instructions.md) - iOS target (on a MacOS host)
+*   [Chrome OS Build Instructions](platforms/chromeos/chromeos_build_instructions.md) - Chrome OS target
+*   [Custom Browser Development](development/custom-browser-development.md) - Complete development workflow for custom browser builds
+*   [Custom Browser Build System](development/custom-browser-build-system.md) - Build system integration and configuration
+*   [Linux Chromium ARM Recipes](platforms/linux/chromium_arm.md) - Recipes for building
+    Chromium for ARM on Linux (if available)
 *   [Chrome Component Build](component_build.md) - Faster builds using more
     libraries
 *   [Using the BuildRunner](using_build_runner.md) - Scripts that extract build
@@ -324,7 +319,7 @@ used when committed.
     hardware video decode codepaths on Linux
 
 ### Misc MacOS-Specific Docs
-*   [Mac Debugging Tips](mac/debugging.md) - An introduction to debugging on
+*   [Mac Debugging Tips](platforms/mac/debugging.md) - An introduction to debugging on
     Mac, as well as a collection of useful tips.
 *   [Using CCache on Mac](ccache_mac.md) - Speed up builds on Mac using ccache
     with clang/ninja
@@ -354,7 +349,7 @@ used when committed.
     on a remote machine for an Android device connected to your local machine
 *   [Android Test Instructions](testing/android_test_instructions.md) - Running a build
     on an Android device or emulator.
-*   [Android Debugging](android_debugging_instructions.md) - Tools and tips for
+*   [Android Debugging](platforms/android/android_debugging_instructions.md) - Tools and tips for
     how to debug Java and/or C/C++ code running on Android.
 *   [Android Logging](android_logging.md) - How Chrome's logging API works with
     `android.util.Log` on Android, and usage guidelines.
@@ -369,13 +364,13 @@ used when committed.
     developing UI
 
 ### Misc iOS-Specific Docs
-*   [Continuous Build and Test Infrastructure for Chromium for iOS](ios/infra.md)
-*   [Opening links in Chrome for iOS](ios/opening_links.md) - How to have your
+*   [Continuous Build and Test Infrastructure for Chromium for iOS](platforms/ios/ios_infra.md)
+*   [Opening links in Chrome for iOS](platforms/ios/opening_links.md) - How to have your
     iOS app open links in Chrome.
-*   [User Agent in Chrome for iOS](ios/user_agent.md) - Notes on User Agent
+*   [User Agent in Chrome for iOS](platforms/ios/user_agent.md) - Notes on User Agent
     strings using Chrome for iOS.
-*   [Running iOS test suites locally](ios/testing.md)
-*   [Working With Project Files in iOS](ios/working_with_files.md) - How
+*   [Running iOS test suites locally](platforms/ios/testing.md)
+*   [Working With Project Files in iOS](platforms/ios/working_with_files.md) - How
     to add, remove, and rename files in the iOS Chromium project.
 
 ### Misc Chrome-OS-Specific Docs
@@ -435,7 +430,7 @@ used when committed.
     BRLTTY to support refreshable braille displays
 *   [PATTS on Chrome OS](accessibility/os/patts.md) - Notes on the PATTS speech
     synthesis engine used on Chrome OS
-*   [VoiceOver](ios/voiceover.md) - Using Apple's VoiceOver feature with
+*   [VoiceOver](platforms/ios/ios_voiceover.md) - Using Apple's VoiceOver feature with
     Chromium on iOS.
 
 ### Autofill & Payments

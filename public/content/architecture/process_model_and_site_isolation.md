@@ -11,6 +11,61 @@ This comprehensive document explores the complete architecture of Chromium's pro
 
 ![Process Model Architecture](../../img/architecture/multiprocess-architecture.png)
 
+## Chromium v134+ Process Architecture
+
+The modern Chromium process model provides sophisticated isolation and security through a distributed architecture:
+
+```mermaid
+graph TB
+    subgraph "Browser Host Process"
+        BrowserMain[Browser Main Thread]
+        UI[UI Thread]
+        IO[IO Thread]
+        Network[Network Service]
+        Storage[Storage Service]
+    end
+    
+    subgraph "Security Boundary"
+        subgraph "Site A Processes"
+            RendererA[Renderer Process A]
+            WorkerA[Service Worker A]
+        end
+        
+        subgraph "Site B Processes" 
+            RendererB[Renderer Process B]
+            WorkerB[Dedicated Worker B]
+        end
+        
+        subgraph "Shared Services"
+            GPU[GPU Process]
+            Audio[Audio Service]
+            Utility[Utility Process]
+        end
+    end
+    
+    subgraph "Extension Isolation"
+        ExtProcess[Extension Process]
+        ExtWorker[Extension Service Worker]
+    end
+    
+    BrowserMain -.->|Mojo IPC| RendererA
+    BrowserMain -.->|Mojo IPC| RendererB  
+    BrowserMain -.->|Mojo IPC| GPU
+    BrowserMain -.->|Mojo IPC| ExtProcess
+    
+    RendererA -.->|Graphics Commands| GPU
+    RendererB -.->|Graphics Commands| GPU
+    
+    Network -.->|Network Requests| RendererA
+    Network -.->|Network Requests| RendererB
+    
+    style BrowserMain fill:#e1f5fe
+    style RendererA fill:#f3e5f5  
+    style RendererB fill:#f3e5f5
+    style GPU fill:#fff3e0
+    style ExtProcess fill:#e8f5e8
+```
+
 ## Table of Contents
 
 - [Goals and Principles](#goals-and-principles)

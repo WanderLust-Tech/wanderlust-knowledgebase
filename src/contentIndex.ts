@@ -19,6 +19,7 @@ export const contentIndex: ContentNode[] = [
         description: "Start here to understand what Chromium is and why it matters",
         children: [
             { title: "What is Chromium?", path: "introduction/overview" },
+            { title: "Custom Browser Overview", path: "introduction/custom-browser-overview" },
             { title: "Chromium Documentation Index", path: "chromium-docs-index" }
         ]
     },
@@ -35,12 +36,12 @@ export const contentIndex: ContentNode[] = [
             {
                 title: "Platform-Specific Build Instructions", 
                 children: [
-                    { title: "Windows Build", path: "development/build/windows_build_instructions" },
-                    { title: "Mac Build", path: "development/build/mac_build_instructions" },
-                    { title: "Android Build", path: "development/build/android_build_instructions" },
-                    { title: "Chrome OS Build", path: "development/build/chromeos_build_instructions" },
-                    { title: "iOS Build", path: "development/build/ios_build_instructions" },
-                    { title: "Android Cast Build", path: "development/build/android_cast_build_instructions" }
+                    { title: "Windows Build", path: "platforms/windows/windows_build_instructions" },
+                    { title: "Mac Build", path: "platforms/mac/mac_build_instructions" },
+                    { title: "Android Build", path: "platforms/android/android_build_instructions" },
+                    { title: "Chrome OS Build", path: "platforms/chromeos/chromeos_build_instructions" },
+                    { title: "iOS Build", path: "platforms/ios/ios_build_instructions" },
+                    { title: "Android Cast Build", path: "platforms/android/android_cast_build_instructions" }
                 ]
             }
         ]
@@ -142,6 +143,8 @@ export const contentIndex: ContentNode[] = [
         description: "Modern Chromium APIs and service architecture",
         children: [
             { title: "APIs & Services Overview", path: "apis/overview" },
+            { title: "API Reference", path: "apis/api-reference" },
+            { title: "Scripts Reference", path: "apis/scripts-reference" },
             { title: "Mojo & Services", path: "apis/mojo_and_services" },
             { title: "Mojo IPC Conversion", path: "apis/mojo_ipc_conversion" },
             { title: "Servicification", path: "apis/servicification" },
@@ -149,7 +152,56 @@ export const contentIndex: ContentNode[] = [
         ]
     },
 
-    // PHASE 7.5: FEATURES & IMPLEMENTATIONS
+    // PHASE 7.5: CUSTOM BROWSER FEATURES
+    {
+        title: "Custom Browser Features",
+        description: "Wanderlust Custom Browser specific features and implementations",
+        children: [
+            { title: "Features Overview", path: "features/custom-browser/README" },
+            {
+                title: "Core Features",
+                children: [
+                    { title: "Custom Cache Feature", path: "features/custom-browser/custom-cache-feature" },
+                    { title: "Remote New Tab Page System", path: "features/custom-browser/remote-ntp-documentation" },
+                    { title: "RSS Feed Support", path: "features/custom-browser/rss-feed-support" },
+                    { title: "RSS User Guide", path: "features/custom-browser/rss-user-guide" },
+                    { title: "Privacy Guard", path: "features/custom-browser/privacy-guard" },
+                    { title: "Vertical Tabs UI", path: "features/custom-browser/vertical-tabs-ui" },
+                    { title: "Custom Settings UI", path: "features/custom-browser/custom-settings-ui" },
+                    { title: "Custom Download Shelf", path: "features/custom-browser/custom-download-shelf" },
+                    { title: "Tab Shapes Feature", path: "features/custom-browser/tab-shapes-feature" }
+                ]
+            },
+            {
+                title: "Modernized Browser Features (v1.1.0)",
+                children: [
+                    { title: "Feature Flag Management", path: "features/custom-browser/feature-flag-management" },
+                    { title: "Enhanced Scroll Animations", path: "features/custom-browser/enhanced-scroll-animations" },
+                    { title: "JavaScript Content Controls", path: "features/custom-browser/javascript-content-controls" },
+                    { title: "Advanced Download Management", path: "features/custom-browser/advanced-download-management" },
+                    { title: "Reader Mode Integration", path: "features/custom-browser/reader-mode-integration" }
+                ]
+            },
+            {
+                title: "System Features",
+                children: [
+                    { title: "Multi-Brand System", path: "features/custom-browser/multi-brand-system" },
+                    { title: "Google API Suppression", path: "features/custom-browser/google-api-suppression" },
+                    { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
+                    { title: "Build System Integration", path: "features/custom-browser/build-system-integration" }
+                ]
+            },
+            {
+                title: "Legacy Documentation",
+                children: [
+                    { title: "Custom Features Implementation", path: "features/custom-browser/custom-features-implementation" },
+                    { title: "RSS Restoration Summary", path: "features/custom-browser/rss-feature-restoration-summary" }
+                ]
+            }
+        ]
+    },
+
+    // PHASE 7.6: FEATURES & IMPLEMENTATIONS
     {
         title: "Features & Implementations",
         description: "Chrome feature implementations and development case studies",
@@ -207,6 +259,13 @@ export const contentIndex: ContentNode[] = [
         children: [
             { title: "Development Overview", path: "development/overview" },
             { title: "Browser Industry Economics", path: "development/browser-industry-economics" },
+            {
+                title: "Custom Browser Development",
+                children: [
+                    { title: "Custom Browser Development Guide", path: "development/custom-browser-development" },
+                    { title: "Custom Browser Build System", path: "development/custom-browser-build-system" }
+                ]
+            },
             { title: "Git Cookbook", path: "development/git_cookbook" },
             { title: "Git Tips", path: "development/git_tips" },
             { title: "Git Submodules", path: "development/git_submodules" },
@@ -375,9 +434,23 @@ export const contentIndex: ContentNode[] = [
         title: "Debugging & Troubleshooting",
         description: "Tools and techniques for debugging Chromium issues",
         children: [
+            { title: "Debugging Overview", path: "debugging/overview" },
+            { title: "Debugging Guide", path: "debugging/debugging-guide" },
             { title: "Debugging Tools Overview", path: "debugging/debugging-tools", description: "Comprehensive guide to Chrome DevTools for web content and UI DevTools for desktop interface debugging, plus additional debugging tools and techniques" },
             { title: "Chrome Internals URLs", path: "debugging/chrome-internals-urls" },
-            { title: "Crash Reports Analysis", path: "debugging/crash-reports" }
+            { title: "Command Line Switches", path: "debugging/command-line-switches" },
+            { title: "Crash Reports Analysis", path: "debugging/crash-reports" },
+            { title: "Troubleshooting", path: "debugging/troubleshooting" },
+            {
+                title: "Advanced Debugging",
+                children: [
+                    { title: "Android Debugging Instructions", path: "debugging/android_debugging_instructions" },
+                    { title: "Debugging with Crash Keys", path: "debugging/debugging_with_crash_keys" },
+                    { title: "GDB Init", path: "debugging/gdbinit" },
+                    { title: "LLDB Init", path: "debugging/lldbinit" },
+                    { title: "Graphical Debugging Aid for Views", path: "debugging/graphical_debugging_aid_chromium_views" }
+                ]
+            }
         ]
     },
 

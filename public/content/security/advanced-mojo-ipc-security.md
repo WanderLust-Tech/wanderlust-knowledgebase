@@ -22,6 +22,55 @@ The content is structured to provide both technical understanding for developers
 
 ## Mojo IPC Architecture Deep Dive
 
+### Mojo IPC Communication Architecture
+
+The Mojo IPC system provides secure inter-process communication through strongly-typed interfaces and message pipes:
+
+```mermaid
+graph TB
+    subgraph "Browser Process"
+        BrowserMojo[Browser Mojo Endpoint]
+        Interface[Mojo Interface]
+        Security[Security Validation]
+    end
+    
+    subgraph "Message Transport"
+        Pipe[Message Pipe]
+        Queue[Message Queue]
+        Serialization[Message Serialization]
+    end
+    
+    subgraph "Renderer Process (Sandboxed)"
+        RendererMojo[Renderer Mojo Endpoint]
+        JSBindings[JavaScript Bindings]
+        BlinkAPI[Blink API Integration]
+    end
+    
+    subgraph "Security Boundaries"
+        Sandbox[Process Sandbox]
+        TypeCheck[Type Validation]
+        PermCheck[Permission Checks]
+    end
+    
+    BrowserMojo -.->|Send Message| Pipe
+    Pipe -.->|Deliver| RendererMojo
+    RendererMojo -.->|Response| Pipe
+    Pipe -.->|Return| BrowserMojo
+    
+    Security --> TypeCheck
+    Security --> PermCheck
+    TypeCheck --> Pipe
+    PermCheck --> Pipe
+    
+    Sandbox --> RendererMojo
+    Interface --> BrowserMojo
+    
+    style BrowserMojo fill:#e1f5fe
+    style RendererMojo fill:#fff3e0
+    style Sandbox fill:#ffcdd2
+    style Security fill:#c8e6c9
+```
+
 ### Message Pipes and Communication Patterns
 
 **Message pipes** form the foundation of Mojo communication. Each pipe consists of two endpoints that correspond to both ends of bidirectional communication. Each endpoint maintains an incoming message queue, enabling efficient message delivery between processes.

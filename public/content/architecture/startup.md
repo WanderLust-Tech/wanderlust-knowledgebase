@@ -5,6 +5,32 @@ the interesting sorts of processes we use.
 
 Here's an overview of how that works.
 
+## Chrome Startup Process Overview
+
+The Chrome startup process follows a platform-agnostic flow with platform-specific entry points:
+
+```mermaid
+flowchart TD
+    A[Platform Entry Point] --> B[ChromeMain]
+    B --> C{Process Type Check}
+    C -->|--type=browser| D[BrowserMain]
+    C -->|--type=renderer| E[RendererMain]
+    C -->|--type=gpu| F[GpuMain]
+    C -->|--type=utility| G[UtilityMain]
+    
+    D --> H[Browser Process Initialization]
+    E --> I[Renderer Process Setup]
+    F --> J[GPU Process Setup]
+    G --> K[Utility Process Setup]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#fff3e0
+    style D fill:#e8f5e8
+```
+
+## Detailed Startup Flow
+
 1. First there's the platform-specific entry point: `wWinMain()` on Windows,
    `main()` on Linux.  This lives in `chrome/app/chrome_exe_main_*`.  On Mac and
    Windows, that function loads modules as described later, while on Linux it
@@ -17,6 +43,35 @@ Here's an overview of how that works.
    browser process) or `RendererMain()` (for a tab-specific renderer process).
 
 ## Platform-specific entry points
+
+Platform-specific startup implementations vary based on the operating system architecture:
+
+```mermaid
+flowchart LR
+    subgraph Windows ["Windows Platform"]
+        WinMain[wWinMain] --> LoadDLL[Load chrome.dll]
+        LoadDLL --> |"Call into DLL"| ChromeMainWin[ChromeMain]
+    end
+    
+    subgraph Mac ["Mac Platform"]
+        MacMain[main] --> |"Direct call"| ChromeMainMac[ChromeMain]
+        AppMode[chrome_main_app_mode_mac.mm] --> |"App shortcuts"| ChromeMainMac
+    end
+    
+    subgraph Linux ["Linux Platform"]
+        LinuxMain[main] --> Fork[Fork Helper Process]
+        Fork --> |"Child processes resume"| ChromeMainLinux[ChromeMain]
+        Fork --> |"Sandbox isolation"| SubProcesses[Subprocess Resume]
+    end
+    
+    ChromeMainWin --> CommonFlow[Cross-platform ChromeMain]
+    ChromeMainMac --> CommonFlow
+    ChromeMainLinux --> CommonFlow
+    
+    style Windows fill:#e3f2fd
+    style Mac fill:#f1f8e9
+    style Linux fill:#fff3e0
+```
 
 ### Windows
 

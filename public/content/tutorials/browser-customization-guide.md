@@ -20,6 +20,61 @@ Learn how to create a differentiated Chromium-based browser by studying real-wor
 
 Vivaldi provides an excellent example of successful Chromium customization through their three-part architecture approach:
 
+### Browser Customization Architecture
+
+The modern browser customization strategy follows a layered approach that balances compatibility with differentiation:
+
+```mermaid
+graph TB
+    subgraph "Core Foundation Layer"
+        Chromium[Chromium Base]
+        Blink[Blink Engine]
+        V8[V8 JavaScript Engine]
+        Security[Security Framework]
+    end
+    
+    subgraph "Customization Layer"
+        UICustom[Custom UI Components]
+        ThemeSystem[Theme System]
+        FeatureAdditions[Feature Additions]
+        APIMods[API Modifications]
+    end
+    
+    subgraph "Service Layer"
+        CustomSync[Custom Sync Service]
+        Backend[Custom Backend]
+        Privacy[Privacy Services]
+        Analytics[Custom Analytics]
+    end
+    
+    subgraph "User Experience"
+        Interface[Browser Interface]
+        Extensions[Extension System]
+        Settings[User Settings]
+        Data[User Data Management]
+    end
+    
+    Chromium --> UICustom
+    Blink --> FeatureAdditions
+    V8 --> APIMods
+    Security --> Privacy
+    
+    UICustom --> Interface
+    ThemeSystem --> Interface
+    FeatureAdditions --> Extensions
+    
+    CustomSync --> Data
+    Backend --> Analytics
+    Privacy --> Data
+    
+    style Chromium fill:#e1f5fe
+    style UICustom fill:#f3e5f5
+    style CustomSync fill:#e8f5e8
+    style Interface fill:#fff3e0
+```
+
+Vivaldi provides an excellent example of successful Chromium customization through their three-part architecture approach:
+
 ### **Part 1: Shared Foundation (Blink Engine)**
 Vivaldi demonstrates the strategic advantage of maintaining engine compatibility:
 

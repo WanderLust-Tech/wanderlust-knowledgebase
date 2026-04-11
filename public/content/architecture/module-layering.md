@@ -27,6 +27,76 @@ Chromium's architecture has evolved from a simple Browser/Renderer separation in
 
 ## 2. Modern Layered Architecture Overview
 
+### Chromium v134+ Architectural Layers
+
+The modern Chromium architecture follows a sophisticated layering approach with clear separation of concerns and security boundaries:
+
+```mermaid
+graph TB
+    subgraph "Layer 5: Browser Features & UI"
+        Chrome[Chrome Browser Interface]
+        Extensions[Extension System]
+        WebUI[WebUI Framework]
+        Settings[Settings & Preferences]
+    end
+    
+    subgraph "Layer 4: Specialized Services"
+        Network[Network Service<br/>HTTP/3, QUIC, DNS-over-HTTPS]
+        Storage[Storage Service<br/>Encrypted DB, OPFS]
+        Audio[Audio Service<br/>Spatial Audio, HW Accel]
+        GPU[GPU Service<br/>Vulkan, Ray Tracing]
+        ML[ML Service<br/>TensorFlow Lite, Privacy AI]
+        Device[Device Service<br/>WebHID, WebUSB]
+    end
+    
+    subgraph "Layer 3: Web Platform Core (content/)"
+        Blink[Blink Rendering Engine<br/>DOM, CSS, Layout]
+        V8[V8 JavaScript Engine<br/>WebAssembly Support]
+        SiteIsolation[Site Isolation<br/>Security Boundaries]
+        WebAPIs[Web APIs<br/>WebGPU, WebNN, Storage]
+    end
+    
+    subgraph "Layer 2: Infrastructure Services"
+        Mojo[Mojo IPC<br/>Capability-based Security]
+        ServiceMgr[Service Manager<br/>Dependency Injection]
+        ProcessMgmt[Process Lifecycle<br/>Health Monitoring]
+        Memory[Memory Optimization<br/>Garbage Collection]
+    end
+    
+    subgraph "Layer 1: Platform Foundation (base/)"
+        Platform[Platform Abstractions<br/>Windows, macOS, Linux]
+        Threading[Threading & Tasks<br/>Task Scheduling]
+        Crypto[Cryptographic Services<br/>Quantum-resistant]
+        Hardware[Hardware Abstraction<br/>CPU/GPU Features]
+    end
+    
+    Chrome --> Network
+    Chrome --> Storage
+    Extensions --> WebAPIs
+    WebUI --> Blink
+    
+    Network --> Mojo
+    Storage --> ServiceMgr
+    Audio --> ProcessMgmt
+    GPU --> Memory
+    
+    Blink --> Threading
+    V8 --> Platform
+    SiteIsolation --> Crypto
+    WebAPIs --> Hardware
+    
+    Mojo --> Platform
+    ServiceMgr --> Threading
+    ProcessMgmt --> Crypto
+    Memory --> Hardware
+    
+    style Chrome fill:#e1f5fe
+    style Network fill:#f3e5f5
+    style Blink fill:#e8f5e8
+    style Mojo fill:#fff3e0
+    style Platform fill:#fce4ec
+```
+
 ### Layer 1: Platform Abstraction Foundation
 ```
 ┌─────────────────────────────────────────────────────────────┐
