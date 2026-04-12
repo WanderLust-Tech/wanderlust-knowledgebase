@@ -1,3 +1,14 @@
+---
+title: "Security & Safety"
+description: "Welcome to the Security section! This area covers the comprehensive security model and safety mechanisms implemented in the Wanderlust custom..."
+category: "Security"
+tags: ["security", "overview"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # Security & Safety
 
 Welcome to the Security section! This area covers the comprehensive security model and safety mechanisms implemented in the Wanderlust custom Chromium browser.

@@ -1,3 +1,14 @@
+---
+title: "Chromium Architecture Overview (v134+)"
+description: "Modern Chromium v134+ represents the pinnacle of browser architectural engineering, embodying decades of evolution in software design principles,..."
+category: "Architecture"
+tags: ["architecture", "overview"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # Chromium Architecture Overview (v134+)
 
 Modern Chromium v134+ represents the pinnacle of browser architectural engineering, embodying decades of evolution in software design principles, security engineering, and performance optimization. This comprehensive overview explores the sophisticated architectural foundations that make Chromium one of the most advanced software systems ever built.

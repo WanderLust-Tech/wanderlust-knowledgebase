@@ -1,3 +1,14 @@
+---
+title: "Debugging & Troubleshooting"
+description: "Welcome to the Debugging section! This comprehensive guide helps developers debug, troubleshoot, and analyze issues in the Wanderlust custom Chromium..."
+category: "Debugging"
+tags: ["debugging", "overview", "debugging"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # Debugging & Troubleshooting
 
 Welcome to the Debugging section! This comprehensive guide helps developers debug, troubleshoot, and analyze issues in the Wanderlust custom Chromium browser.

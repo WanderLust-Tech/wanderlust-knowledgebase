@@ -1,3 +1,14 @@
+---
+title: "APIs & Services Overview"
+description: "Chromium's modern architecture relies heavily on well-defined APIs and service-oriented design. This section covers the key APIs and service..."
+category: "APIs"
+tags: ["apis", "overview"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # APIs & Services Overview
 
 Chromium's modern architecture relies heavily on well-defined APIs and service-oriented design. This section covers the key APIs and service architecture patterns used throughout the codebase.

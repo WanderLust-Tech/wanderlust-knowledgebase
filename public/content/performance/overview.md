@@ -1,3 +1,14 @@
+---
+title: "Performance & Optimization Overview"
+description: "Performance is critical to Chromium's success. This section covers the tools, techniques, and methodologies used to analyze, optimize, and maintain..."
+category: "Performance"
+tags: ["performance", "overview"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # Performance & Optimization Overview
 
 Performance is critical to Chromium's success. This section covers the tools, techniques, and methodologies used to analyze, optimize, and maintain Chromium's performance across different platforms and use cases.

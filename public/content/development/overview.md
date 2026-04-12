@@ -1,3 +1,14 @@
+---
+title: "Development Workflow Overview"
+description: "Effective Chromium development requires mastering a comprehensive set of tools, processes, and best practices. This section provides everything you..."
+category: "Development"
+tags: ["development", "overview"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # Development Workflow Overview
 
 Effective Chromium development requires mastering a comprehensive set of tools, processes, and best practices. This section provides everything you need to become a productive Chromium contributor.

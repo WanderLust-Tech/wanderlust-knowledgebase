@@ -1,3 +1,14 @@
+---
+title: "Interactive Learning Hub"
+description: "Welcome to the **Interactive Learning Hub** - your gateway to mastering Chromium development through hands-on, guided tutorials. Each tutorial..."
+category: "Tutorials"
+tags: ["tutorials", "overview"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # Interactive Learning Hub
 
 Welcome to the **Interactive Learning Hub** - your gateway to mastering Chromium development through hands-on, guided tutorials. Each tutorial provides step-by-step instructions, interactive code examples, and instant validation to accelerate your learning journey.

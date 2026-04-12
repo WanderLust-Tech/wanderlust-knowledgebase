@@ -29,6 +29,7 @@ export const contentIndex: ContentNode[] = [
         title: "Getting Started",
         description: "Essential setup and orientation for new developers",
         children: [
+            { title: "Getting Started Overview", path: "getting-started/overview" },
             { title: 'Setup & Build System', path: 'getting-started/setup-build' },
             { title: "Build Performance & Optimization", path: "getting-started/build-performance-optimization" },
             { title: "Project Layout", path: "getting-started/project-layout" },
@@ -54,20 +55,33 @@ export const contentIndex: ContentNode[] = [
         children: [
             { title: "Architecture Overview", path: "architecture/overview" },
             { title: "Process Model", path: "architecture/process-model" },
+            { title: "Process Model and Site Isolation", path: "architecture/process_model_and_site_isolation" },
             { title: "Module Layering", path: "architecture/module-layering" },
             { title: "Browser Components", path: "architecture/browser-components" },
             { title: "IPC Internals", path: "architecture/ipc-internals" },
+            { title: "Navigation Architecture", path: "architecture/navigation" },
+            { title: "Navigation Concepts", path: "architecture/navigation_concepts" },
+            { title: "Frame Trees", path: "architecture/frame_trees" },
+            { title: "Life of a Frame", path: "architecture/life_of_a_frame" },
+            { title: "Threading & Tasks", path: "architecture/threading" },
+            { title: "Startup Architecture", path: "architecture/startup" },
+            { title: "Sandbox Overview", path: "architecture/sandbox" },
+            { title: "Sandbox FAQ", path: "architecture/sandbox_faq" },
+            { title: "iOS Sandbox Forcefield", path: "architecture/ios_sandbox_forcefield" },
             { title: "UI Design Principles", path: "architecture/ui-design-principles" },
             { title: "UI Library Fundamentals", path: "architecture/ui-library-fundamentals" },
             { title: "UI Framework & Aura Architecture", path: "architecture/ui-framework-aura" },
+            { title: "Custom Browser Architecture", path: "architecture/custom-browser-architecture" },
             {
                 title: "Rendering System",
                 children: [
                     { title: "Rendering Architecture Fundamentals", path: "architecture/rendering-architecture-fundamentals" },
                     { title: "Render Pipeline (Modern)", path: "architecture/render-pipeline" },
+                    { title: "Chromium Compositor (CC)", path: "architecture/chromium-compositor-cc" },
                     { title: "Direct Rendering Display Compositor (DrDc)", path: "architecture/drdc-architecture" },
                     { title: "Graphics Layer Tree Creation", path: "architecture/graphics-layer-tree-creation" },
-                    { title: "CC Layer Tree Creation", path: "architecture/cc-layer-tree-creation" }
+                    { title: "CC Layer Tree Creation", path: "architecture/cc-layer-tree-creation" },
+                    { title: "GPU Synchronization", path: "architecture/gpu_synchronization" }
                 ]
             },
             {
@@ -91,6 +105,7 @@ export const contentIndex: ContentNode[] = [
         title: "Design Patterns",
         description: "Common patterns and practices used throughout Chromium",
         children: [
+            { title: "Design Patterns Overview", path: "architecture/design-patterns/overview" },
             { title: "Delegate Pattern", path: "architecture/design-patterns/delegate-pattern" },
             { title: "Factory Pattern", path: "architecture/design-patterns/factory-pattern" },
             { title: "Observer Pattern", path: "architecture/design-patterns/observer-pattern" },
@@ -103,15 +118,49 @@ export const contentIndex: ContentNode[] = [
     {
         title: "Security Architecture",
         description: "Understanding Chromium's security model and sandbox architecture",
-        children: [
-            { title: "Security Model Overview", path: "security/security-model" },
+        children: [            { title: "Security Overview", path: "security/overview" },
+            { title: "Architecture Security Overview", path: "architecture/security/overview" },            { title: "Security Model Overview", path: "security/security-model" },
             { title: "Advanced Mojo IPC & Security Research", path: "security/advanced-mojo-ipc-security" },
             { title: "Sandbox Architecture", path: "architecture/security/sandbox-architecture" },
+            { title: "Security Checklist", path: "security/checklist" },
+            { title: "Browser Protocol Schemes", path: "security/browser-protocol-schemes" },
             {
                 title: "Security Research",
                 children: [
+                    { title: "Security Research README", path: "security/research/README" },
+                    { title: "Graphics Research Overview", path: "security/research/graphics/overview" },
+                    { title: "Graphics Research README", path: "security/research/graphics/README" },
+                    { title: "Graphics Vulnerabilities README", path: "security/research/graphics/vulnerabilities/README" },
                     { title: "RenderFrameHost UAF Vulnerability Analysis", path: "security/research/renderframehost-uaf-analysis" },
                     { title: "V8 SuperIC Type Confusion Vulnerability Analysis", path: "security/research/v8-superic-type-confusion-analysis" }
+                ]
+            },
+            {
+                title: "Platform Security",
+                children: [
+                    { title: "Android IPC Security", path: "security/android-ipc" },
+                    { title: "Android Sandbox", path: "security/android-sandbox" },
+                    { title: "AppArmor User Namespace Restrictions", path: "security/apparmor-userns-restrictions" }
+                ]
+            },
+            {
+                title: "Web Security",
+                children: [
+                    { title: "Autofill Across iframes", path: "security/autofill-across-iframes" },
+                    { title: "Mixed Content Autoupgrade", path: "security/autoupgrade-mixed" },
+                    { title: "Behavior Over Internet", path: "security/behavior-over-the-internet" },
+                    { title: "CSP (Content Security Policy)", path: "security/csp" },
+                    { title: "CORS and Fetch", path: "security/cors-rfc1918" }
+                ]
+            },
+            {
+                title: "Security Tools & Testing",
+                children: [
+                    { title: "ClusterFuzz for Shepherds", path: "security/clusterfuzz-for-shepherds" },
+                    { title: "Fuzzing in Chrome", path: "security/fuzzing" },
+                    { title: "Security FAQ", path: "security/faq" },
+                    { title: "Security Severity Guidelines", path: "security/severity-guidelines" },
+                    { title: "Security Tips for Developers", path: "security/security-tips" }
                 ]
             }
         ]
@@ -122,6 +171,7 @@ export const contentIndex: ContentNode[] = [
         title: "Core Modules",
         description: "Deep dive into key Chromium subsystems",
         children: [
+            { title: "Modules Overview", path: "modules/overview" },
             { title: "JavaScript Engine (V8)", path: "modules/javascript-v8" },
             { title: "V8 Compiler Internals", path: "modules/v8-compiler-internals" },
             { title: "Plugin Architecture & Process Management", path: "modules/plugin-architecture" },
@@ -130,6 +180,7 @@ export const contentIndex: ContentNode[] = [
             {
                 title: "Storage & Caching System",
                 children: [
+                    { title: "Storage & Caching Overview", path: "modules/storage-cache/overview" },
                     { title: "Storage Overview", path: "modules/storage-cache" },
                     { title: "Disk Cache Design", path: "modules/storage-cache/disk-cache-design-principles" }
                 ]
@@ -142,6 +193,7 @@ export const contentIndex: ContentNode[] = [
         title: "APIs & Services",
         description: "Modern Chromium APIs and service architecture",
         children: [
+            { title: "APIs & Services README", path: "apis/README" },
             { title: "APIs & Services Overview", path: "apis/overview" },
             { title: "API Reference", path: "apis/api-reference" },
             { title: "Scripts Reference", path: "apis/scripts-reference" },
@@ -157,6 +209,7 @@ export const contentIndex: ContentNode[] = [
         title: "Custom Browser Features",
         description: "Wanderlust Custom Browser specific features and implementations",
         children: [
+            { title: "Features README", path: "features/README" },
             { title: "Features Overview", path: "features/custom-browser/README" },
             {
                 title: "Core Features",
@@ -256,14 +309,23 @@ export const contentIndex: ContentNode[] = [
     {
         title: "Development Workflow",
         description: "Tools, processes, and best practices for Chromium development",
-        children: [
-            { title: "Development Overview", path: "development/overview" },
+        children: [            { title: "Development README", path: "development/README" },            { title: "Development Overview", path: "development/overview" },
             { title: "Browser Industry Economics", path: "development/browser-industry-economics" },
             {
                 title: "Custom Browser Development",
                 children: [
                     { title: "Custom Browser Development Guide", path: "development/custom-browser-development" },
                     { title: "Custom Browser Build System", path: "development/custom-browser-build-system" }
+                ]
+            },
+            {
+                title: "Infrastructure & CI/CD",
+                children: [
+                    { title: "Commit Queue (CQ)", path: "infra/cq" },
+                    { title: "New Builder Setup", path: "infra/new_builder" },
+                    { title: "Trybot Usage", path: "infra/trybot_usage" },
+                    { title: "Using LED (Chromium Test Tool)", path: "infra/using_led" },
+                    { title: "Watchlists", path: "infra/watchlists" }
                 ]
             },
             { title: "Git Cookbook", path: "development/git_cookbook" },
@@ -357,6 +419,15 @@ export const contentIndex: ContentNode[] = [
                 ]
             },
             {
+                title: "Chrome OS Integration Testing",
+                children: [
+                    { title: "Chrome OS Integration README", path: "development/testing/chromeos_integration/README" },
+                    { title: "Chrome OS Development Guide", path: "development/testing/chromeos_integration/development_guide" },
+                    { title: "Crosier Metadata", path: "development/testing/chromeos_integration/crosier_metadata" },
+                    { title: "Navbar Testing", path: "development/testing/navbar" }
+                ]
+            },
+            {
                 title: "Debugging & Troubleshooting",
                 children: [
                     { title: "Chrome OS Debugging Tips", path: "development/testing/chromeos_debugging_tips" },
@@ -381,8 +452,7 @@ export const contentIndex: ContentNode[] = [
     {
         title: "Performance & Optimization",
         description: "Performance analysis and optimization techniques",
-        children: [
-            { title: "Performance Overview", path: "performance/overview" },
+        children: [            { title: "Performance README", path: "performance/README" },            { title: "Performance Overview", path: "performance/overview" },
             { title: "Profiling Techniques", path: "performance/profiling" },
             { title: "Profile Guided Optimization (PGO)", path: "performance/pgo" },
             { title: "Order File Optimization", path: "performance/orderfile" },
@@ -390,11 +460,72 @@ export const contentIndex: ContentNode[] = [
         ]
     },
 
-    // PHASE 11: PLATFORM-SPECIFIC DEVELOPMENT
+    // PHASE 11: ACCESSIBILITY
+    {
+        title: "Accessibility",
+        description: "Making Chromium accessible to users with disabilities",
+        children: [
+            { title: "Accessibility Overview", path: "accessibility/overview" },
+            { title: "Accessibility Guidelines", path: "accessibility/README" },
+            {
+                title: "Assistive Technologies",
+                children: [
+                    { title: "ChromeVox Screen Reader", path: "accessibility/assistive-technologies/chromevox" },
+                    { title: "ChromeVox Desktop Linux", path: "accessibility/assistive-technologies/chromevox-desktop-linux" },
+                    { title: "Select to Speak", path: "accessibility/assistive-technologies/select-to-speak" },
+                    { title: "AutoClick", path: "accessibility/assistive-technologies/autoclick" },
+                    { title: "Text-to-Speech (TTS)", path: "accessibility/assistive-technologies/tts" },
+                    { title: "BRLTTY (Braille Display)", path: "accessibility/assistive-technologies/brltty" },
+                    { title: "eSpeak Speech Synthesis", path: "accessibility/assistive-technologies/espeak" },
+                    { title: "PATTS Speech Engine", path: "accessibility/assistive-technologies/patts" }
+                ]
+            },
+            {
+                title: "Platform-Specific Features",
+                children: [
+                    { title: "Android Accessibility", path: "accessibility/features/android" },
+                    { title: "Offscreen Accessibility", path: "accessibility/features/offscreen" },
+                    { title: "Reader Mode Accessibility", path: "accessibility/features/reader-mode" }
+                ]
+            },
+            {
+                title: "Development & Testing",
+                children: [
+                    { title: "Accessibility Performance", path: "accessibility/development/performance" },
+                    { title: "Accessibility Testing", path: "accessibility/development/testing" }
+                ]
+            },
+            {
+                title: "Release Notes",
+                children: [
+                    { title: "Accessibility Release Notes", path: "accessibility/release-notes/relnotes" }
+                ]
+            }
+        ]
+    },
+
+    // PHASE 12: GPU & GRAPHICS
+    {
+        title: "GPU & Graphics",
+        description: "Graphics processing, GPU testing, and rendering pipeline",
+        children: [
+            { title: "GPU Testing Overview", path: "gpu/gpu_testing" },
+            { title: "GPU Testing Bot Details", path: "gpu/gpu_testing_bot_details" },
+            { title: "GPU Pixel Testing with Gold", path: "gpu/gpu_pixel_testing_with_gold" },
+            { title: "Debugging GPU Related Code", path: "gpu/debugging_gpu_related_code" },
+            { title: "WebGL Bug Triage", path: "gpu/webgl_bug_triage" },
+            { title: "Pixel Wrangling", path: "gpu/pixel_wrangling" },
+            { title: "Sync Token Internals", path: "gpu/sync_token_internals" },
+            { title: "VA-API (Video Acceleration API)", path: "gpu/vaapi" }
+        ]
+    },
+
+    // PHASE 13: PLATFORM-SPECIFIC DEVELOPMENT
     {
         title: "Platform-Specific Development",
         description: "Platform-specific considerations and implementations",
         children: [
+            { title: "Platforms README", path: "platforms/README" },
             { title: "Platforms Overview", path: "platforms/overview" },
             {
                 title: "Android Development",
@@ -458,8 +589,7 @@ export const contentIndex: ContentNode[] = [
     {
         title: "Contributing to Chromium",
         description: "Guidelines and processes for contributing to the Chromium project",
-        children: [
-            { title: "Contributing Guide", path: "contributing/contributing" },
+        children: [            { title: "Contributing Overview", path: "contributing/overview" },            { title: "Contributing Guide", path: "contributing/contributing" },
             { title: "Web Standards Participation", path: "contributing/standards-participation" }
         ]
     },
@@ -517,11 +647,23 @@ export const contentIndex: ContentNode[] = [
         ]
     },
 
-    // PHASE 16: INTERACTIVE DEMOS & EXAMPLES
+    // PHASE 18: CODE EXAMPLES & REFERENCES
+    {
+        title: "Code Examples & References",
+        description: "Practical code examples and reference implementations",
+        children: [
+            { title: "Code Examples README", path: "code-examples/README" },
+            { title: "Mermaid Examples", path: "examples/mermaid-examples" },
+            { title: "Mermaid Guide", path: "guides/mermaid-guide" }
+        ]
+    },
+
+    // PHASE 18: INTERACTIVE DEMOS & EXAMPLES
     {
         title: "Interactive Demos & Examples",
         description: "Hands-on examples and interactive learning tools",
         children: [
+            { title: "Bookmark Features Demo", path: "demo/bookmark-features" },
             { title: "Syntax Highlighting Demo", path: "demo/syntax-highlighting" },
             { title: "Enhanced Component Architecture", path: "demo/enhanced-component-architecture" },
             { title: "Code Playground", path: "demo/code-playground" },

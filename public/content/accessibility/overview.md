@@ -1,3 +1,14 @@
+---
+title: "Accessibility Overview"
+description: "Accessibility means ensuring that all users, including users with disabilities, have equal access to software. One piece of this involves basic..."
+category: "Accessibility"
+tags: ["accessibility", "overview"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # Accessibility Overview
 
 Accessibility means ensuring that all users, including users with disabilities,

@@ -1,3 +1,14 @@
+---
+title: "Modules & Components"
+description: "Welcome to the Modules section! This area provides detailed documentation about the core modules and components that make up the Wanderlust custom..."
+category: "Core Modules"
+tags: ["modules", "overview"]
+difficulty: "beginner"
+date: "2026-04-12"
+author: "Wanderlust Team"
+estimated_reading_time: "5 minutes"
+---
+
 # Modules & Components
 
 Welcome to the Modules section! This area provides detailed documentation about the core modules and components that make up the Wanderlust custom Chromium browser.
