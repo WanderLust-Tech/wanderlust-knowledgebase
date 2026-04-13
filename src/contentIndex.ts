@@ -1,11 +1,21 @@
 export interface ContentNode {
     title: string;
-    path?: string;     // corresponds to public/content/<path>.md
+    path?: string;     // corresponds to public/content/<subject>/<path>.md
     children?: ContentNode[];
     description?: string; // Optional description for better understanding
 }
 
-export const contentIndex: ContentNode[] = [
+export interface Subject {
+    id: string;
+    title: string;
+    description: string;
+    color: string;  // For theming
+    icon: string;   // For UI
+    contentIndex: ContentNode[];
+}
+
+// Chromium Development Content (existing content)
+const chromiumContent: ContentNode[] = [
     // LEARNING PATH GUIDE
     {
         title: "Learning Path Guide",
@@ -673,3 +683,204 @@ export const contentIndex: ContentNode[] = [
         ]
     }
 ];
+
+// Minecraft Development Content
+const minecraftContent: ContentNode[] = [
+    {
+        title: "Getting Started",
+        description: "Introduction to Minecraft development and modding",
+        children: [
+            { title: "Minecraft Development Overview", path: "getting-started/overview" },
+            { title: "Setting Up Development Environment", path: "getting-started/setup" },
+            { title: "Minecraft Architecture", path: "getting-started/minecraft-architecture" }
+        ]
+    },
+    {
+        title: "Forge Modding",
+        description: "Creating mods using Minecraft Forge",
+        children: [
+            { title: "Forge Setup", path: "forge/setup" },
+            { title: "Creating Your First Mod", path: "forge/first-mod" },
+            { title: "Items and Blocks", path: "forge/items-blocks" },
+            { title: "Entities and AI", path: "forge/entities-ai" },
+            { title: "World Generation", path: "forge/world-generation" },
+            { title: "GUIs and Networking", path: "forge/guis-networking" }
+        ]
+    },
+    {
+        title: "Fabric Modding",
+        description: "Creating mods using Fabric",
+        children: [
+            { title: "Fabric Setup", path: "fabric/setup" },
+            { title: "Fabric API Basics", path: "fabric/api-basics" },
+            { title: "Mixins", path: "fabric/mixins" },
+            { title: "Data Generation", path: "fabric/data-generation" }
+        ]
+    },
+    {
+        title: "Plugin Development",
+        description: "Server-side plugin development",
+        children: [
+            { title: "Bukkit/Spigot Plugins", path: "plugins/bukkit-spigot" },
+            { title: "Paper Plugins", path: "plugins/paper" },
+            { title: "Velocity Plugins", path: "plugins/velocity" }
+        ]
+    },
+    {
+        title: "Resource Packs & Data Packs",
+        description: "Custom content without code",
+        children: [
+            { title: "Resource Pack Basics", path: "packs/resource-packs" },
+            { title: "Data Pack Fundamentals", path: "packs/data-packs" },
+            { title: "Custom Models and Textures", path: "packs/custom-assets" }
+        ]
+    }
+];
+
+// Frontend Development Content  
+const frontendContent: ContentNode[] = [
+    {
+        title: "Fundamentals",
+        description: "Core frontend development concepts",
+        children: [
+            { title: "HTML5 & Semantic Web", path: "fundamentals/html5" },
+            { title: "Modern CSS & Flexbox/Grid", path: "fundamentals/css" },
+            { title: "JavaScript ES6+", path: "fundamentals/javascript" },
+            { title: "TypeScript Essentials", path: "fundamentals/typescript" },
+            { title: "Web APIs & DOM", path: "fundamentals/web-apis" }
+        ]
+    },
+    {
+        title: "React Development",
+        description: "Building applications with React",
+        children: [
+            { title: "React Fundamentals", path: "react/fundamentals" },
+            { title: "Hooks & State Management", path: "react/hooks-state" },
+            { title: "Component Patterns", path: "react/patterns" },
+            { title: "Testing React Apps", path: "react/testing" },
+            { title: "Performance Optimization", path: "react/performance" }
+        ]
+    },
+    {
+        title: "Vue.js Development",
+        description: "Building applications with Vue.js",
+        children: [
+            { title: "Vue 3 Composition API", path: "vue/composition-api" },
+            { title: "Vuex/Pinia State Management", path: "vue/state-management" },
+            { title: "Vue Router", path: "vue/router" },
+            { title: "Vue Testing", path: "vue/testing" }
+        ]
+    },
+    {
+        title: "Angular Development", 
+        description: "Enterprise applications with Angular",
+        children: [
+            { title: "Angular Fundamentals", path: "angular/fundamentals" },
+            { title: "Reactive Programming with RxJS", path: "angular/rxjs" },
+            { title: "Angular Services & DI", path: "angular/services" },
+            { title: "Angular Testing", path: "angular/testing" }
+        ]
+    },
+    {
+        title: "Build Tools & Bundlers",
+        description: "Modern frontend tooling",
+        children: [
+            { title: "Vite", path: "tools/vite" },
+            { title: "Webpack", path: "tools/webpack" },
+            { title: "Rollup", path: "tools/rollup" },
+            { title: "ESBuild & SWC", path: "tools/fast-bundlers" }
+        ]
+    },
+    {
+        title: "CSS Frameworks & Styling",
+        description: "Modern CSS approaches",
+        children: [
+            { title: "Tailwind CSS", path: "styling/tailwind" },
+            { title: "Styled Components", path: "styling/styled-components" },
+            { title: "CSS Modules", path: "styling/css-modules" },
+            { title: "SASS/SCSS", path: "styling/sass" }
+        ]
+    },
+    {
+        title: "Testing & Quality",
+        description: "Frontend testing strategies",
+        children: [
+            { title: "Jest & Vitest", path: "testing/unit-testing" },
+            { title: "Cypress & Playwright", path: "testing/e2e-testing" },
+            { title: "Testing Library", path: "testing/testing-library" },
+            { title: "Visual Regression Testing", path: "testing/visual-testing" }
+        ]
+    },
+    {
+        title: "Performance & Optimization",
+        description: "Web performance best practices",
+        children: [
+            { title: "Core Web Vitals", path: "performance/core-web-vitals" },
+            { title: "Bundle Optimization", path: "performance/bundle-optimization" },
+            { title: "Image Optimization", path: "performance/image-optimization" },
+            { title: "Lazy Loading & Code Splitting", path: "performance/lazy-loading" }
+        ]
+    },
+    {
+        title: "Progressive Web Apps",
+        description: "PWA development",
+        children: [
+            { title: "Service Workers", path: "pwa/service-workers" },
+            { title: "Web App Manifest", path: "pwa/manifest" },
+            { title: "Offline Strategies", path: "pwa/offline-strategies" },
+            { title: "PWA Deployment", path: "pwa/deployment" }
+        ]
+    },
+    {
+        title: "Deployment & DevOps",
+        description: "Frontend deployment strategies",
+        children: [
+            { title: "Netlify & Vercel", path: "deployment/static-hosting" },
+            { title: "Docker for Frontend", path: "deployment/docker" },
+            { title: "CI/CD for Frontend", path: "deployment/ci-cd" },
+            { title: "CDN & Edge Computing", path: "deployment/cdn-edge" }
+        ]
+    }
+];
+
+// Main subjects configuration
+export const subjects: Subject[] = [
+    {
+        id: 'chromium',
+        title: 'Chromium Development',
+        description: 'Comprehensive guide to Chromium browser development, architecture, and custom browser creation',
+        color: 'blue',
+        icon: '🌏',
+        contentIndex: chromiumContent
+    },
+    {
+        id: 'minecraft',
+        title: 'Minecraft Development',
+        description: 'Modding, plugin development, and content creation for Minecraft',
+        color: 'green',
+        icon: '🎮',
+        contentIndex: minecraftContent
+    },
+    {
+        id: 'frontend',
+        title: 'Frontend Development',
+        description: 'Modern web frontend development with React, Vue, Angular, and cutting-edge tools',
+        color: 'purple',
+        icon: '💻',
+        contentIndex: frontendContent
+    }
+];
+
+// Default export for backwards compatibility (Chromium content)
+export const contentIndex: ContentNode[] = chromiumContent;
+
+// Helper function to get subject by ID
+export const getSubjectById = (id: string): Subject | undefined => {
+    return subjects.find(subject => subject.id === id);
+};
+
+// Helper function to get content index for a subject
+export const getContentIndexForSubject = (subjectId: string): ContentNode[] => {
+    const subject = getSubjectById(subjectId);
+    return subject ? subject.contentIndex : [];
+};

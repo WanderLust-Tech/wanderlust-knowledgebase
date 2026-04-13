@@ -140,9 +140,9 @@ const HybridSidebar: React.FC<HybridSidebarProps> = ({ fallbackNodes }) => {
           ) : (
             /* Content Tree */
             <ul>
-              {contentNodes.map(node => (
+              {contentNodes.map((node, index) => (
                 <Node 
-                  key={node.title} 
+                  key={`root-${index}-${node.path || node.title}`} 
                   node={node} 
                   level={0} 
                   expandedNode={expandedNode}
@@ -291,9 +291,9 @@ const Node: React.FC<{
       </div>
       {hasChildren && isExpanded && (
         <ul className="ml-4 mt-1">
-          {node.children!.map(child => (
+          {node.children!.map((child, index) => (
             <Node 
-              key={child.title} 
+              key={`child-${level}-${index}-${child.path || child.title}`} 
               node={child} 
               level={level + 1} 
               expandedNode={expandedNode}

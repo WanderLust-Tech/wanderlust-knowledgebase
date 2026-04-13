@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, Navigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { BookmarkButton } from './BookmarkButton';
 import { SectionBookmark } from './SectionBookmark';
@@ -11,19 +11,44 @@ import { ArticleComponent, InteractiveDiagramContent } from '../types/ComponentT
 import { contentService, ContentMetadata } from '../services/ContentService';
 import { useAuth } from '../contexts/AuthContext';
 import { useLoading } from '../contexts/LoadingContext';
+import { useSubject } from '../contexts/SubjectContext';
+import { getSubjectById } from '../contentIndex';
 import '../github-markdown.css';
 
 const EnhancedArticleView: React.FC = () => {
-  const { '*': path } = useParams<{ '*': string }>();
+  const { subject: subjectParam, '*': pathParam } = useParams<{ subject: string; '*': string }>();
   const location = useLocation();
   const { user } = useAuth();
   const { addLoading, removeLoading } = useLoading();
+  const { currentSubject, switchToSubject } = useSubject();
   
   const [content, setContent] = useState('');
   const [metadata, setMetadata] = useState<ContentMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [contentSource, setContentSource] = useState<'api' | 'static' | 'cache'>('static');
+
+  // Handle subject validation and switching
+  useEffect(() => {
+    if (subjectParam && getSubjectById(subjectParam)) {
+      // Valid subject, ensure context is updated
+      if (currentSubject.id !== subjectParam) {
+        switchToSubject(subjectParam);
+      }
+    } else if (subjectParam) {
+      // Invalid subject, should redirect to valid subject
+      console.warn(`Invalid subject: ${subjectParam}`);
+    }
+  }, [subjectParam, currentSubject, switchToSubject]);
+
+  // Redirect legacy URLs or invalid subjects to chromium
+  if (!subjectParam || !getSubjectById(subjectParam)) {
+    const redirectPath = pathParam ? `/chromium/${pathParam}` : '/chromium/introduction/overview';
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  // Construct the full path for content loading (without subject prefix)
+  const path = pathParam;
 
   // Check if this is a video tutorial path
   const isVideoTutorialPath = path && (
@@ -58,7 +83,9 @@ const EnhancedArticleView: React.FC = () => {
     setError(null);
 
     try {
-      const result = await contentService.getContent(path);
+      // Construct the subject-aware path for content loading
+      const subjectAwarePath = subjectParam ? `${subjectParam}/${path}` : path;
+      const result = await contentService.getContent(subjectAwarePath);
       
       setContent(result.content);
       setMetadata(result.metadata);
@@ -273,7 +300,9 @@ const EnhancedArticleView: React.FC = () => {
           <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
             <h4 className="font-semibold mb-2">Debug Information</h4>
             <div className="space-y-1 text-gray-600 dark:text-gray-400">
+              <div>Subject: {subjectParam} (Current: {currentSubject.id})</div>
               <div>Path: {path}</div>
+              <div>Full URL: {location.pathname}</div>
               <div>Source: {contentSource}</div>
               <div>Content Length: {content.length} characters</div>
               <div>Reading Time: {readingTime} minutes</div>

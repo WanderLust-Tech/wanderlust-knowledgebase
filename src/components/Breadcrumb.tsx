@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useProgress } from '../contexts/ProgressContext';
+import { useSubject } from '../contexts/SubjectContext';
+import { getSubjectById } from '../contentIndex';
 
 interface BreadcrumbItem {
   title: string;
   path: string;
-  context?: 'architecture' | 'getting-started' | 'modules' | 'contributing' | 'debugging' | 'introduction' | 'security';
+  context?: 'architecture' | 'getting-started' | 'modules' | 'contributing' | 'debugging' | 'introduction' | 'security' | 'development' | 'features' | 'chromium' | 'minecraft' | 'frontend';
 }
 
 const Breadcrumb: React.FC = () => {
@@ -85,39 +87,89 @@ const Breadcrumb: React.FC = () => {
       { title: 'Home', path: '/' }
     ];
 
-    // Known section folders that should link to their overview
-    const sectionFolders = [
-      'architecture', 'getting-started', 'modules', 'contributing', 
-      'debugging', 'introduction', 'security'
-    ];
+    // Check if we have a subject-based URL
+    if (pathSegments.length === 0) {
+      return breadcrumbs;
+    }
 
-    // Build breadcrumbs from path segments
-    let currentPath = '';
-    pathSegments.forEach((segment, index) => {
-      currentPath += `/${segment}`;
-      
-      // Convert segment to readable title
-      const title = segment
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
-      // Determine context based on first segment
-      const context = index === 0 ? segment as BreadcrumbItem['context'] : undefined;
-
-      // For section folders (first level), append /overview to the path for navigation
-      // For deeper paths, use the current path as-is
-      let navigationPath = currentPath;
-      if (index === 0 && sectionFolders.includes(segment)) {
-        navigationPath = `${currentPath}/overview`;
-      }
-
+    const potentialSubject = pathSegments[0];
+    const subject = getSubjectById(potentialSubject);
+    
+    if (subject) {
+      // Add subject breadcrumb
       breadcrumbs.push({
-        title,
-        path: navigationPath,
-        context
+        title: subject.name,
+        path: `/${subject.id}`,
+        context: subject.id as BreadcrumbItem['context']
       });
-    });
+
+      // Process remaining path segments (after subject)
+      const contentSegments = pathSegments.slice(1);
+      let currentSubjectPath = `/${subject.id}`;
+      
+      contentSegments.forEach((segment, index) => {
+        currentSubjectPath += `/${segment}`;
+        
+        // Convert segment to readable title
+        const title = segment
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+
+        // For section folders (first level under subject), append /overview to the path for navigation
+        let navigationPath = currentSubjectPath;
+        if (index === 0) {
+          // Known section folders that should link to their overview
+          const sectionFolders = [
+            'architecture', 'getting-started', 'modules', 'contributing', 
+            'debugging', 'introduction', 'security', 'development', 'features'
+          ];
+          
+          if (sectionFolders.includes(segment)) {
+            navigationPath = `${currentSubjectPath}/overview`;
+          }
+        }
+
+        breadcrumbs.push({
+          title,
+          path: navigationPath,
+          context: subject.id as BreadcrumbItem['context']
+        });
+      });
+    } else {
+      // Legacy URL format (backwards compatibility) - treat as chromium content
+      const sectionFolders = [
+        'architecture', 'getting-started', 'modules', 'contributing', 
+        'debugging', 'introduction', 'security'
+      ];
+
+      // Build breadcrumbs from path segments
+      let currentPath = '';
+      pathSegments.forEach((segment, index) => {
+        currentPath += `/${segment}`;
+        
+        // Convert segment to readable title
+        const title = segment
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+
+        // Determine context based on first segment
+        const context = index === 0 ? segment as BreadcrumbItem['context'] : undefined;
+
+        // For section folders (first level), append /overview to the path for navigation
+        let navigationPath = currentPath;
+        if (index === 0 && sectionFolders.includes(segment)) {
+          navigationPath = `${currentPath}/overview`;
+        }
+
+        breadcrumbs.push({
+          title,
+          path: navigationPath,
+          context
+        });
+      });
+    }
 
     return breadcrumbs;
   };
