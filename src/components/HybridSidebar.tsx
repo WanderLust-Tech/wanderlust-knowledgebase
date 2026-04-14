@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ContentNode } from '../contentIndex';
 import { contentIndexBuilder } from '../services/ContentIndexBuilder';
 import { useSidebar } from '../contexts/SidebarContext';
+import { useSubject } from '../contexts/SubjectContext';
 
 interface HybridSidebarProps {
   fallbackNodes: ContentNode[];
@@ -20,6 +21,12 @@ const HybridSidebar: React.FC<HybridSidebarProps> = ({ fallbackNodes }) => {
   useEffect(() => {
     loadContentIndex();
   }, []);
+
+  // Update content nodes when fallbackNodes prop changes (subject switching)
+  useEffect(() => {
+    setContentNodes(fallbackNodes);
+    setContentSource('static');
+  }, [fallbackNodes]);
 
   const loadContentIndex = async () => {
     try {
@@ -166,6 +173,7 @@ const Node: React.FC<{
 }> = ({ node, level, expandedNode, setExpandedNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { currentSubject } = useSubject();
   const hasChildren = node.children && node.children.length > 0;
   
   // For top-level nodes (level 0), use accordion behavior
@@ -173,9 +181,9 @@ const Node: React.FC<{
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Check if this node or any of its children matches the current path
-  const isCurrentPage = node.path && location.pathname === `/${node.path}`;
+  const isCurrentPage = node.path && location.pathname === `/${currentSubject.id}/${node.path}`;
   const isParentOfCurrentPage = hasChildren && node.children!.some(child => 
-    child.path && location.pathname.startsWith(`/${child.path}`)
+    child.path && location.pathname.startsWith(`/${currentSubject.id}/${child.path}`)
   );
 
   // Auto-expand logic based on current page
@@ -224,12 +232,12 @@ const Node: React.FC<{
       );
       
       if (overviewChild) {
-        navigate(`/${overviewChild.path}`);
+        navigate(`/${currentSubject.id}/${overviewChild.path}`);
       } else {
         // Navigate to the first child if no overview found
         const firstChild = node.children[0];
         if (firstChild && firstChild.path) {
-          navigate(`/${firstChild.path}`);
+          navigate(`/${currentSubject.id}/${firstChild.path}`);
         }
       }
     }
@@ -257,7 +265,7 @@ const Node: React.FC<{
       <div className={`group ${level === 0 ? 'mb-1' : ''}`}>
         {node.path ? (
           <Link
-            to={`/${node.path}`}
+            to={`/${currentSubject.id}/${node.path}`}
             className={`flex items-center w-full px-2 py-3 transition-colors duration-150 text-base leading-6 ${
               isCurrentPage 
                 ? 'text-blue-700 dark:text-blue-300 font-medium' 
