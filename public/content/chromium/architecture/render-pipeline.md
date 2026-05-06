@@ -49,10 +49,20 @@ Chromium's render pipeline transforms HTML, CSS and JavaScript into pixels on yo
    - Allows rendering to begin before full document parse  
    - Critical for perceived performance on large pages  
 
-```text
-HTML Bytes → [Preload Scanner] → Resource Discovery
-     ↓
-[Tokenizer] → Tokens → [Parser] → DOM Tree
+```mermaid
+flowchart TD
+    A[HTML Bytes] --> B[Preload Scanner]
+    B --> C[Resource Discovery]
+    
+    A --> D[Tokenizer]
+    D --> E[Tokens]
+    E --> F[Parser]
+    F --> G[DOM Tree]
+    
+    style A fill:#e1f5fe
+    style G fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
 ```
 
 ---
@@ -76,10 +86,23 @@ HTML Bytes → [Preload Scanner] → Resource Discovery
 - **CSS Color Level 4**: Extended color spaces and functions  
 - **CSS Logical Properties**: Writing-mode aware properties  
 
-```text
-CSS → [Parser] → CSSOM → [Style Engine] → Computed Styles
-                    ↓
-DOM + CSSOM → [Style Resolver] → Styled Elements
+```mermaid
+flowchart TD
+    A[CSS] --> B[Parser]
+    B --> C[CSSOM]
+    C --> D[Style Engine]
+    D --> E[Computed Styles]
+    
+    F[DOM] --> G[Style Resolver]
+    C --> G
+    E --> G
+    G --> H[Styled Elements]
+    
+    style A fill:#e1f5fe
+    style F fill:#e1f5fe
+    style H fill:#e8f5e8
+    style D fill:#fff3e0
+    style G fill:#fff3e0
 ```
 
 ---
@@ -104,8 +127,14 @@ DOM + CSSOM → [Style Resolver] → Styled Elements
 
 **Output**: LayoutObject tree with precise geometry and positioning
 
-```text
-Styled Elements → [NG Layout] → LayoutObject Tree with Geometry
+```mermaid
+flowchart LR
+    A[Styled Elements] --> B[NG Layout]
+    B --> C[LayoutObject Tree with Geometry]
+    
+    style A fill:#e1f5fe
+    style C fill:#e8f5e8
+    style B fill:#fff3e0
 ```
 
 ---
@@ -130,8 +159,15 @@ Styled Elements → [NG Layout] → LayoutObject Tree with Geometry
 
 **Key Classes**: `PaintController`, `DisplayItemList`, `PaintLayer`
 
-```text
-LayoutObjects → [Paint] → Display Lists → Layer Tree
+```mermaid
+flowchart LR
+    A[LayoutObjects] --> B[Paint]
+    B --> C[Display Lists]
+    C --> D[Layer Tree]
+    
+    style A fill:#e1f5fe
+    style D fill:#e8f5e8
+    style B fill:#fff3e0
 ```
 
 ---
@@ -157,8 +193,16 @@ LayoutObjects → [Paint] → Display Lists → Layer Tree
 
 **Output**: GPU textures and rasterized tile bitmaps
 
-```text
-Display Lists → [OOP Raster] → GPU Textures → Tile Cache
+```mermaid
+flowchart LR
+    A[Display Lists] --> B[OOP Raster]
+    B --> C[GPU Textures]
+    C --> D[Tile Cache]
+    
+    style A fill:#e1f5fe
+    style D fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
 ```
 
 ---
@@ -188,8 +232,16 @@ For detailed information about the advanced **Direct Rendering Display Composito
 
 **Output**: Smooth, synchronized frames displayed to screen
 
-```text
-Layer Tree → [Viz Compositor] → GPU → Display Hardware
+```mermaid
+flowchart LR
+    A[Layer Tree] --> B[Viz Compositor]
+    B --> C[GPU]
+    C --> D[Display Hardware]
+    
+    style A fill:#e1f5fe
+    style D fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
 ```
 
 ---
