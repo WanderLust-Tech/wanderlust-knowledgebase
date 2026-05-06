@@ -73,7 +73,6 @@ const chromiumContent: ContentNode[] = [
             { title: "Navigation Concepts", path: "architecture/navigation_concepts" },
             { title: "Frame Trees", path: "architecture/frame_trees" },
             { title: "Life of a Frame", path: "architecture/life_of_a_frame" },
-            { title: "Threading & Tasks", path: "architecture/threading" },
             { title: "Startup Architecture", path: "architecture/startup" },
             { title: "Sandbox Overview", path: "architecture/sandbox" },
             { title: "Sandbox FAQ", path: "architecture/sandbox_faq" },
