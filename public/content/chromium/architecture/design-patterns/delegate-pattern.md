@@ -202,27 +202,25 @@ class ProductionDownloadDelegate : public DownloadManagerDelegate {
 ```
 
 ### Modern UML Architecture
-```text
-┌─────────────────────┐    delegates to    ┌──────────────────────────┐
-│   DownloadManager   │ ──────────────────► │  DownloadManagerDelegate │
-│                     │                     │                          │
-│ + StartDownload()   │                     │ + DetermineDownloadTarget│
-│ + PauseDownload()   │                     │ + ValidateDownloadAsync  │
-│ + CancelDownload()  │                     │ + OnDownloadProgress     │
-│ + SetDelegate()     │                     │ + ShouldBlockDownload    │
-└─────────────────────┘                     └──────────────────────────┘
-         │                                              △
-         │                                              │
-         ▼                                              │
-┌─────────────────────┐                     ┌──────────────────────────┐
-│   Mojo IPC Layer    │                     │ ProductionDownloadDelegate│
-│                     │                     │                          │
-│ + SendProgress()    │                     │ + Integration with:      │
-│ + HandleErrors()    │                     │   - SafeBrowsingService  │
-│ + CrossProcess()    │                     │   - QuarantineService    │
-└─────────────────────┘                     │   - Privacy Controls     │
-                                            │   - Cloud Sync           │
-                                            └──────────────────────────┘
+```mermaid
+flowchart TB
+    DM["DownloadManager<br/>• StartDownload()<br/>• PauseDownload()<br/>• CancelDownload()<br/>• SetDelegate()"]
+    DMD["DownloadManagerDelegate<br/>• DetermineDownloadTarget()<br/>• ValidateDownloadAsync()<br/>• OnDownloadProgress()<br/>• ShouldBlockDownload()"]
+    MOJO["Mojo IPC Layer<br/>• SendProgress()<br/>• HandleErrors()<br/>• CrossProcess()"]
+    PDD["ProductionDownloadDelegate<br/>• Integration with:<br/>  - SafeBrowsingService<br/>  - QuarantineService<br/>  - Privacy Controls<br/>  - Cloud Sync"]
+    
+    DM -->|delegates to| DMD
+    DM --> MOJO
+    PDD -.->|implements| DMD
+    
+    DM:::processing
+    DMD:::interface
+    MOJO:::processing
+    PDD:::implementation
+    
+    classDef interface fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
+    classDef processing fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000
+    classDef implementation fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#000
 ```
 
 ---
