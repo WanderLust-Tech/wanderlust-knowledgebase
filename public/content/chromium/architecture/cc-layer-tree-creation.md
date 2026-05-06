@@ -24,16 +24,23 @@ The CC (Content Compositor) Layer Tree is a critical component in Chromium's ren
 
 ### Key Relationships
 
-```text
-Graphics Layer Tree (WebKit/Blink)
-    ↓ [1:1 Mapping]
-WebContentLayerImpl (Content Layer)
-    ↓ [Wrapping]
-WebLayerImpl (Content Layer)  
-    ↓ [CC Integration]
-PictureLayer/ContentLayer (CC Layer)
-    ↓ [Tree Structure]
-CC Layer Tree (CC Module)
+```mermaid
+flowchart TD
+    A[Graphics Layer Tree<br/>WebKit/Blink] --> B[WebContentLayerImpl<br/>Content Layer]
+    B --> C[WebLayerImpl<br/>Content Layer]
+    C --> D[PictureLayer/ContentLayer<br/>CC Layer]
+    D --> E[CC Layer Tree<br/>CC Module]
+    
+    A -.-> |"[1:1 Mapping]"| B
+    B -.-> |"[Wrapping]"| C
+    C -.-> |"[CC Integration]"| D
+    D -.-> |"[Tree Structure]"| E
+    
+    style A fill:#e1f5fe
+    style E fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style D fill:#fff3e0
 ```
 
 **Important Note**: Each Graphics Layer corresponds to exactly one CC Layer, but the mapping is established through intermediate wrapper objects in the Content layer.
@@ -131,10 +138,16 @@ WebContentLayerImpl::WebContentLayerImpl(blink::WebContentLayerClient* client)
 
 When `--enable-impl-side-painting` is enabled:
 
-```cpp
-// Graphics Layer records paint commands only
-// Actual rasterization happens on Compositor thread
-PictureLayer → Records DisplayItemList → GPU Rasterization
+```mermaid
+flowchart LR
+    A[Graphics Layer<br/>Records paint commands only] --> B[PictureLayer]
+    B --> C[Records DisplayItemList]
+    C --> D[GPU Rasterization<br/>Compositor thread]
+    
+    style A fill:#e1f5fe
+    style D fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
 ```
 
 **Benefits**:
@@ -146,9 +159,16 @@ PictureLayer → Records DisplayItemList → GPU Rasterization
 
 Without Impl Side Painting:
 
-```cpp  
-// Graphics Layer paints directly to canvas on Main thread
-ContentLayer → Direct Canvas Painting → GPU Upload
+```mermaid
+flowchart LR
+    A[Graphics Layer<br/>Paints directly to canvas<br/>Main thread] --> B[ContentLayer]
+    B --> C[Direct Canvas Painting]
+    C --> D[GPU Upload]
+    
+    style A fill:#e1f5fe
+    style D fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
 ```
 
 ---
@@ -224,18 +244,20 @@ void WebLayerImpl::addChild(WebLayer* child) {
 
 ### Layer Tree Synchronization Process
 
-```text
-1. Graphics Layer Tree Modified
-    ↓
-2. updateChildList() Called
-    ↓  
-3. WebLayerImpl::addChild() 
-    ↓
-4. PictureLayer::AddChild()
-    ↓
-5. CC Layer Tree Structure Updated
-    ↓
-6. SetNeedsFullTreeSync() Notification
+```mermaid
+flowchart TD
+    A[Graphics Layer Tree Modified] --> B[updateChildList Called]
+    B --> C[WebLayerImpl::addChild]
+    C --> D[PictureLayer::AddChild]
+    D --> E[CC Layer Tree Structure Updated]
+    E --> F[SetNeedsFullTreeSync Notification]
+    
+    style A fill:#e1f5fe
+    style F fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#fff3e0
 ```
 
 ### Tree Sync Notification
