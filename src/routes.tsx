@@ -52,8 +52,8 @@ const App: React.FC = () => (
                       <Breadcrumb />
                       <div className="flex-1 overflow-auto">
                         <Routes>
-                          {/* Default route redirects to chromium introduction */}
-                          <Route path="/" element={<Navigate to="/chromium/introduction/overview" replace />} />
+                          {/* Default route redirects to chromium root */}
+                          <Route path="/" element={<Navigate to="/chromium" replace />} />
                           <Route path="/search" element={<SearchResults />} />
                           <Route path="/progress" element={
                             <ProtectedRoute 

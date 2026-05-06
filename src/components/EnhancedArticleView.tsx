@@ -43,7 +43,7 @@ const EnhancedArticleView: React.FC = () => {
 
   // Redirect legacy URLs or invalid subjects to chromium
   if (!subjectParam || !getSubjectById(subjectParam)) {
-    const redirectPath = pathParam ? `/chromium/${pathParam}` : '/chromium/introduction/overview';
+    const redirectPath = pathParam ? `/chromium/${pathParam}` : '/chromium';
     return <Navigate to={redirectPath} replace />;
   }
 
@@ -66,7 +66,36 @@ const EnhancedArticleView: React.FC = () => {
   }, [path]);
 
   const loadContent = async () => {
-    if (!path) {
+    if (!path || path.trim() === '') {
+      // For chromium root path, load learning-path-guide by default
+      if (subjectParam === 'chromium') {
+        const loadingId = addLoading({ message: 'Loading learning path guide...' });
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+          const result = await contentService.getContent('chromium/learning-path-guide');
+          setContent(result.content);
+          setMetadata(result.metadata);
+          setContentSource('static');
+        } catch (error) {
+          console.error('Error loading learning path guide:', error);
+          setError('Failed to load learning path guide');
+          setContent('# Error\n\nFailed to load the learning path guide.');
+          setMetadata({
+            title: 'Error',
+            category: 'general', 
+            tags: [],
+            lastUpdated: new Date()
+          });
+        } finally {
+          removeLoading(loadingId);
+          setIsLoading(false);
+        }
+        return;
+      }
+      
+      // Fallback for other subjects
       setContent('# Welcome\n\nPlease select an article from the sidebar.');
       setMetadata({
         title: 'Welcome',
