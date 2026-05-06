@@ -35,16 +35,24 @@ Chromium's threading model is fundamentally based on **asynchronous communicatio
 
 ### Typical Asynchronous Communication Pattern
 
-```
-Thread-1                     Thread-2                     Thread-1
-   |                           |                           |
-Task-1(1) ─────────────→ Task Queue ─────────→ Task-1(2)  |
-   |                           |                     |     |
-   ↓                           |                     ↓     |
-Task-2 ←─────────────────── Task Queue ←───────── Reply ──┘
-   |                                                       
-   ↓                                                       
-Continue...                                               
+```mermaid
+sequenceDiagram
+    participant T1 as Thread-1
+    participant TQ2 as Task Queue (Thread-2)
+    participant T2 as Thread-2
+    participant TQ1 as Task Queue (Thread-1)
+    
+    T1->>T1: Task-1(1)
+    T1->>TQ2: Post Task-1(2)
+    TQ2->>T2: Execute Task-1(2)
+    T2->>TQ1: Post Reply
+    T1->>T1: Task-2
+    TQ1->>T1: Process Reply
+    T1->>T1: Continue...
+    
+    Note over T1,T2: Asynchronous Communication Pattern
+    Note over T1: Thread-1 remains responsive
+    Note over T2: Thread-2 processes independently
 ```
 
 This pattern allows Thread-1 to remain responsive by:
@@ -59,19 +67,63 @@ This pattern allows Thread-1 to remain responsive by:
 
 The threading model centers around several key classes that work together to provide task-based execution:
 
-```
-PlatformThread::Delegate
-          ↑
-       Thread ──────→ MessageLoop ──────→ RunLoop
-          |              |                   |
-          └─── owns ─────┘                   |
-                         |                   |
-                    MessagePump ←────────────┘
-                         |
-                    TaskQueues:
-                    - work_queue_
-                    - delayed_work_queue_  
-                    - deferred_non_nestable_work_queue_
+```mermaid
+classDiagram
+    class PlatformThreadDelegate {
+        <<interface>>
+        +ThreadMain()
+    }
+    
+    class Thread {
+        -message_loop_ : MessageLoop*
+        -thread_ : PlatformThreadHandle
+        -started_ : bool
+        +StartWithOptions()
+        +Stop()
+    }
+    
+    class MessageLoop {
+        -work_queue_ : TaskQueue
+        -delayed_work_queue_ : DelayedTaskQueue
+        -pump_ : MessagePump*
+        +PostTask()
+        +Run()
+        +DoWork()
+    }
+    
+    class RunLoop {
+        -message_loop_ : MessageLoop*
+        -run_depth_ : int
+        -quit_called_ : bool
+        +Run()
+        +Quit()
+    }
+    
+    class MessagePump {
+        <<abstract>>
+        +Run()
+        +ScheduleWork()
+        +Quit()
+    }
+    
+    class TaskQueues {
+        work_queue_
+        delayed_work_queue_
+        deferred_non_nestable_work_queue_
+    }
+    
+    PlatformThreadDelegate <|-- Thread : inherits
+    Thread --> MessageLoop : owns
+    MessageLoop --> RunLoop : creates
+    RunLoop --> MessagePump : uses
+    MessageLoop --> TaskQueues : contains
+    
+    style PlatformThreadDelegate fill:#e1f5fe
+    style Thread fill:#e8f5e8
+    style MessageLoop fill:#fff3e0
+    style RunLoop fill:#fff3e0
+    style MessagePump fill:#fff3e0
+    style TaskQueues fill:#f3e5f5
 ```
 
 ### Thread Class
@@ -230,14 +282,25 @@ public:
 
 **Message Loop Stack During Modal Dialog:**
 
-```
-┌─────────────────────────────┐
-│     Nested RunLoop          │  ← depth=2, processes dialog events
-│     (File Dialog)           │
-├─────────────────────────────┤
-│     Main RunLoop            │  ← depth=1, suspended during dialog
-│     (Main Window)           │
-└─────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Stack ["Message Loop Stack"]
+        subgraph NR ["Nested RunLoop (depth=2)"]
+            FD["File Dialog<br/>Processes dialog events<br/>ACTIVE"]
+        end
+        
+        subgraph MR ["Main RunLoop (depth=1)"]
+            MW["Main Window<br/>Suspended during dialog<br/>PAUSED"]
+        end
+    end
+    
+    NR -.->|"Nested on top of"| MR
+    
+    style NR fill:#ffeb3b,stroke:#ff9800,stroke-width:2px
+    style MR fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style FD fill:#fff3e0
+    style MW fill:#f3e5f5
+    style Stack fill:#f8f9fa,stroke:#6c757d,stroke-width:1px
 ```
 
 #### Task Queue Categorization and Nesting
