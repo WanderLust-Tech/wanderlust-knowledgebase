@@ -352,18 +352,40 @@ flowchart LR
 - **Lighthouse CI**: Automated performance testing and Core Web Vitals monitoring
 
 ### Hands-On Experiments
+
+```mermaid
+flowchart TD
+    A[Render Pipeline Debugging] --> B[GPU Acceleration]
+    A --> C[Performance Profiling]
+    A --> D[Core Web Vitals]
+    A --> E[Visual Analysis]
+    
+    B --> B1["--enable-gpu-rasterization<br/>--enable-vulkan"]
+    
+    C --> C1["chrome://tracing/<br/>with 'Rendering' category"]
+    
+    D --> D1["DevTools → Lighthouse<br/>→ Performance audit"]
+    
+    E --> E1["DevTools → Rendering<br/>→ Paint flashing + Layer borders"]
+    
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#fff3e0
+    style B1 fill:#e8f5e8
+    style C1 fill:#e8f5e8
+    style D1 fill:#e8f5e8
+    style E1 fill:#e8f5e8
+```
+
+**Command Line Examples:**
 ```bash
-# Try modern GPU acceleration
---enable-gpu-rasterization --enable-vulkan
+# Modern GPU acceleration
+chrome --enable-gpu-rasterization --enable-vulkan
 
-# Profile rendering performance
-chrome://tracing/ with "Rendering" category enabled
-
-# Measure Core Web Vitals
-DevTools → Lighthouse → Performance audit
-
-# Visualize rendering pipeline
-DevTools → Rendering → Paint flashing + Layer borders
+# Advanced debugging
+chrome --show-composited-layer-borders --show-paint-rects --enable-logging=stderr
 ```
 
 ---
