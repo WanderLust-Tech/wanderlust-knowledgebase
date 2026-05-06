@@ -4,6 +4,7 @@ import { ContentNode } from '../contentIndex';
 import { contentIndexBuilder } from '../services/ContentIndexBuilder';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useSubject } from '../contexts/SubjectContext';
+import { useSidebarExpandedState } from '../hooks/useSidebarExpandedState';
 
 interface HybridSidebarProps {
   fallbackNodes: ContentNode[];
@@ -11,7 +12,7 @@ interface HybridSidebarProps {
 
 const HybridSidebar: React.FC<HybridSidebarProps> = ({ fallbackNodes }) => {
   const { isOpen, isMobile, isInitialized } = useSidebar();
-  const [expandedNode, setExpandedNode] = useState<string | null>(null);
+  const { expandedNodes, expandNode } = useSidebarExpandedState();
   const [contentNodes, setContentNodes] = useState<ContentNode[]>(fallbackNodes);
   const [isLoading, setIsLoading] = useState(true);
   const [contentSource, setContentSource] = useState<'static' | 'dynamic' | 'hybrid'>('static');
@@ -52,14 +53,14 @@ const HybridSidebar: React.FC<HybridSidebarProps> = ({ fallbackNodes }) => {
 
   // Auto-expand the node that contains the current page on mount and route changes
   useEffect(() => {
-    const findNodeContainingPath = (nodes: ContentNode[], targetPath: string): string | null => {
+    const findNodeContainingPath = (nodes: ContentNode[], targetPath: string, subjectId: string): string | null => {
       for (const node of nodes) {
         if (node.children) {
           // Check if any child or grandchild matches the current path
           const hasMatchingChild = node.children.some(child => 
-            (child.path && targetPath.startsWith(`/${child.path}`)) ||
+            (child.path && targetPath === `/${subjectId}/${child.path}`) ||
             (child.children?.some(grandchild => 
-              grandchild.path && targetPath.startsWith(`/${grandchild.path}`)
+              grandchild.path && targetPath === `/${subjectId}/${grandchild.path}`
             ))
           );
           
@@ -71,13 +72,16 @@ const HybridSidebar: React.FC<HybridSidebarProps> = ({ fallbackNodes }) => {
       return null;
     };
 
-    const currentPath = location.pathname;
-    const nodeToExpand = findNodeContainingPath(contentNodes, currentPath);
+    // Extract subject from path
+    const pathParts = location.pathname.split('/').filter(p => p);
+    const subjectId = pathParts[0] || 'chromium';
     
-    if (nodeToExpand) {
-      setExpandedNode(nodeToExpand);
+    const nodeToExpand = findNodeContainingPath(contentNodes, location.pathname, subjectId);
+    
+    if (nodeToExpand && !expandedNodes.has(nodeToExpand)) {
+      expandNode(nodeToExpand);
     }
-  }, [location.pathname, contentNodes]);
+  }, [location.pathname, contentNodes, expandedNodes, expandNode]);
 
   const refreshIndex = async () => {
     contentIndexBuilder.clearCache();
@@ -152,8 +156,7 @@ const HybridSidebar: React.FC<HybridSidebarProps> = ({ fallbackNodes }) => {
                   key={`root-${index}-${node.path || node.title}`} 
                   node={node} 
                   level={0} 
-                  expandedNode={expandedNode}
-                  setExpandedNode={setExpandedNode}
+                  expandedNodes={expandedNodes}
                 />
               ))}
             </ul>
@@ -168,54 +171,48 @@ const HybridSidebar: React.FC<HybridSidebarProps> = ({ fallbackNodes }) => {
 const Node: React.FC<{ 
   node: ContentNode; 
   level: number; 
-  expandedNode: string | null; 
-  setExpandedNode: (node: string | null) => void;
-}> = ({ node, level, expandedNode, setExpandedNode }) => {
+  expandedNodes: Set<string>;
+}> = ({ node, level, expandedNodes }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentSubject } = useSubject();
+  const { toggleNode } = useSidebarExpandedState();
   const hasChildren = node.children && node.children.length > 0;
   
-  // For top-level nodes (level 0), use accordion behavior
-  // For nested nodes, use individual toggle behavior
-  const [isExpanded, setIsExpanded] = useState(false);
+  // For top-level nodes (level 0), use persistent multi-expand behavior
+  // For nested nodes, use individual toggle behavior with local state
+  const [localExpanded, setLocalExpanded] = useState(false);
+  
+  // Determine if this node should be expanded
+  const isExpanded = level === 0 ? expandedNodes.has(node.title) : localExpanded;
   
   // Check if this node or any of its children matches the current path
   const isCurrentPage = node.path && location.pathname === `/${currentSubject.id}/${node.path}`;
   const isParentOfCurrentPage = hasChildren && node.children!.some(child => 
-    child.path && location.pathname.startsWith(`/${currentSubject.id}/${child.path}`)
+    child.path && location.pathname.startsWith(`/${currentSubject.id}/${child.path}`) ||
+    (child.children?.some(grandchild =>
+      grandchild.path && location.pathname.startsWith(`/${currentSubject.id}/${grandchild.path}`)
+    ))
   );
 
-  // Auto-expand logic based on current page
+  // Auto-expand logic based on current page for nested nodes only
   useEffect(() => {
-    if (level === 0) {
-      // Top-level: use accordion (expandedNode state)
-      if (expandedNode === node.title) {
-        setIsExpanded(true);
-      } else {
-        setIsExpanded(false);
-      }
-    } else {
-      // Nested: expand if it contains current page
+    if (level > 0) {
+      // Nested: expand if it contains current page or is current page
       if (isParentOfCurrentPage || isCurrentPage) {
-        setIsExpanded(true);
+        setLocalExpanded(true);
       }
     }
-  }, [expandedNode, isParentOfCurrentPage, level, node.title]);
+    // Top-level expansion is handled by the expandedNodes Set
+  }, [isParentOfCurrentPage, isCurrentPage, level]);
 
   const toggleExpand = () => {
-    // For accordion behavior: only apply to top-level nodes (level 0)
     if (level === 0) {
-      // If this node is already expanded, close it
-      // Otherwise, set this node as the only expanded one
-      if (expandedNode === node.title) {
-        setExpandedNode(null);
-      } else {
-        setExpandedNode(node.title);
-      }
+      // Top-level: use persistent multi-expand behavior
+      toggleNode(node.title);
     } else {
       // For nested nodes, use normal toggle behavior
-      setIsExpanded(!isExpanded);
+      setLocalExpanded(!localExpanded);
     }
   };
 
@@ -304,8 +301,7 @@ const Node: React.FC<{
               key={`child-${level}-${index}-${child.path || child.title}`} 
               node={child} 
               level={level + 1} 
-              expandedNode={expandedNode}
-              setExpandedNode={setExpandedNode}
+              expandedNodes={expandedNodes}
             />
           ))}
         </ul>

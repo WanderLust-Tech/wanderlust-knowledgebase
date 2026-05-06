@@ -101,12 +101,13 @@ const EnhancedArticleView: React.FC = () => {
       console.error('Failed to load content:', error);
       setError(error instanceof Error ? error.message : 'Failed to load content');
       
-      // Set fallback content
-      setContent(`# Content Not Found\n\nThe requested article "${path}" could not be loaded.\n\nThis might be because:\n- The article doesn't exist\n- There's a network connection issue\n- The API is temporarily unavailable\n\nPlease try refreshing the page or contact support if the issue persists.`);
+      // Enhanced error content with debugging information
+      const errorDetails = error instanceof Error ? error.message : 'Unknown error';
+      setContent(`# Content Loading Error\n\nThe requested article "${path}" could not be loaded.\n\n## Error Details\n\`\`\`\n${errorDetails}\n\`\`\`\n\n## Debugging Information\n\n- **Subject**: ${subjectParam}\n- **Path**: ${path}\n- **Full URL**: ${location.pathname}\n- **Attempted Paths**: \n  - \`/content/${subjectParam ? subjectParam + '/' : ''}${path}.md\`\n  - \`/content/${subjectParam ? subjectParam + '/' : ''}${path}/overview.md\`\n  - \`/content/${subjectParam ? subjectParam + '/' : ''}${path}/index.md\`\n  - \`/content/${subjectParam ? subjectParam + '/' : ''}${path}/README.md\`\n\n## Possible Solutions\n\n1. **Check File Exists**: Verify the markdown file exists at one of the attempted paths\n2. **Check Content Index**: Ensure the content is properly indexed in the search system\n3. **Refresh Search Index**: Run \`npm run build-index\` to rebuild the content index\n4. **Check Network**: Verify you have a stable connection to the development server\n\n## Available Content\n\nTry navigating to:\n- [Getting Started Overview](/getting-started/overview)\n- [Architecture Overview](/architecture/overview)\n- [Introduction](/introduction/overview)\n\nIf the issue persists, please check the browser console for additional error details.`);
       setMetadata({
-        title: 'Content Not Found',
+        title: 'Content Loading Error',
         category: 'error',
-        tags: [],
+        tags: ['error', 'debugging'],
         lastUpdated: new Date()
       });
     } finally {

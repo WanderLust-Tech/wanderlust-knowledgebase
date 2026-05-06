@@ -143,23 +143,58 @@ class ContentService {
 
   /**
    * Load content from static markdown files (fallback)
+   * Enhanced to handle directory-style paths with multiple fallback strategies
    */
   private async loadFromStaticFiles(path: string): Promise<{ content: string; metadata: ContentMetadata }> {
-    const response = await fetch(`/content/${path}.md`);
-    
-    if (!response.ok) {
-      throw new Error(`Static file not found: ${path}.md`);
+    // Strategy 1: Try exact path match first
+    try {
+      const response = await fetch(`/content/${path}.md`);
+      if (response.ok) {
+        const markdownContent = await response.text();
+        const metadata = this.extractMetadata(markdownContent, path);
+        return { content: markdownContent, metadata };
+      }
+    } catch (error) {
+      // Continue to fallback strategies
     }
 
-    const markdownContent = await response.text();
-    
-    // Extract metadata from frontmatter or content
-    const metadata = this.extractMetadata(markdownContent, path);
-    
-    return {
-      content: markdownContent,
-      metadata
-    };
+    // Strategy 2: Try path with /overview.md suffix (common pattern)
+    try {
+      const response = await fetch(`/content/${path}/overview.md`);
+      if (response.ok) {
+        const markdownContent = await response.text();
+        const metadata = this.extractMetadata(markdownContent, `${path}/overview`);
+        return { content: markdownContent, metadata };
+      }
+    } catch (error) {
+      // Continue to next strategy
+    }
+
+    // Strategy 3: Try path with /index.md suffix
+    try {
+      const response = await fetch(`/content/${path}/index.md`);
+      if (response.ok) {
+        const markdownContent = await response.text();
+        const metadata = this.extractMetadata(markdownContent, `${path}/index`);
+        return { content: markdownContent, metadata };
+      }
+    } catch (error) {
+      // Continue to next strategy
+    }
+
+    // Strategy 4: Try README.md in the directory
+    try {
+      const response = await fetch(`/content/${path}/README.md`);
+      if (response.ok) {
+        const markdownContent = await response.text();
+        const metadata = this.extractMetadata(markdownContent, `${path}/README`);
+        return { content: markdownContent, metadata };
+      }
+    } catch (error) {
+      // All strategies failed
+    }
+
+    throw new Error(`Content not found for path: ${path}. Tried: ${path}.md, ${path}/overview.md, ${path}/index.md, ${path}/README.md`);
   }
 
   /**
