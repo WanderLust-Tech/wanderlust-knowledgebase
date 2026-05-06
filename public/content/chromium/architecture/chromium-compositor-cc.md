@@ -42,8 +42,24 @@ The main interface to cc consists of:
 
 The data flow follows this pattern:
 
-```
-LayerTreeHost + Layer Tree → Property Trees → Commit → Pending Tree → Activation → Active Tree → Draw → Compositor Frame
+```mermaid
+flowchart LR
+    A[LayerTreeHost + Layer Tree] --> B[Property Trees]
+    B --> C[Commit]
+    C --> D[Pending Tree]
+    D --> E[Activation]
+    E --> F[Active Tree]
+    F --> G[Draw]
+    G --> H[Compositor Frame]
+    
+    style A fill:#e1f5fe
+    style H fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#fff3e0
+    style F fill:#fff3e0
+    style G fill:#fff3e0
 ```
 
 ### Key Steps:
@@ -157,9 +173,18 @@ The **TileManager** orchestrates rasterization across the system:
 
 ### Rasterization Pipeline
 
-```cpp
-// Simplified raster pipeline flow
-PaintRecord → RasterSource → RasterBuffer → RasterTask → GPUTexture
+```mermaid
+flowchart LR
+    A[PaintRecord] --> B[RasterSource]
+    B --> C[RasterBuffer]
+    C --> D[RasterTask]
+    D --> E[GPUTexture]
+    
+    style A fill:#e1f5fe
+    style E fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style D fill:#fff3e0
 ```
 
 #### **Paint Operations**
@@ -199,14 +224,55 @@ The **cc::SchedulerStateMachine** determines actions:
 ### Scheduling Flow Examples
 
 #### **Fast Pipeline** (low latency):
-```
-BeginImplFrame → BeginMainFrame → Commit → ReadyToActivate → Activate → ReadyToDraw → Draw
+
+```mermaid
+flowchart LR
+    A[BeginImplFrame] --> B[BeginMainFrame]
+    B --> C[Commit]
+    C --> D[ReadyToActivate]
+    D --> E[Activate]
+    E --> F[ReadyToDraw]
+    F --> G[Draw]
+    
+    style A fill:#e1f5fe
+    style G fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#fff3e0
+    style F fill:#fff3e0
 ```
 
 #### **Slow Raster Pipeline** (parallel work):
-```  
-BeginImplFrame1 → BeginMainFrame1 → Commit1 → (slow raster)
-BeginImplFrame2 → BeginMainFrame2 → ReadyToActivate1 → Activate1 → Commit2 → ReadyToDraw1 → Draw1
+
+```mermaid
+flowchart TD
+    A[BeginImplFrame1] --> B[BeginMainFrame1]
+    B --> C[Commit1]
+    C --> D["(slow raster)"]
+    
+    E[BeginImplFrame2] --> F[BeginMainFrame2]
+    F --> G[ReadyToActivate1]
+    G --> H[Activate1]
+    H --> I[Commit2]
+    I --> J[ReadyToDraw1]
+    J --> K[Draw1]
+    
+    %% Show temporal relationship
+    A --> E
+    D --> G
+    
+    style A fill:#e1f5fe
+    style E fill:#e1f5fe
+    style K fill:#e8f5e8
+    style D fill:#ffcdd2
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+    style F fill:#fff3e0
+    style G fill:#fff3e0
+    style H fill:#fff3e0
+    style I fill:#fff3e0
+    style J fill:#fff3e0
 ```
 
 #### **Latency Management**
