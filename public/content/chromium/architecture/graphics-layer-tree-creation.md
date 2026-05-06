@@ -42,15 +42,23 @@ Layer Compositing provides two main advantages:
 
 The Graphics Layer Tree is derived from the Render Layer Tree with important architectural relationships:
 
-```text
-DOM Tree → Render Object Tree → Render Layer Tree → Graphics Layer Tree
-```
-
 **Key Characteristics:**
 - Multiple Render Layers can share a single Graphics Layer
 - Each Graphics Layer acts as a graphics buffer
 - Graphics Layers form a hierarchical tree structure
 - Relationship enables efficient compositing and hardware acceleration
+
+```mermaid
+flowchart LR
+    A[DOM Tree] --> B[Render Object Tree]
+    B --> C[Render Layer Tree]
+    C --> D[Graphics Layer Tree]
+    
+    style A fill:#e1f5fe
+    style D fill:#e8f5e8
+    style B fill:#fff3e0
+    style C fill:#fff3e0
+```
 
 ## Stacking Context & Drawing Order
 
@@ -213,21 +221,26 @@ const uint64_t CompositingReasonComboSquashableReasons =
 
 Each Composited Layer Mapping contains a Graphics Layer Sub Tree with the following potential components:
 
-```text
-┌─────────────────────────────────────────┐
-│            Clip Layer (optional)        │
-│  ┌───────────────────────────────────┐  │
-│  │        Scrolling Container        │  │
-│  │  ┌─────────────────────────────┐  │  │
-│  │  │        Main Layer           │  │  │
-│  │  │                             │  │  │
-│  │  │  Negative Z-Index Children  │  │  │
-│  │  │  Normal Flow Children       │  │  │
-│  │  │  Positive Z-Index Children  │  │  │
-│  │  └─────────────────────────────┘  │  │
-│  └───────────────────────────────────┘  │
-│            Children Clip Layer          │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph CL ["Clip Layer (optional)"]
+        subgraph SC ["Scrolling Container"]
+            subgraph ML ["Main Layer"]
+                NZI["Negative Z-Index Children"]
+                NFC["Normal Flow Children"]
+                PZI["Positive Z-Index Children"]
+            end
+        end
+        CCL["Children Clip Layer"]
+    end
+    
+    style CL fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style SC fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style ML fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    style NZI fill:#fff3e0
+    style NFC fill:#fff3e0
+    style PZI fill:#fff3e0
+    style CCL fill:#fff3e0
 ```
 
 ### Layer Descriptions
