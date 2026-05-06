@@ -76,10 +76,45 @@ const ArticleView: React.FC = () => {
     return pathParts[0]; // First part of path as category
   };
 
+  // Helper function to process code content and fix indentation
+  const processCodeContent = (content: string): string => {
+    const lines = content.split('\n');
+    
+    // Remove empty lines from the beginning and end
+    while (lines.length > 0 && lines[0].trim() === '') {
+      lines.shift();
+    }
+    while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
+      lines.pop();
+    }
+    
+    if (lines.length === 0) return content;
+    
+    // Find the minimum indentation (excluding empty lines)
+    const nonEmptyLines = lines.filter(line => line.trim() !== '');
+    if (nonEmptyLines.length === 0) return content;
+    
+    const indentLengths = nonEmptyLines.map(line => {
+      const match = line.match(/^(\s*)/);
+      return match ? match[1].length : 0;
+    });
+    
+    const minIndent = Math.min(...indentLengths);
+    
+    // Remove the common leading indentation from all lines
+    const processedLines = lines.map(line => {
+      if (line.trim() === '') return line; // Keep empty lines as is
+      return line.substring(minIndent);
+    });
+    
+    return processedLines.join('\n');
+  };
+
   // Custom renderer for code blocks to add bookmark functionality
   const components = {
     code: ({ node, inline, className, children, ...props }: any) => {
-      const codeContent = String(children).replace(/\n$/, '');
+      const rawContent = String(children).replace(/\n$/, '');
+      const codeContent = processCodeContent(rawContent);
       
       // Check if this is a special component type
       if (className === 'language-interactive-diagram' && !inline) {

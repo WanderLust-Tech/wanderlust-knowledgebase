@@ -32,16 +32,18 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, inline }) =>
     console.log('CodeBlock: Detected mermaid diagram');
     console.log('CodeBlock: Raw children:', children);
     console.log('CodeBlock: Children type:', typeof children);
-    const diagramContent = String(children).replace(/\n$/, '');
-    console.log('CodeBlock: Processed diagram content:', diagramContent);
+    const diagramContent = String(children);
+    console.log('CodeBlock: Diagram content:', diagramContent);
     console.log('CodeBlock: Content length:', diagramContent.length);
     return <MermaidDiagram chart={diagramContent} />;
   }
 
   // Copy to clipboard functionality
+  const codeContent = String(children);
+  
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(children);
+      await navigator.clipboard.writeText(codeContent);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -101,6 +103,8 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, inline }) =>
           lineHeight: '1.5',
           backgroundColor: theme === 'dark' ? '#1f2937' : undefined,
           background: theme === 'dark' ? '#1f2937' : undefined,
+          textIndent: 0, // Ensure no text indentation
+          paddingLeft: '1rem', // Consistent left padding
         }}
         codeTagProps={{
           style: {
@@ -108,18 +112,29 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, inline }) =>
             fontFamily: 'Monaco, Menlo, "Ubuntu Mono", Consolas, source-code-pro, monospace',
             backgroundColor: theme === 'dark' ? '#1f2937' : undefined,
             background: theme === 'dark' ? '#1f2937' : undefined,
+            textIndent: 0, // Ensure no text indentation
+            whiteSpace: 'pre', // Preserve whitespace but don't add extra
+            display: 'block', // Block display to avoid inline text-indent issues
           }
         }}
-        showLineNumbers={children.split('\n').length > 5} // Show line numbers for longer code blocks
+        lineProps={{
+          style: {
+            textIndent: 0, // Ensure no text indentation on individual lines
+            marginLeft: 0,
+            paddingLeft: 0,
+          }
+        }}
+        showLineNumbers={codeContent.split('\n').length > 5} // Show line numbers for longer code blocks
         lineNumberStyle={{
           minWidth: '2.5em',
           paddingRight: '1em',
           color: theme === 'dark' ? '#6b7280' : '#9ca3af',
           borderRight: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`,
           marginRight: '1em',
+          textIndent: 0,
         }}
       >
-        {children}
+        {codeContent}
       </SyntaxHighlighter>
     </div>
   );

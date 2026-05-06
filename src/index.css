@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix code block indentation issues */
+pre code {
+  text-indent: 0 !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+pre code span {
+  text-indent: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* Ensure syntax highlighter lines don't have extra indentation */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  text-indent: 0 !important;
+}
+
 /* Custom scrollbar styles for sidebar */
 .sidebar-scrollbar {
   scrollbar-width: thin;
