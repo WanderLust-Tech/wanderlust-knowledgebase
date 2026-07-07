@@ -1,255 +1,169 @@
-# Custom Download Shelf Implementation
+---
+title: "Custom Download Shelf"
+description: "Replaces Chrome's default download bubble with a bottom shelf UI offering extended download commands, zero-delay transient downloads, and a per-profile preference to revert to the bubble."
+category: "Features"
+tags: ["download", "ui", "views", "buildflag", "custom-download-shelf"]
+difficulty: "advanced"
+date: "2026-07-02"
+author: "Wanderlust Team"
+estimated_reading_time: "10 minutes"
+---
 
-## Overview
+# Custom Download Shelf
 
-The Custom Browser implements an enhanced download shelf system that extends Chromium's standard download UI with additional functionality and customization options. This implementation provides users with more control over download visibility and management while maintaining compatibility with the standard Chromium download system.
+Gated by `BUILDFLAG(CUSTOM_DOWNLOAD_SHELF)`. Replaces Chrome's default download
+bubble with a bottom shelf-style UI that shows active and recent downloads, with
+extended commands (hide, delete from list, delete file) and a zero-delay
+transient-download appearance. A per-profile preference
+(`custom.enable_download_bubble`) lets users revert to the bubble at runtime.
 
-## Key Features
+## Build / activation
 
-### 1. Custom Download Options Shelf
-
-The implementation adds a secondary download shelf (`DownloadOptionsShelfView`) that provides enhanced download management capabilities:
-
-- **Enhanced UI**: Custom styling and layout for download items
-- **Additional Controls**: Extended context menu options for better download management
-- **Flexible Positioning**: Positioned above the standard download shelf when both are visible
-- **Conditional Display**: Can be toggled independently of the main download shelf
-
-### 2. Extended Context Menu
-
-The download context menu has been enhanced with custom options:
-
-- **Hide Download Item**: `HIDE_DOWNLOAD_ITEM_VIEW` command allows users to hide specific downloads from view
-- **Enhanced Labels**: Uses extension-specific string resources for better integration
-- **Progressive Display**: Available in both in-progress and finished download states
-
-### 3. Build Flag Integration
-
-The feature is controlled by the `CUSTOM_DOWNLOAD_SHELF` build flag, ensuring clean separation from vanilla Chromium code:
-
-```cpp
-#if BUILDFLAG(CUSTOM_DOWNLOAD_SHELF)
-// Custom implementation
-#endif
-```
+| Where | What |
+|---|---|
+| [`custom_browser_config.gni`](../src/custom/custom_browser_config.gni) | `custom_download_shelf = true` — gates source compilation |
+| [`buildflags/BUILD.gn`](../src/custom/buildflags/BUILD.gn) | Emits `BUILDFLAG(CUSTOM_DOWNLOAD_SHELF)` via `custom_features_buildflags.h` |
+| [`browser/sources.gni`](../src/custom/browser/sources.gni) | Adds `download/download_options_item_model.{cc,h}` and `download/download_options_shelf.{cc,h}` |
+| [`browser/ui/sources.gni`](../src/custom/browser/ui/sources.gni) | Adds `views/download/download_options_{item,shelf}_view.{cc,h}` |
+| [`browser/prefs/custom_prefs.cc`](../src/custom/browser/prefs/custom_prefs.cc) | Registers `custom.enable_download_bubble` (default `false`) |
 
 ## Architecture
 
-### Component Overview
-
 ```
-┌─────────────────────────────────────────────────────┐
-│                 BrowserView                         │
-├─────────────────────────────────────────────────────┤
-│              Standard Content Area                  │
-├─────────────────────────────────────────────────────┤
-│          DownloadOptionsShelfView (Custom)          │
-├─────────────────────────────────────────────────────┤
-│           Standard Download Shelf                   │
-└─────────────────────────────────────────────────────┘
+Download event (DownloadItem*)
+   │
+   ▼
+DownloadOptionsShelf  (abstract, src/custom/browser/download/)
+   │  GetTransientDownloadShowDelay() → 0 s  (vs upstream 2 s)
+   │  AddDownload() / Open() / Close() / Hide() / Unhide()
+   │
+   ▼
+DownloadOptionsShelfView  (views::AccessiblePaneView, src/custom/browser/ui/views/download/)
+   │  Manages a list of DownloadOptionsItemView widgets
+   │  Slide animation for show/hide (gfx::SlideAnimation)
+   │  "Show All Downloads" + close buttons
+   │
+   └── DownloadOptionsItemView  (per download)
+         Shows progress, file icon, filename, status text
+         Context menu: open, pause/resume, cancel, hide, delete from list, delete file
+         Driven by DownloadOptionsItemModel
+
+DownloadOptionsItemModel  (DownloadUIModel implementation)
+   Tracks DownloadItem* state
+   Supports custom commands:
+     HIDE_DOWNLOAD_ITEM_VIEW  — marks item hidden in this session
+     DELETE_LIST              — removes from download history
+     DELETE_FILE              — removes file from disk + history
 ```
 
-### Class Hierarchy
+### Class hierarchy
 
 ```
 DownloadOptionsShelf (Abstract Base)
 └── DownloadOptionsShelfView (Views Implementation)
     ├── Inherits: views::AccessiblePaneView
-    ├── Inherits: views::AnimationDelegateViews  
+    ├── Inherits: views::AnimationDelegateViews
     └── Inherits: views::MouseWatcherListener
 ```
 
-### Key Files
+## Custom download commands
 
-#### Core Implementation
-- **[src/custom/browser/download/download_options_shelf.h](../src/custom/browser/download/download_options_shelf.h)**: Abstract base class defining the download options shelf interface
-- **[src/custom/browser/ui/views/download/download_options_shelf_view.h](../src/custom/browser/ui/views/download/download_options_shelf_view.h)**: Views-based implementation of the custom download shelf
-- **[src/custom/browser/ui/views/download/download_options_shelf_view.cc](../src/custom/browser/ui/views/download/download_options_shelf_view.cc)**: Implementation of shelf view with custom rendering and behavior
+Three commands are added to `DownloadCommands::Command` when
+`CUSTOM_DOWNLOAD_SHELF` is enabled:
 
-#### Integration Points
-- **[src/chrome/browser/ui/views/frame/browser_view.cc](../src/chrome/browser/ui/views/frame/browser_view.cc)**: Integration with main browser window
-- **[src/chrome/browser/ui/views/frame/browser_view_layout.cc](../src/chrome/browser/ui/views/frame/browser_view_layout.cc)**: Layout and positioning logic
-- **[src/chrome/browser/download/download_shelf_context_menu.cc](../src/chrome/browser/download/download_shelf_context_menu.cc)**: Extended context menu functionality
+| Enum value | ID | Behaviour |
+|---|---|---|
+| `HIDE_DOWNLOAD_ITEM_VIEW` | 23 | Hides this item from the shelf for this session |
+| `DELETE_LIST` | 24 | Removes the download entry from history (keeps file) |
+| `DELETE_FILE` | 25 | Deletes the file from disk and removes from history |
 
-#### Supporting Files
-- **[src/custom/browser/ui/views/download/download_options_item_view.h](../src/custom/browser/ui/views/download/download_options_item_view.h)**: Individual download item representation in the custom shelf
+These are wired through `DownloadUIModel`, `DownloadItemModel`, and the shelf's
+context menu.
 
-## Implementation Details
+## Download bubble interop
 
-### Layout Integration
-
-The custom download shelf is positioned above the standard download shelf in the browser layout hierarchy:
+The patched `download_bubble_prefs.cc` adds a profile-aware overload:
 
 ```cpp
-int BrowserViewLayout::LayoutDownloadOptionsShelf(int bottom) {
-  if (download_options_shelf_ && download_options_shelf_->GetVisible()) {
-    const int height = download_options_shelf_->GetPreferredSize().height();
-    download_options_shelf_->SetBounds(vertical_layout_rect_.x(), bottom - height,
-                               vertical_layout_rect_.width(), height);
-    bottom -= height;
-  }
-  return bottom;
-}
+// Returns false → show custom shelf; true → show Chrome's bubble.
+bool IsDownloadBubbleEnabled(Profile* profile);
 ```
 
-### Context Menu Enhancements
+When `custom.enable_download_bubble` is **false** (the default), the custom
+shelf is used exclusively. When **true**, Chrome's built-in download bubble
+takes over and the shelf is not shown.
 
-The context menu system has been extended with custom commands:
+Call sites patched to use the profile-aware overload:
 
-```cpp
-// In-progress downloads menu
-#if BUILDFLAG(CUSTOM_DOWNLOAD_SHELF)
-    in_progress_download_menu_model_->AddItem(
-        DownloadCommands::HIDE_DOWNLOAD_ITEM_VIEW, 
-        l10n_util::GetStringUTF16(IDS_EXTENSIONS_HIDE_DETAILS));
-#endif
+| File | Change |
+|---|---|
+| `download_ui_controller.cc` | Chooses shelf vs bubble per profile |
+| `chrome_download_manager_delegate.cc` | Skips ephemeral-warning scheduling when shelf is active |
+| `downloads_api.cc` | Extension downloads API uses profile-aware check |
 
-// Finished downloads menu  
-#if BUILDFLAG(CUSTOM_DOWNLOAD_SHELF)
-    finished_download_menu_model_->AddItem(
-        DownloadCommands::HIDE_DOWNLOAD_ITEM_VIEW, 
-        l10n_util::GetStringUTF16(IDS_EXTENSIONS_HIDE_DETAILS));
-#endif
-```
+## Preferences
 
-### Visibility Management
+| Pref key | Type | Default | Description |
+|---|---|---|---|
+| `custom.enable_download_bubble` | bool | `false` | `true` → use Chrome's bubble; `false` → use custom shelf |
+| `download.shelf_invisible` | bool | `false` | Hide the shelf bar itself (downloads still tracked) |
+| `toolbar.show_download_button` | bool | — | Show/hide the download toolbar button |
 
-The custom shelf provides independent visibility control:
+Prefs are registered in [`custom_prefs.cc`](../src/custom/browser/prefs/custom_prefs.cc)
+under `#if BUILDFLAG(CUSTOM_DOWNLOAD_SHELF)`. Constants live in
+[`custom_pref_names.h`](../src/custom/common/custom_pref_names.h).
 
-```cpp
-void BrowserView::SetDownloadOptionsShelfVisible(bool visible) {
-  DCHECK(download_options_shelf_);
-  browser_->UpdateDownloadOptionsShelfVisibility(visible);
-  ToolbarSizeChanged(false);
-}
+## Settings page
 
-bool BrowserView::IsDownloadOptionsShelfVisible() const {
-  return download_options_shelf_ && download_options_shelf_->IsShowing();
-}
-```
+The toggle is in the custom browser **Others** settings section
+(`chrome://settings/customOthers`):
 
-## Build Configuration
+| Control | Pref | Effect |
+|---|---|---|
+| "Use Chrome's download bubble instead of the custom download shelf" | `custom.enable_download_bubble` | Switches UI mode; takes effect on next download |
+| "Invisible download bar" | `download.shelf_invisible` | Hides the shelf visually while keeping tracking active |
+| "Show download button" | `toolbar.show_download_button` | Toolbar icon visibility |
 
-### Build Flag Definition
+## Toolbar button
 
-The `CUSTOM_DOWNLOAD_SHELF` build flag controls compilation of custom download shelf features. This flag should be defined in the project's build configuration files.
+[`custom_download_button.{cc,h}`](../src/custom/browser/ui/views/toolbar/custom_download_button.cc)
+adds a `ToolbarButton` wired to `IDC_SHOW_DOWNLOADS` with the
+`kDownloadToolbarButtonIcon` vector icon. It is shown/hidden based on the
+`toolbar.show_download_button` pref and is placed in the toolbar by the patched
+`toolbar_view.cc`.
 
-### Conditional Compilation Areas
+## Animation behaviour
 
-The following components are conditionally compiled based on the build flag:
+When `CUSTOM_DOWNLOAD_SHELF` is enabled, `scroll_offset_animation_curve.cc` is
+patched to use `kEaseInOut` instead of `kLinear` for scroll animations, giving
+the shelf slide a smoother feel.
 
-1. **Browser View Integration**: Custom shelf creation and management
-2. **Layout System**: Positioning and sizing logic
-3. **Context Menu**: Extended menu items and commands
-4. **Download Statistics**: Custom metrics and tracking
-5. **Preference System**: Download bubble preferences customization
+## Patched upstream files
 
-## Usage Patterns
+| Upstream file | Nature of patch |
+|---|---|
+| `download_commands.h` | Adds `HIDE_DOWNLOAD_ITEM_VIEW`, `DELETE_LIST`, `DELETE_FILE` enum values |
+| `download_ui_model.h/cc` | Hooks for new commands |
+| `download_item_model.cc` | `IsCommandEnabled` / `ExecuteCommand` for new commands |
+| `download_shelf_context_menu.cc` | Context menu entries for new commands |
+| `download_stats.h/cc` | Tracking enums for new command usage |
+| `download_bubble_prefs.h/cc` | Profile-aware `IsDownloadBubbleEnabled(Profile*)` |
+| `chrome_download_manager_delegate.h/cc` | Ephemeral-warning short-circuit |
+| `download_ui_controller.cc` | Shelf vs bubble routing |
+| `downloads_api.cc` | Extension API profile-aware bubble check |
+| `toolbar_view.h/cc` | Injects `CustomDownloadButton`; `OnShowDownloadButtonChanged()` |
+| `browser_view.h/cc` | Frame-level shelf integration |
+| `scroll_offset_animation_curve.cc` | `kEaseInOut` animation |
 
-### Developer Integration
+## File map
 
-To extend the custom download shelf functionality:
-
-1. **Add New Commands**: Extend `DownloadCommands::Command` enum
-2. **Update Context Menu**: Modify context menu generation logic
-3. **Implement Handlers**: Add command execution logic in `DownloadCommands`
-4. **Update UI**: Extend download item view components as needed
-
-### User Interface
-
-The custom download shelf is designed to:
-- Automatically show/hide based on download activity
-- Provide intuitive controls for download management
-- Maintain consistency with Chromium UI patterns
-- Support keyboard navigation and accessibility features
-
-## Configuration Options
-
-### Runtime Behavior
-
-- **Auto-hide**: Shelf can automatically hide after download completion
-- **Manual Control**: Users can manually show/hide the shelf
-- **Integration Mode**: Works alongside or independently of standard download shelf
-
-### Customization Points
-
-- **Styling**: Custom themes and visual appearance
-- **Positioning**: Configurable placement within browser window
-- **Animation**: Customizable show/hide animations
-- **Item Limits**: Configurable maximum number of displayed items
-
-## Testing
-
-### Unit Tests
-
-Custom download shelf components should be tested for:
-- Proper initialization and cleanup
-- Correct layout calculations
-- Context menu functionality
-- Visibility state management
-
-### Integration Tests
-
-System integration testing should cover:
-- Browser window layout with shelf visible/hidden
-- Interaction with standard download system
-- Multi-download scenarios
-- Window resizing and repositioning
-
-## Compatibility
-
-### Chromium Integration
-
-The custom download shelf implementation:
-- Maintains compatibility with standard Chromium download APIs
-- Uses established UI frameworks (Views, Animation system)
-- Follows Chromium coding standards and patterns
-- Supports standard accessibility features
-
-### Platform Support
-
-The implementation is designed to work across Chromium's supported platforms:
-- Windows (primary development platform)
-- macOS (with platform-specific adaptations)
-- Linux (following standard Views implementation patterns)
-
-## Future Enhancements
-
-### Planned Features
-
-- **Extended Download Management**: Additional download manipulation options
-- **Enhanced Notifications**: Improved download progress and completion notifications  
-- **Customizable Layouts**: User-configurable shelf appearance and behavior
-- **Download Categorization**: Grouping and filtering of downloads by type or source
-
-### Extension Points
-
-The architecture supports future extensions through:
-- Abstract base class design for alternative implementations
-- Build flag system for feature toggling
-- Established integration patterns with Chromium systems
-- Modular component design for independent feature development
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Shelf Not Visible**: Check `CUSTOM_DOWNLOAD_SHELF` build flag inclusion
-2. **Layout Problems**: Verify browser view layout integration
-3. **Context Menu Missing**: Ensure proper command registration
-4. **Performance Issues**: Review animation and rendering optimizations
-
-### Debug Information
-
-Enable debug logging for download shelf components:
-- Browser view layout calculations
-- Download shelf visibility state changes
-- Context menu construction and command execution
-- Animation state transitions
-
-## Related Documentation
-
-- [Chromium Download System](https://chromium.googlesource.com/chromium/src/+/HEAD/chrome/browser/download/README.md)
-- [Views UI Framework](https://chromium.googlesource.com/chromium/src/+/HEAD/ui/views/README.md)
-- [Build Flag System](../build-system.md)
-- [Custom UI Components](custom-ui-components.md)
+| File | Purpose |
+|---|---|
+| [`browser/download/download_options_shelf.{cc,h}`](../src/custom/browser/download/download_options_shelf.h) | Abstract shelf base; zero-delay transient downloads |
+| [`browser/download/download_options_item_model.{cc,h}`](../src/custom/browser/download/download_options_item_model.h) | Per-download UI model with custom commands |
+| [`browser/ui/views/download/download_options_shelf_view.{cc,h}`](../src/custom/browser/ui/views/download/download_options_shelf_view.h) | Main shelf view with animation |
+| [`browser/ui/views/download/download_options_item_view.{cc,h}`](../src/custom/browser/ui/views/download/download_options_item_view.h) | Per-item widget with progress, icons, context menu |
+| [`browser/ui/views/toolbar/custom_download_button.{cc,h}`](../src/custom/browser/ui/views/toolbar/custom_download_button.h) | Toolbar button → `IDC_SHOW_DOWNLOADS` |
+| [`common/custom_pref_names.h`](../src/custom/common/custom_pref_names.h) | `kCustomEnableDownloadBubble`, `kDownloadShelfInvisible`, `kToolbarShowDownloadButton` constants |
+| [`browser/resources/settings/others_page/`](../src/custom/browser/resources/settings/others_page/) | Polymer settings UI |
+| [`app/generated_resources.grdp`](../src/custom/app/generated_resources.grdp) | `IDS_DOWNLOAD_*` string resources |

@@ -81,6 +81,10 @@ const chromiumContent: ContentNode[] = [
             { title: "UI Library Fundamentals", path: "architecture/ui-library-fundamentals" },
             { title: "UI Framework & Aura Architecture", path: "architecture/ui-framework-aura" },
             { title: "Custom Browser Architecture", path: "architecture/custom-browser-architecture" },
+            { title: "Feature Management Architecture", path: "architecture/feature-management" },
+            { title: "Split View Architecture", path: "architecture/split-view" },
+            { title: "Input Event Lifecycle (Chromium 134)", path: "architecture/chromium-134-input-lifecycle" },
+            { title: "Plugin Architecture Analysis (Chromium 134)", path: "architecture/chromium-134-plugin-architecture" },
             {
                 title: "Rendering System",
                 children: [
@@ -218,7 +222,6 @@ const chromiumContent: ContentNode[] = [
         title: "Custom Browser Features",
         description: "Wanderlust Custom Browser specific features and implementations",
         children: [
-            { title: "Features README", path: "features/README" },
             { title: "Features Overview", path: "features/custom-browser/README" },
             {
                 title: "Core Features",
@@ -228,25 +231,129 @@ const chromiumContent: ContentNode[] = [
                     { title: "RSS Feed Support", path: "features/custom-browser/rss-feed-support" },
                     { title: "RSS User Guide", path: "features/custom-browser/rss-user-guide" },
                     { title: "Privacy Guard", path: "features/custom-browser/privacy-guard" },
-                    { title: "Vertical Tabs UI", path: "features/custom-browser/vertical-tabs-ui" },
+                    { title: "Vertical Tabs", path: "features/custom-browser/vertical-tabs" },
                     { title: "Custom Settings UI", path: "features/custom-browser/custom-settings-ui" },
                     { title: "Custom Download Shelf", path: "features/custom-browser/custom-download-shelf" },
-                    { title: "Tab Shapes Feature", path: "features/custom-browser/tab-shapes-feature" }
+                    { title: "Tab Shapes Feature", path: "features/custom-browser/tab-shapes-feature" },
+                    { title: "Ad Blocker", path: "features/custom-browser/ad-blocker" },
+                    { title: "Privacy Shield", path: "features/custom-browser/privacy-shield" },
+                    { title: "De-Googling", path: "features/custom-browser/de-googling" },
+                    { title: "Tracking Dashboard", path: "features/custom-browser/tracking-dashboard" }
                 ]
             },
             {
-                title: "Modernized Browser Features (v1.1.0)",
+                title: "Browser UI & Navigation",
                 children: [
-                    { title: "Feature Flag Management", path: "features/custom-browser/feature-flag-management" },
-                    { title: "Enhanced Scroll Animations", path: "features/custom-browser/enhanced-scroll-animations" },
-                    { title: "JavaScript Content Controls", path: "features/custom-browser/javascript-content-controls" },
-                    { title: "Advanced Download Management", path: "features/custom-browser/advanced-download-management" },
-                    { title: "Reader Mode Integration", path: "features/custom-browser/reader-mode-integration" }
+                    { title: "Sidebar", path: "features/custom-browser/sidebar" },
+                    { title: "Sidebar Apps", path: "features/custom-browser/sidebar-apps" },
+                    { title: "Infobars", path: "features/custom-browser/infobars" },
+                    { title: "Panels", path: "features/custom-browser/panels" },
+                    { title: "Browser Tools", path: "features/custom-browser/browser-tools" },
+                    { title: "Splash Screen", path: "features/custom-browser/splash-screen" },
+                    { title: "Tab Utilities", path: "features/custom-browser/tab-utilities" },
+                    { title: "Mouse Gestures", path: "features/custom-browser/mouse-gestures" },
+                    { title: "Autoscroll", path: "features/custom-browser/autoscroll" },
+                    { title: "Super Drag", path: "features/custom-browser/super-drag" }
+                ]
+            },
+            {
+                title: "Privacy & Security",
+                children: [
+                    { title: "Incognito Clipboard Privacy", path: "features/custom-browser/incognito-clipboard-privacy" },
+                    { title: "Origin Permission Grants", path: "features/custom-browser/origin-permission-grants" },
+                    { title: "Scheme Aliases", path: "features/custom-browser/scheme-aliases" },
+                    { title: "Content Policy Chain", path: "features/custom-browser/content-policy-chain" },
+                    { title: "Security & Privacy Features", path: "features/custom-browser/security-privacy-features" },
+                    { title: "Site Injection", path: "features/custom-browser/site-injection" },
+                    { title: "UA Overrides", path: "features/custom-browser/ua-overrides" }
+                ]
+            },
+            {
+                title: "Downloads & Networking",
+                children: [
+                    { title: "Crash & Resume Downloads", path: "features/custom-browser/crash-resume-downloads" },
+                    { title: "Proxy Settings", path: "features/custom-browser/proxy-settings" },
+                    { title: "Smart Proxy Routing", path: "features/custom-browser/smart-proxy-routing" },
+                    { title: "Startup Cache", path: "features/custom-browser/startup-cache" }
+                ]
+            },
+            {
+                title: "Content & Media",
+                children: [
+                    { title: "BitTorrent Client", path: "features/custom-browser/bittorrent-client" },
+                    { title: "ePub Reader", path: "features/custom-browser/epub-reader" },
+                    { title: "RSS Infobar Subscribe", path: "features/custom-browser/rss-infobar-subscribe" },
+                    { title: "Most Visited Panel", path: "features/custom-browser/most-visited-panel" }
+                ]
+            },
+            {
+                title: "Page Utilities",
+                children: [
+                    { title: "Page Notes", path: "features/custom-browser/page-notes" },
+                    { title: "Typed Input History", path: "features/custom-browser/typed-input-history" }
+                ]
+            },
+            {
+                title: "NTP (New Tab Page)",
+                children: [
+                    { title: "NTP Bookmarks API", path: "features/custom-browser/ntp/ntp-bookmarks-api" },
+                    { title: "NTP Feature Roadmap", path: "features/custom-browser/ntp/ntp-feature-roadmap" }
+                ]
+            },
+            {
+                title: "Custom WebUI",
+                children: [
+                    { title: "Getting Started", path: "features/custom-browser/custom-webui/getting-started" },
+                    { title: "RSS Reader WebUI", path: "features/custom-browser/custom-webui/rss-reader" },
+                    { title: "Sidebar WebUI", path: "features/custom-browser/custom-webui/sidebar" }
+                ]
+            },
+            {
+                title: "Branding",
+                children: [
+                    { title: "Branding Setup", path: "features/custom-browser/branding/branding-setup" },
+                    { title: "Branding System", path: "features/custom-browser/branding/branding-system" },
+                    { title: "Branding Analysis", path: "features/custom-browser/branding/branding-analysis" },
+                    { title: "GRD Branding Analysis", path: "features/custom-browser/branding/grd-branding-analysis" },
+                    { title: "Android Branding", path: "features/custom-browser/branding/android-branding" },
+                    { title: "Linux Branding", path: "features/custom-browser/branding/linux-branding" },
+                    { title: "iOS Branding", path: "features/custom-browser/branding/ios-branding" },
+                    { title: "Help URL Branding", path: "features/custom-browser/branding/help-url-branding" },
+                    { title: "URL Schema Branding", path: "features/custom-browser/branding/url-schema-branding" }
+                ]
+            },
+            {
+                title: "Bloomberg Port",
+                children: [
+                    { title: "Bloomberg Chromium Patches", path: "features/custom-browser/bloomberg/bloomberg-chromium-patches" },
+                    { title: "Bloomberg Feature Ports", path: "features/custom-browser/bloomberg/bloomberg-feature-ports" },
+                    { title: "Bloomberg Diagnostics", path: "features/custom-browser/bloomberg/bloomberg-diagnostics" }
+                ]
+            },
+            {
+                title: "Helium Port",
+                children: [
+                    { title: "Helium Phase A", path: "features/custom-browser/helium/helium-phase-a" },
+                    { title: "Helium Phase B", path: "features/custom-browser/helium/helium-phase-b" },
+                    { title: "Helium Phase C", path: "features/custom-browser/helium/helium-phase-c" },
+                    { title: "Helium Backlog", path: "features/custom-browser/helium/helium-backlog" },
+                    { title: "Privacy Hardening Backlog", path: "features/custom-browser/helium/privacy-hardening-backlog" }
+                ]
+            },
+            {
+                title: "Opera Feature Ports",
+                children: [
+                    { title: "Opera Feature Ports", path: "features/custom-browser/opera-feature-ports" }
                 ]
             },
             {
                 title: "System Features",
                 children: [
+                    { title: "Feature Flag Management", path: "features/custom-browser/feature-flag-management" },
+                    { title: "Enhanced Scroll Animations", path: "features/custom-browser/enhanced-scroll-animations" },
+                    { title: "JavaScript Content Controls", path: "features/custom-browser/javascript-content-controls" },
+                    { title: "Advanced Download Management", path: "features/custom-browser/advanced-download-management" },
+                    { title: "Reader Mode Integration", path: "features/custom-browser/reader-mode-integration" },
                     { title: "Multi-Brand System", path: "features/custom-browser/multi-brand-system" },
                     { title: "Google API Suppression", path: "features/custom-browser/google-api-suppression" },
                     { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
@@ -324,7 +431,18 @@ const chromiumContent: ContentNode[] = [
                 title: "Custom Browser Development",
                 children: [
                     { title: "Custom Browser Development Guide", path: "development/custom-browser-development" },
-                    { title: "Custom Browser Build System", path: "development/custom-browser-build-system" }
+                    { title: "Custom Browser Build System", path: "development/custom-browser-build-system" },
+                    { title: "Migration from Fork", path: "development/migration-from-fork" },
+                    { title: "UI Automation Testing", path: "development/ui-automation-testing" }
+                ]
+            },
+            {
+                title: "Chromium Version Migrations",
+                children: [
+                    { title: "Chromium 134 → 135 Migration", path: "features/custom-browser/chromium-134-to-135-migration" },
+                    { title: "Chromium 135 → 136 Migration", path: "features/custom-browser/chromium-135-to-136-migration" },
+                    { title: "Chromium 136 → 137 Migration", path: "features/custom-browser/chromium-136-to-137-migration" },
+                    { title: "Chromium 139 → 140 Migration", path: "features/custom-browser/chromium-139-to-140-migration" }
                 ]
             },
             {
@@ -334,7 +452,9 @@ const chromiumContent: ContentNode[] = [
                     { title: "New Builder Setup", path: "infra/new_builder" },
                     { title: "Trybot Usage", path: "infra/trybot_usage" },
                     { title: "Using LED (Chromium Test Tool)", path: "infra/using_led" },
-                    { title: "Watchlists", path: "infra/watchlists" }
+                    { title: "Watchlists", path: "infra/watchlists" },
+                    { title: "GPU Acceleration Guide", path: "infra/gpu-acceleration-guide" },
+                    { title: "Release Builds", path: "infra/release-builds" }
                 ]
             },
             { title: "Git Cookbook", path: "development/git_cookbook" },
@@ -465,7 +585,8 @@ const chromiumContent: ContentNode[] = [
             { title: "Profiling Techniques", path: "performance/profiling" },
             { title: "Profile Guided Optimization (PGO)", path: "performance/pgo" },
             { title: "Order File Optimization", path: "performance/orderfile" },
-            { title: "Profiling Content Shell on Android", path: "performance/profiling_content_shell_on_android" }
+            { title: "Profiling Content Shell on Android", path: "performance/profiling_content_shell_on_android" },
+            { title: "Git Patcher Optimization Guide", path: "performance/gitpatcher-optimization" }
         ]
     },
 
@@ -581,6 +702,13 @@ const chromiumContent: ContentNode[] = [
             { title: "Command Line Switches", path: "debugging/command-line-switches" },
             { title: "Crash Reports Analysis", path: "debugging/crash-reports" },
             { title: "Troubleshooting", path: "debugging/troubleshooting" },
+            {
+                title: "Custom Browser Troubleshooting",
+                children: [
+                    { title: "Content Blocking Fix", path: "debugging/content-blocking-fix" },
+                    { title: "Vertical → Horizontal Tab Switch", path: "debugging/vertical-to-horizontal-switch" }
+                ]
+            },
             {
                 title: "Advanced Debugging",
                 children: [

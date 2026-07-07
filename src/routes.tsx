@@ -25,6 +25,7 @@ import CodeExamplesRepository from './components/CodeExamplesRepository';
 import ArticleSyncPage from './components/ArticleSyncPage';
 import RealTimeDemoPage from './components/RealTimeDemoPage';
 import { CMSDashboard } from './components/CMSDashboard';
+import OmahaManagement from './components/OmahaManagement';
 
 import Header from './components/Header';
 import SearchResults from './components/SearchResults';
@@ -97,6 +98,11 @@ const App: React.FC = () => (
                         <Route path="/code-examples" element={<CodeExamplesRepository />} />
                         <Route path="/content-sync" element={<ArticleSyncPage />} />
                         <Route path="/cms" element={<CMSDashboard />} />
+                        <Route path="/admin/omaha" element={
+                          <ProtectedRoute requiredRole="Admin">
+                            <OmahaManagement />
+                          </ProtectedRoute>
+                        } />
                         <Route path="/versioning/:contentPath?" element={<ContentVersioningPage />} />
                         <Route path="/ai-suggestions/:contentPath?" element={<AIContentSuggestionsPage />} />                          
                           {/* Subject-based routes - captures /:subject/* */}

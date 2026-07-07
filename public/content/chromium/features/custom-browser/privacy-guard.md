@@ -1,308 +1,262 @@
+---
+title: "Privacy Guard"
+description: "Strips known tracking query parameters from HTTP(S) URLs before requests leave the browser process. Two-layer rule system: global rules for universal trackers (utm_*, fbclid, gclid) and per-site rules for Google, Amazon, YouTube, Facebook, and others."
+category: "Features"
+tags: ["privacy", "url-purification", "tracking", "buildflag", "network"]
+difficulty: "advanced"
+date: "2026-07-02"
+author: "Wanderlust Team"
+estimated_reading_time: "12 minutes"
+---
+
 # Privacy Guard
 
-## Overview
+Gated by `BUILDFLAG(ENABLE_PRIVACY_GUARD)`. Strips known tracking query
+parameters from HTTP(S) URLs before the network request leaves the browser
+process. Operates entirely in the browser process — no network round-trip
+is needed to decide whether a parameter should be removed.
 
-Privacy Guard is a comprehensive URL purification system that automatically removes tracking parameters from URLs to enhance user privacy. This feature operates transparently in the background, cleaning URLs without breaking website functionality or disrupting the browsing experience.
+The feature has two layers of rules compiled into the binary:
 
-## 📁 Location
-**Directory**: `src/custom/components/privacy_guard/core/`
+- **Global rules** — applied to every URL. Covers widely-deployed tracking
+  params (`utm_*`, `ga_*`, `fbclid`, `gclid`, `yclid`, `mkt_tok`,
+  `__twitter_impression`, `Echobox`, `spm`, etc.).
+- **Per-site rules** — applied only when the URL's host matches the rule's
+  domain. Covers site-specific analytics params for Google, Amazon, YouTube,
+  Facebook, Instagram, Steam, GitHub, LinkedIn, and others.
 
-## 🏗️ Architecture
-
-### Core Components
-
-#### URL Purification Engine
-**Files**: `url_purify_rule.h/.cc`
-- **Purpose**: Core URL purification logic and rule processing
-- **Integration**: Navigation and URL processing pipeline
-- **Responsibilities**:
-  - Apply purification rules to URLs
-  - Maintain URL functionality while removing tracking
-  - Process rule-based URL transformations
-  - Validate purified URLs for correctness
-
-#### Rule Parser System
-**Files**: `url_purify_rule_parser.h/.cc`
-- **Purpose**: Parse and validate privacy protection rules
-- **Integration**: Rule definition and configuration system
-- **Responsibilities**:
-  - Parse rule configuration files
-  - Validate rule syntax and logic
-  - Convert rules into executable format
-  - Handle rule updates and modifications
-
-#### Default Protection Rules
-**Files**: `url_purify_default_rules.h/.cc`
-- **Purpose**: Pre-configured tracking parameter removal rules
-- **Integration**: Default privacy protection baseline
-- **Responsibilities**:
-  - Define common tracking parameters to remove
-  - Provide out-of-the-box privacy protection
-  - Handle major advertising and analytics platforms
-  - Maintain compatibility with popular websites
-
-## 🛡️ Privacy Protection Features
-
-### Tracking Parameter Removal
-The system automatically removes common tracking parameters including:
-
-#### Analytics Tracking
-- **Google Analytics**: `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`
-- **Adobe Analytics**: `s_cid`, `s_kwcid`, `s_kwgid`
-- **Facebook Tracking**: `fbclid`, `fb_action_ids`, `fb_action_types`
-
-#### Social Media Tracking  
-- **Twitter**: `twclid`, `twitter_impression_id`
-- **LinkedIn**: `li_source`, `li_medium`, `li_campaign`
-- **Instagram**: `igshid`, `ig_rid`
-
-#### E-commerce Tracking
-- **Amazon**: `tag`, `linkCode`, `ref`, `th`, `psc`
-- **eBay**: `hash`, `_trkparms`, `_trksid`
-- **Shopping Platforms**: `aff_id`, `affiliate_id`, `ref_id`
-
-#### Email & Newsletter Tracking
-- **Mailchimp**: `mc_cid`, `mc_eid`
-- **Campaign Monitor**: `cm_mmc`
-- **Newsletter Platforms**: `newsletter_id`, `email_id`
-
-### Rule-Based System
-The Privacy Guard uses a flexible rule-based architecture:
-
-```cpp
-class URLPurifyRule {
-  // Rule definition and processing
-  bool ShouldPurify(const GURL& url);
-  GURL PurifyURL(const GURL& url);
-  bool ValidateRule(const std::string& rule_text);
-};
-```
-
-## ⚙️ Implementation Details
-
-### URL Processing Pipeline
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Browser
-    participant PrivacyGuard
-    participant RuleEngine
-    participant URLValidator
-    
-    User->>Browser: Request URL Navigation
-    Browser->>PrivacyGuard: Intercept Navigation
-    PrivacyGuard->>RuleEngine: Check URL Against Rules
-    
-    RuleEngine->>RuleEngine: Identify Tracking Parameters
-    RuleEngine->>RuleEngine: Apply Purification Rules
-    RuleEngine-->>PrivacyGuard: Return Cleaned URL
-    
-    PrivacyGuard->>URLValidator: Validate Cleaned URL
-    URLValidator-->>PrivacyGuard: Confirm URL Validity
-    
-    PrivacyGuard->>Browser: Proceed with Clean URL
-    Browser->>User: Navigate to Purified URL
-```
-
-### URL Purification Flow
+## URL processing flow
 
 ```mermaid
 flowchart TD
-    A[Original URL] --> B{Contains Tracking?}
-    B -->|No| C[Pass Through Unchanged]
-    B -->|Yes| D[Parse URL Components]
-    
-    D --> E[Apply Default Rules]
-    E --> F[Apply Custom Rules]
-    F --> G[Remove Tracking Parameters]
-    
-    G --> H{URL Still Valid?}
-    H -->|No| I[Restore Critical Parameters]
-    H -->|Yes| J[Generate Clean URL]
-    
-    I --> J
-    J --> K[Log Purification Action]
-    K --> L[Return Purified URL]
-    
-    C --> M[Log No Action Needed]
-    L --> N[Navigate to Clean URL]
-    M --> N
+    A[Original URL] --> B{Internal scheme?}
+    B -->|chrome:// etc.| C[Skip — pass through]
+    B -->|No| D{Pref enabled?}
+    D -->|No| C
+    D -->|Yes| E{NTP tab URL?}
+    E -->|chrome-search://| C
+    E -->|No| F[Apply global rules]
+    F --> G[Apply per-site rules]
+    G --> H{Params removed?}
+    H -->|No| C
+    H -->|Yes| I[Rewrite request URL]
+    I --> J[Navigate with clean URL]
 ```
 
-#### Steps Overview:
+## Build / activation
 
-1. **Navigation Interception**: Intercept URL navigation events
-2. **Rule Application**: Apply configured purification rules
-3. **Parameter Removal**: Remove identified tracking parameters  
-4. **Validation**: Ensure purified URL maintains functionality
-5. **Redirect Handling**: Process the cleaned URL seamlessly
+| Where | What |
+|---|---|
+| [`custom_browser_config.gni`](../src/custom/custom_browser_config.gni) | `enable_privacy_guard = true` — gates source compilation and the proxying URL loader factory hook |
+| [`branding_buildflags.h`](../src/custom/buildflags/) | Emits `BUILDFLAG(ENABLE_PRIVACY_GUARD)` for `#if`-gating |
+| [`custom_prefs.cc`](../src/custom/browser/prefs/custom_prefs.cc) | `prefs::kURLPurifyEnabled` (`privacy_guard.url_purify.enabled`) — user toggle, defaults to `false` |
+| [`custom_content_browser_client.cc`](../src/custom/browser/custom_content_browser_client.cc) | `WillCreateURLLoaderFactory` override (under `BUILDFLAG(ENABLE_PRIVACY_GUARD)`) — installs `CustomProxyingURLLoaderFactory` for every render frame |
+| Net sources | [`browser/sources.gni`](../src/custom/browser/sources.gni) — `custom_browser_net` under `if (enable_privacy_guard)` |
 
-### Integration Points
+## Architecture
 
-#### Navigation System
-- **URL Processing**: Integrated with Chrome's navigation pipeline
-- **Redirect Handling**: Transparent URL cleaning during navigation
-- **History Management**: Clean URLs in browser history
-- **Bookmark Integration**: Store purified URLs in bookmarks
+### Proxy installation (once per render frame)
 
-#### Rule Management
-```cpp
-class URLPurifyRuleParser {
-  // Rule parsing and validation
-  std::vector<URLPurifyRule> ParseRules(const std::string& rules_text);
-  bool ValidateRuleFormat(const std::string& rule);
-  void UpdateRules(const std::vector<URLPurifyRule>& new_rules);
-};
+```
+ContentBrowserClient::WillCreateURLLoaderFactory called for a RenderFrameHost
+   │
+   ▼
+CustomContentBrowserClient::WillCreateURLLoaderFactory
+   │  (custom_content_browser_client.cc, gated by BUILDFLAG(ENABLE_PRIVACY_GUARD))
+   │
+   ├── Calls ChromeContentBrowserClient::WillCreateURLLoaderFactory (Chrome base)
+   │
+   └── CustomProxyingURLLoaderFactory::MaybeProxyRequest(
+           browser_context, frame, render_process_id,
+           factory_builder, navigation_response_task_runner)
+            │
+            └── ResourceContextData::StartProxying(...)
+                  Wraps the network-service URLLoaderFactory with
+                  CustomProxyingURLLoaderFactory for this BrowserContext.
+                  All subsequent URL loads from this frame go through
+                  the proxy.
 ```
 
-#### Default Rule Configuration
-```cpp
-class URLPurifyDefaultRules {
-  // Pre-configured tracking protection
-  static std::vector<URLPurifyRule> GetDefaultRules();
-  static bool IsTrackingParameter(const std::string& param_name);
-  static void AddCustomRule(const URLPurifyRule& rule);
-};
+### Per-request interception (every non-internal-scheme URL load)
+
+```
+Browser navigates / a page loads a sub-resource
+   │
+   ▼
+CustomProxyingURLLoaderFactory::InProgressRequest::Restart()
+   │  (browser process, UI thread)
+   │
+   ▼
+CustomRequestHandler::OnBeforeURLRequest(ctx, ...)
+   │
+   ├── IsInternalScheme? (chrome://, chrome-extension://) → skip
+   │
+   └── Runs before_url_request_callbacks_ in order
+            │
+            ▼
+       OnBeforeURLRequest_URLPurifyWork(next_callback, ctx)
+            │
+            ├── ctx->browser_context null? → skip
+            ├── prefs::kURLPurifyEnabled false? → skip
+            ├── ctx->tab_url scheme == "chrome-search"? → skip (NTP)
+            │
+            └── URLPurifier::Purify(ctx->request_url)
+                     │
+                     ├── No query string? → return nullopt
+                     │
+                     ├── Apply global rules (always)
+                     │     RE2::GlobalReplace × 3 patterns per rule
+                     │     (trailing param, first param, mid param)
+                     │
+                     └── Apply per-site rules (first domain match wins)
+                           │
+                           ├── URL doesn't match rule's domain? → try next
+                           ├── URL matches exception pattern? → break
+                           └── Apply query_matchers, break
+                     │
+                     └── count > 0?
+                           Yes → GURL with modified/cleared query string
+                           No  → nullopt (URL unchanged)
+
+            If purified URL returned:
+              ctx->new_url_spec = purified.spec()
+              (applied by RunNextCallback → *ctx->new_url = GURL(new_url_spec))
 ```
 
-## 🔧 Build Configuration
+The `URLPurifier` is a process-wide singleton (`base::NoDestructor`) whose
+RE2 patterns are compiled once at first use from the compiled-in default rules.
+Pattern construction is single-threaded (the first `OnBeforeURLRequest` call
+on the UI thread triggers it); after that all access is read-only and
+thread-safe.
 
-### Build Files
-**File**: `BUILD.gn`
-```gn
-source_set("privacy_guard_core") {
-  sources = [
-    "url_purify_rule.cc",
-    "url_purify_rule.h", 
-    "url_purify_rule_parser.cc",
-    "url_purify_rule_parser.h",
-    "url_purify_default_rules.cc",
-    "url_purify_default_rules.h",
-  ]
-  deps = [
-    "//base",
-    "//net",
-    "//url",
-    "//components/prefs",
-  ]
-}
-```
+## Default rules
 
-### Component Integration
-**File**: `components/sources.gni`
-- Privacy Guard included in custom browser build
-- Conditional compilation with `BUILDFLAG(CUSTOM_BROWSER)`
-- Integration with navigation and URL processing systems
+### Global (`GetDefaultGlobalRules`)
 
-## 🎯 Features
+Applies to every URL. Patterns are case-insensitive RE2 regexes matched
+against the query parameter name.
 
-### Current Capabilities
-- ✅ **Automatic URL Cleaning**: Transparent removal of tracking parameters
-- ✅ **Rule-Based Processing**: Flexible, configurable protection rules  
-- ✅ **Default Protection**: Out-of-the-box tracking parameter removal
-- ✅ **Website Compatibility**: Maintains website functionality
-- ✅ **Performance Optimization**: Efficient URL processing
-- ✅ **Extensible Architecture**: Easy addition of new protection rules
+| Pattern | What it covers |
+|---|---|
+| `utm(?:_[a-z_]*)?` | All UTM campaign params (`utm_source`, `utm_medium`, etc.) |
+| `ga_[a-z_]+` | Google Analytics cross-domain params |
+| `fbclid` | Facebook click identifier |
+| `gclid` | Google Ads click identifier |
+| `yclid` | Yandex click identifier |
+| `_openstat` | Yandex OpenStat |
+| `mkt_tok` | Marketo email link token |
+| `gfe_[a-zA-Z]`, `gs_[a-zA-Z]` | Google Frontend / Search params |
+| `__twitter_impression` | Twitter impression tracker |
+| `Echobox` | Echobox social sharing tracker |
+| `spm` | Alibaba/Taobao Super Position Model |
+| `dclid` | DoubleClick click ID |
+| `otm_[a-z_]*` | Oracle marketing params |
+| `ref_?`, `referrer` | Generic referrer params (where they appear as query keys) |
+| `wt_?z?mc`, `wtrid`, `[a-z]?mc` | Webtrends / generic marketing codes |
+| `hmb_(?:campaign\|medium\|source)` | HubSpot marketing |
+| `vn(?:_[a-z]*)+`, `tracking_source`, `from_spm_id` | Miscellaneous |
 
-### Privacy Benefits
-- **Tracking Prevention**: Blocks URL-based user tracking
-- **Cross-Site Protection**: Prevents tracking across different websites
-- **Analytics Blocking**: Removes analytics and advertising trackers
-- **Social Media Protection**: Blocks social platform tracking
-- **E-commerce Privacy**: Removes affiliate and shopping trackers
+### Per-site (`GetDefaultPerSiteRules`)
 
-## 🔄 Integration Pattern
+Only applied when the URL host matches the rule's domain regex. First matching
+rule wins; if the URL matches a rule's exception list, all per-site processing
+stops.
 
-### Chrome Integration
-The Privacy Guard follows Chrome's architectural patterns:
+| Site | Extra params stripped | Notable exceptions |
+|---|---|---|
+| Google | `ved`, `ei`, `source`, `oq`, `esrc`, `uact`, `cd`, `cad`, `sa`, `hl`, `dpr`, `usg`, `zx`, `_u`, `je`, `dcr`, `ie`, `sei`, `atyp`, `vet`, `gws_[a-zA-Z]`, `gs_[a-zA-Z]`, `bi[a-zA-Z]`, `gfe_[a-zA-Z]`, `btn[a-zA-Z]` | googlevideo.com, Gmail, Drive, Docs, Accounts, image search, Hangouts, Maps, news hl, setprefs, reCAPTCHA |
+| Amazon | `pd_rd_*`, `pf_rd_*`, `qid`, `crid`, `sprefix`, `keywords`, `smid`, `linkCode`, `creativeASIN`, `ascsubtag`, `aaxitk`, `hsa_cr_id`, `sb-ci-*`, `rnid`, `dchild`, `camp`, `creative`, and more | Redirector/cart-ajax/video-API paths, reviews-render |
+| YouTube | `feature`, `gclid`, `kw` | — |
+| Facebook | `hc_*`, `*ref*`, `__tn__`, `eid`, `__xts__[…]`, `comment_tracking`, `dti`, `app`, `video_source`, etc. | plugins/ajax, dialog/share, photo download |
+| Instagram | `igshid` | — |
+| Steam | `snr` | — |
+| GitHub | `email_token`, `email_source` | — |
+| LinkedIn | `refId`, `trk`, `li[a-z]{2}` | — |
 
-1. **Navigation Pipeline**: Integration with URL navigation processing
-2. **Component Architecture**: Modular, reusable component design
-3. **Rule Engine**: Flexible rule-based configuration system
-4. **Performance**: Optimized for minimal impact on browsing speed
+## NTP exclusion
 
-### Conditional Compilation
-```cpp
-#if BUILDFLAG(CUSTOM_BROWSER)
-  // Privacy Guard functionality enabled
-  if (privacy_guard_enabled) {
-    url = URLPurifyRule::PurifyURL(url);
-  }
-#endif
-```
+Requests initiated from a `chrome-search://` tab (the custom NTP) are skipped
+entirely. The check is `ctx->tab_url.SchemeIs("chrome-search")`. This prevents
+the purifier from interfering with API calls the NTP makes to its own backend,
+which may carry params that look like tracking params but are semantically
+required.
 
-## 📊 Development Status
+## Threading
 
-| Component | Status | Testing | Documentation |
-|-----------|--------|---------|---------------|
-| Rule Engine | ✅ Complete | ✅ Tested | ✅ Full |
-| URL Processing | ✅ Complete | ✅ Tested | ✅ Full |
-| Default Rules | ✅ Complete | ✅ Tested | ✅ Full |
-| Parser System | ✅ Complete | ✅ Tested | ✅ Full |
-| Integration | ✅ Complete | ✅ Tested | ✅ Full |
+Everything in the URL purify path runs on the UI thread:
 
-## 🚀 Future Enhancements
+- `CustomProxyingURLLoaderFactory` and `InProgressRequest` are UI-thread objects
+- `CustomRequestHandler::OnBeforeURLRequest` is called on UI
+- Pref reads via `user_prefs::UserPrefs::Get()` are safe on UI
+- RE2 matching in `URLPurifier::Purify` is read-only and safe on any thread, but
+  in practice it runs on UI via the callback chain
 
-### Planned Features
-- **User Configuration**: User-customizable privacy rules
-- **Whitelist Support**: Site-specific privacy rule exceptions
-- **Advanced Rules**: Complex pattern matching for tracking parameters
-- **Privacy Dashboard**: Visual privacy protection statistics
-- **Import/Export**: Share and backup privacy rule configurations
+The `URLPurifier` singleton is constructed on the UI thread on the first
+request that passes the pref check. Subsequent calls are read-only.
 
-### Technical Improvements
-- **Machine Learning**: AI-powered tracking parameter detection
-- **Real-time Updates**: Automatic rule updates for new tracking methods
-- **Performance**: Further optimization of URL processing pipeline
-- **Coverage**: Expanded protection against emerging tracking techniques
+## Adding a rule
 
-## 🔗 Dependencies
+**Global rule** — add a pattern string to the `query_patterns` vector in
+`GetDefaultGlobalRules()` in
+[`url_purify_default_rules.cc`](../src/custom/components/privacy_guard/core/url_purify_default_rules.cc).
+Patterns are case-insensitive RE2 regexes matched against the parameter name
+only (not the value).
 
-### Chrome Dependencies
-- **Navigation System**: For URL processing integration
-- **Preference System**: For user configuration storage
-- **Network Stack**: For URL validation and processing
-- **Component Framework**: For modular architecture
+**Per-site rule** — append a new `URLPurifyRule` to the vector returned by
+`GetDefaultPerSiteRules()`. Fields:
 
-### Custom Dependencies
-- **Build System**: Custom browser build configuration
-- **Logging**: Custom browser logging and debugging
-- **Configuration**: Custom browser settings management
+| Field | Meaning |
+|---|---|
+| `name` | Human-readable label (used in VLOG output) |
+| `url_pattern` | RE2 regex matched against the full URL — rule applies only when this matches |
+| `query_patterns` | Vector of RE2 regexes matched against parameter names |
+| `url_exceptions` | Optional vector of RE2 regexes — if any match the full URL, this rule is skipped |
 
-## 🛠️ Development Guide
+The singleton is constructed once at first use. Rules take effect on the
+next browser launch — a running browser won't pick up changes.
 
-### Adding Protection Rules
-1. Define new rules in URLPurifyDefaultRules
-2. Test rule effectiveness against tracking parameters
-3. Validate website compatibility with rule application
-4. Update rule parser for new rule formats
-5. Document rule behavior and coverage
+## Known gaps
 
-### Testing Privacy Protection
-1. Visit websites with tracking parameters
-2. Verify automatic parameter removal
-3. Test website functionality after URL cleaning
-4. Validate rule parser with various rule formats
-5. Performance test URL processing pipeline
+- **Default pref is `false`.** URL purification is opt-in via the settings toggle. Stripping params can occasionally break sites that use `ref` as a functional parameter rather than a tracker.
+- **Per-request pref read.** `prefs->GetBoolean(kURLPurifyEnabled)` is called on every request. PrefService caches the value (hash lookup) so cost is low, but a `PrefChangeRegistrar` + `std::atomic<bool>` cache would eliminate it entirely.
+- **No user-visible indicator.** No omnibox badge showing that params were stripped on the current page. A `WebContentsUserData` counter + `PageActionIconView` badge (similar to `AdBlockTabHelper`) would fill this gap.
+- **Network-service delegate is unused.** `URLPurifyDelegate` in `services/network/privacy_guard/` was inherited from the upstream fork but is wired to nothing — the browser-side `url_purify_work.cc` is the active path.
+- **`ParseRules` is a stub.** `url_purify_rule_parser.cc::ParseRules` returns `std::nullopt` unconditionally. Dynamic rule loading from a JSON policy file is not implemented.
 
-### Rule Configuration Format
-```
-# Parameter removal rules
-remove_param: utm_source
-remove_param: utm_medium  
-remove_param: fbclid
+## Testing
 
-# Domain-specific rules
-domain: amazon.com
-  remove_param: tag
-  remove_param: ref
-  
-# Pattern-based rules  
-pattern: *utm_*
-action: remove
-```
+Smoke test recipe:
 
----
+1. Build with `enable_privacy_guard = true`.
+2. Open `chrome://settings` → Privacy and security → enable "Remove tracking parameters from URLs".
+3. Navigate to a URL with known tracking params:
+   ```
+   https://example.com/page?utm_source=newsletter&utm_medium=email&id=123
+   ```
+4. In DevTools Network panel the request URL should show only `?id=123`.
+5. Visit a Google search result link — `ved`, `ei`, `usg`, etc. should be absent from the outbound request.
+6. Toggle the pref off → reload → params are preserved in the outbound request.
+7. Open a new tab (NTP) and confirm NTP API calls are not rewritten (check via DevTools on `chrome-search://` frame resources).
 
-*Part of the WanderLust Browser Custom Features Documentation*
+| Symptom | Likely cause |
+|---|---|
+| Params not stripped despite toggle on | `enable_privacy_guard = false` at build time; OR `CustomContentBrowserClient::WillCreateURLLoaderFactory` is missing |
+| Site broken after enabling | A per-site rule is stripping a param the site uses functionally — add URL to `url_exceptions` |
+| NTP content fails to load | The `chrome-search://` scheme guard isn't firing — verify `ctx->tab_url` is set correctly |
+| RE2 compile crash at startup | A pattern string has invalid RE2 syntax — check `DCHECK(m.url_matcher->ok())` in debug builds |
+
+## File map
+
+| File | Purpose |
+|---|---|
+| [`browser/custom_content_browser_client.{cc,h}`](../src/custom/browser/custom_content_browser_client.cc) | Entry point — `WillCreateURLLoaderFactory` override installs the proxy factory for every render frame |
+| [`browser/net/url_purify_work.{cc,h}`](../src/custom/browser/net/url_purify_work.cc) | `OnBeforeURLRequest_URLPurifyWork` — pref check, NTP exclusion, singleton `URLPurifier` invocation |
+| [`browser/net/custom_request_handler.{cc,h}`](../src/custom/browser/net/custom_request_handler.cc) | Owns the `before_url_request_callbacks_` chain |
+| [`browser/net/custom_proxying_url_loader_factory.{cc,h}`](../src/custom/browser/net/custom_proxying_url_loader_factory.cc) | Intercepts URL loads for a given `BrowserContext` + `RenderFrameHost` |
+| [`browser/net/resource_context_data.{cc,h}`](../src/custom/browser/net/resource_context_data.cc) | Per-`BrowserContext` storage for the proxy factory |
+| [`browser/net/url_context.{cc,h}`](../src/custom/browser/net/url_context.h) | `CustomRequestInfo` struct — per-request state. `new_url_spec` is the output field |
+| [`components/privacy_guard/core/url_purify_default_rules.{cc,h}`](../src/custom/components/privacy_guard/core/url_purify_default_rules.cc) | Static default rule sets — `base::NoDestructor`-backed singletons |
+| [`components/privacy_guard/core/url_purify_rule.{cc,h}`](../src/custom/components/privacy_guard/core/url_purify_rule.h) | `URLPurifyRule` struct |
+| [`components/privacy_guard/browser/custom_privacy_guard_service.{cc,h}`](../src/custom/components/privacy_guard/browser/custom_privacy_guard_service.cc) | `KeyedService` shell — holds a `PrefChangeRegistrar` for future callbacks |
+| [`browser/privacy_guard/custom_privacy_guard_service_factory.{cc,h}`](../src/custom/browser/privacy_guard/custom_privacy_guard_service_factory.cc) | `BrowserContextKeyedServiceFactory` — redirects incognito to the original profile |
+| [`components/custom_settings/components/PrivacyPage.tsx`](../src/custom/components/custom_settings/components/PrivacyPage.tsx) | Settings UI toggle bound to `privacy_guard.url_purify.enabled` |
