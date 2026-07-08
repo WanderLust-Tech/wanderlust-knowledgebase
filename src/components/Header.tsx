@@ -8,8 +8,6 @@ import { useAdvancedSearch } from '../contexts/AdvancedSearchContext';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './auth/AuthModal';
 import UserProfileDropdown from './UserProfileDropdown';
-import SubjectSelector from './SubjectSelector';
-
 
 interface SearchResult {
   path: string;
@@ -95,9 +93,6 @@ const Header: React.FC = () => {
           )}
           
           <div className="text-base font-bold flex-shrink-0">Wanderlust Knowledgebase</div>
-          
-          {/* Subject Selector - moved here for better visibility */}
-          <SubjectSelector />
         </div>
         
         <div className="flex-1 flex justify-center mx-6">

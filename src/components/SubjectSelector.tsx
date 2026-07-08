@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSubject } from '../contexts/SubjectContext';
 import { Subject } from '../contentIndex';
 
-const SubjectSelector: React.FC = () => {
+interface SubjectSelectorProps {
+  sidebar?: boolean;
+}
+
+const SubjectSelector: React.FC<SubjectSelectorProps> = ({ sidebar = false }) => {
   const { currentSubject, subjects, switchToSubject } = useSubject();
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const getColorClasses = (color: string) => {
     switch (color) {
@@ -37,13 +43,23 @@ const SubjectSelector: React.FC = () => {
     switchToSubject(subjectId);
   };
 
+  const handleOpen = () => {
+    if (sidebar && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({ top: rect.bottom + 8, left: rect.left });
+    }
+    setIsOpen(prev => !prev);
+  };
+
   return (
     <div className="relative">
       {/* Subject Selector Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={handleOpen}
         className={`
           flex items-center space-x-3 px-4 py-2 rounded-lg transition-all duration-200
+          ${sidebar ? 'w-full' : ''}
           ${getColorClasses(currentSubject.color)}
           border ${getBorderColorClasses(currentSubject.color)}
           hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
@@ -76,7 +92,13 @@ const SubjectSelector: React.FC = () => {
           />
           
           {/* Dropdown Content */}
-          <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+          <div
+            className="w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+            style={sidebar && dropdownPos
+              ? { position: 'fixed', top: dropdownPos.top, left: dropdownPos.left }
+              : { position: 'absolute', top: '100%', marginTop: '0.5rem', right: 0 }
+            }
+          >
             <div className="p-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                 Select Knowledge Base

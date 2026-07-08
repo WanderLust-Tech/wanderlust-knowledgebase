@@ -1,5 +1,11 @@
 import { authService } from './AuthService';
 
+interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message: string;
+}
+
 export interface BrowserRelease {
   id: number;
   appId: string;
@@ -27,14 +33,16 @@ export interface CreateReleaseRequest {
 
 class ReleasesService {
   async getAll(): Promise<BrowserRelease[]> {
-    return authService.makeAuthenticatedRequest<BrowserRelease[]>('/releases');
+    const res = await authService.makeAuthenticatedRequest<ApiResponse<BrowserRelease[]>>('/releases');
+    return res.data ?? res as unknown as BrowserRelease[];
   }
 
   async create(req: CreateReleaseRequest): Promise<BrowserRelease> {
-    return authService.makeAuthenticatedRequest<BrowserRelease>('/releases', {
+    const res = await authService.makeAuthenticatedRequest<ApiResponse<BrowserRelease>>('/releases', {
       method: 'POST',
       body: JSON.stringify(req),
     });
+    return res.data ?? res as unknown as BrowserRelease;
   }
 
   async deactivate(id: number): Promise<void> {

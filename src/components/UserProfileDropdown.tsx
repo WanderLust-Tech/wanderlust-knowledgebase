@@ -42,6 +42,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ onClose }) =>
 
   // Generate initials from display name or username
   const getInitials = (name: string): string => {
+    if (!name) return '?';
     return name
       .split(' ')
       .map(word => word.charAt(0))
@@ -50,7 +51,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ onClose }) =>
       .slice(0, 2);
   };
 
-  const displayName = user.displayName || user.username || user.email;
+  const displayName = user.displayName || user.username || user.email || '';
   const initials = getInitials(displayName);
 
   return (

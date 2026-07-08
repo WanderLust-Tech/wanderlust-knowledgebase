@@ -5,6 +5,7 @@ import { contentIndexBuilder } from '../services/ContentIndexBuilder';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useSubject } from '../contexts/SubjectContext';
 import { useSidebarExpandedState } from '../hooks/useSidebarExpandedState';
+import SubjectSelector from './SubjectSelector';
 
 interface HybridSidebarProps {
   fallbackNodes: ContentNode[];
@@ -106,6 +107,11 @@ const HybridSidebar: React.FC<HybridSidebarProps> = ({ fallbackNodes }) => {
         `}
       >
         <div className="w-64 p-4 overflow-y-auto h-full sidebar-scrollbar">
+          {/* Subject Selector */}
+          <div className="mb-4">
+            <SubjectSelector sidebar />
+          </div>
+
           {/* Content Source Indicator */}
           <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">

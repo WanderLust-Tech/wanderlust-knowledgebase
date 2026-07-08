@@ -387,7 +387,14 @@ class AuthService {
   }
 
   getUserRole(): string | null {
-    return this.currentUser?.role || null;
+    const role = this.currentUser?.role;
+    if (role === undefined || role === null) return null;
+    const roleHierarchy = ['Member', 'Contributor', 'Moderator', 'Admin'];
+    const numeric = Number(role);
+    if (!isNaN(numeric) && roleHierarchy[numeric]) {
+      return roleHierarchy[numeric];
+    }
+    return role as string;
   }
 
   hasRole(role: string): boolean {
@@ -395,7 +402,7 @@ class AuthService {
     const roleHierarchy = ['Member', 'Contributor', 'Moderator', 'Admin'];
     const userRoleIndex = roleHierarchy.indexOf(userRole || '');
     const requiredRoleIndex = roleHierarchy.indexOf(role);
-    
+
     return userRoleIndex >= requiredRoleIndex;
   }
 
