@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import HybridSidebar from './components/HybridSidebar';
 import EnhancedArticleView from './components/EnhancedArticleView';
 import ArticleView from './components/ArticleView'; // Keep as fallback

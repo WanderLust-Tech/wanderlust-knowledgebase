@@ -289,7 +289,8 @@ class AuthService {
       throw new Error(error.message || 'Profile update failed');
     }
 
-    const updatedUser: User = await response.json();
+    const json = await response.json();
+    const updatedUser: User = json?.data ?? json;
     this.currentUser = updatedUser;
     localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
 
@@ -313,7 +314,9 @@ class AuthService {
         return null;
       }
 
-      const user: User = await response.json();
+      const json = await response.json();
+      // Unwrap ApiResponse envelope if present
+      const user: User = json?.data ?? json;
       this.currentUser = user;
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
 
