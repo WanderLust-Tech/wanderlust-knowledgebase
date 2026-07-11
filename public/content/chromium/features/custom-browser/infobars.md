@@ -241,18 +241,17 @@ the textbook "extension infobar":
   extension URL loader serves any caller), but `chrome.*` APIs are not
   available inside the bar's page. For most banner-style UIs (status
   text, action buttons that fire `window.close()`) this is irrelevant.
-- **No auto-removal on extension unload.** `ExtensionInfoBarDelegate`
-  observed `ExtensionRegistry` and removed its infobar when the owning
-  extension was unloaded. `CustomInfobarDelegate` does not. Currently
-  the infobar persists until the user navigates the tab or hits the X.
+- ~~**No auto-removal on extension unload.**~~ **Fixed.** `infobars_extension_api.cc`
+  now attaches a self-owning `InfobarExtensionGuard` after each successful
+  `CustomInfobarDelegate::Create`. The guard observes both `ExtensionRegistry`
+  (to call `RemoveSelf()` on `OnExtensionUnloaded`) and `InfoBarManager`
+  (to self-delete when the infobar is removed by any means — navigation, X
+  button, or the extension unload path itself).
 
-Both are recoverable. The TODO in [`infobars_extension_api.cc`](../src/custom/browser/extensions/api/infobars/infobars_extension_api.cc)
-points at the minimal fix: a small `ExtensionRegistryObserver` wrapper
-that holds the `InfoBar*` and calls `RemoveSelf()` on
-`OnExtensionUnloaded`. Restoring the extension renderer process needs a
-proper Views renderer that wraps `ExtensionViewHost` — the legacy
-`extension_infobar.cc` is a reference, but expects significant API
-modernization.
+The remaining known gap is the extension renderer process — restoring
+`chrome.*` API access inside the bar page requires a proper Views renderer
+wrapping `ExtensionViewHost`. The legacy `extension_infobar.cc` is a
+reference but needs significant API modernization.
 
 ## Dead-code notes
 

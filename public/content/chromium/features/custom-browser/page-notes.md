@@ -230,7 +230,7 @@ Stored in prefs as an integer so the sidebar reopens to the last-used panel on r
 - `NOTES_BUTTON = 8` in `ButtonKind` enum.
 - `notes_button_` — `SidebarTopPaneButton` positioned after RSS, before the expand/collapse and options buttons at the bottom.
 - Icon: currently `IDR_HISTORY_ICON` (placeholder). Replace with a dedicated pencil/note icon when one is added to `custom_theme_resources`.
-- Tooltip: `"Page Notes"` (hardcoded; add `IDS_TOOLTIP_SIDEBAR_NOTES` when localization pass is done).
+- Tooltip: `IDS_TOOLTIP_SIDEBAR_NOTES` (localised via `generated_resources.grdp`; `IDS_TOOLTIP_SIDEBAR_NTP_SETTINGS` added at the same time).
 
 ### `SidebarContainerView::TopPaneButtonPressed`
 
@@ -264,7 +264,7 @@ case sidebar::SidebarService::TYPE_NOTES:
 | Item | Notes |
 |---|---|
 | Notes icon | `IDR_HISTORY_ICON` is a placeholder. Add a pencil/note icon to `custom_theme_resources` and update `sidebar_top_pane.cc`. |
-| Tooltip string | Hardcoded `u"Page Notes"`. Add `IDS_TOOLTIP_SIDEBAR_NOTES` to the GRD file when a localization pass is done. |
+| ~~Tooltip string~~ | ~~Hardcoded `u"Page Notes"`~~ — Fixed. `IDS_TOOLTIP_SIDEBAR_NOTES` added to `generated_resources.grdp` and wired in `sidebar_top_pane.cc`. `IDS_TOOLTIP_SIDEBAR_NTP_SETTINGS` done at the same time. |
 | Multiple notes per URL | The editor shows the first note for a page; multiple appear as a clickable list below. Future: per-note expand/edit flow. |
 | Search | No search across all notes. `NotesList` returns all — a client-side filter in `NotesPage` would cover basic search without new IPCs. |
 | Export | No export. A `notesExport` IPC could return all notes as JSON or Markdown. |

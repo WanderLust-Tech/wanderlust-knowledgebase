@@ -499,7 +499,6 @@ The peek state is **runtime-only** — not persisted. A browser restart always s
 | **No drag-to-resize on undocked widget** | The widget's bounds are computed from prefs; the inner `SidebarContainerView::OnResize` writes `kSidebarUndockedWidth` on resize-end, but the widget doesn't propagate the resize cursor from its own edges yet. (`views::Widget`'s standard resize edges are gone because `remove_standard_frame=true`.) |
 | **Drag affordance is invisible** | The whole pane-strip background is drag-targetable, but there's no visual cue. Users learn to drag from non-button space by accident or by reading docs. A subtle grip pattern (3 horizontal dots, a hover background) on the empty pane-strip area would make it discoverable. |
 | **Auto-hide polls every 100ms** | Cheaper alternatives exist (per-platform mouse hooks, `aura::WindowEventDispatcher` filters), but the polling timer is simple and the cost is negligible. If profiling ever flags it, the panels subsystem's `PanelMouseWatcher` is a more efficient reference implementation. |
-| **English-only context menu strings** | "Undock Sidebar" / "Dock Sidebar" / "Expand" / "Collapse" are `u""` literals in `ShowContextMenuForViewImpl`. Should be `IDS_SIDEBAR_*` from generated_resources. |
 
 ## Integration patches
 

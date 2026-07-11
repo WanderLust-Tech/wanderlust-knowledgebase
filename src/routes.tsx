@@ -105,6 +105,13 @@ const App: React.FC = () => (
                         } />
                         <Route path="/versioning/:contentPath?" element={<ContentVersioningPage />} />
                         <Route path="/ai-suggestions/:contentPath?" element={<AIContentSuggestionsPage />} />                          
+                          {/* Admin-only internal docs */}
+                          <Route path="/internal/*" element={
+                            <ProtectedRoute requiredRole="Admin">
+                              <EnhancedArticleView />
+                            </ProtectedRoute>
+                          } />
+
                           {/* Subject-based routes - captures /:subject/* */}
                           <Route path="/:subject/*" element={<EnhancedArticleView />} />
                           

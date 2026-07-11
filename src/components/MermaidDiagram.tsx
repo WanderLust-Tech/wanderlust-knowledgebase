@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import mermaid from 'mermaid';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -63,24 +64,43 @@ class MermaidService {
     return mermaid.render(id, chart);
   }
 
-  public async parse(code: string): Promise<boolean> {
-    return await mermaid.parse(code);
+  public async parse(code: string): Promise<void> {
+    await mermaid.parse(code);
   }
 }
 
 const mermaidService = MermaidService.getInstance();
+
+// Parse width/height from a rendered Mermaid SVG string.
+const getSvgDimensions = (svg: string): { width: number; height: number } => {
+  const w = svg.match(/\bwidth="(\d+(?:\.\d+)?)"/);
+  const h = svg.match(/\bheight="(\d+(?:\.\d+)?)"/);
+  return {
+    width: w ? parseFloat(w[1]) : 800,
+    height: h ? parseFloat(h[1]) : 600,
+  };
+};
+
+// Zoom level that makes the SVG fill ~90% of the viewport while keeping aspect ratio.
+const fitZoom = (svgWidth: number, svgHeight: number): number => {
+  const scaleW = (window.innerWidth * 0.9) / svgWidth;
+  const scaleH = (window.innerHeight * 0.85) / svgHeight;
+  return Math.min(1, scaleW, scaleH);
+};
+
+const ZOOM_STEP = 0.25;
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 4;
 
 const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart, className = '' }) => {
   const { theme } = useTheme();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [svgContent, setSvgContent] = useState<string>('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const chartContent = chart?.trim() || '';
-
-  console.log('MermaidDiagram: Component mounted with chart:', chartContent);
-  console.log('MermaidDiagram: Chart type:', typeof chartContent);
-  console.log('MermaidDiagram: Chart length:', chartContent?.length);
-  console.log('MermaidDiagram: Chart content preview:', chartContent?.substring(0, 100));
 
   // Generate unique chart ID
   const chartId = useMemo(() => generateMermaidId(), [chartContent]);
@@ -107,17 +127,12 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart, className = '' }
           },
           fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
         };
-        
-        console.log('MermaidDiagram: Initializing mermaid service');
         await mermaidService.initialize(config);
-        console.log('MermaidDiagram: Mermaid service initialized');
       } catch (err) {
-        console.error('MermaidDiagram: Failed to initialize mermaid:', err);
         setError(err instanceof Error ? err.message : 'Failed to initialize mermaid');
         setIsLoading(false);
       }
     };
-
     initMermaid();
   }, [theme]);
 
@@ -125,40 +140,53 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart, className = '' }
   useEffect(() => {
     const renderChart = async () => {
       if (!chartContent) {
-        console.log('MermaidDiagram: No chart content');
         setIsLoading(false);
         return;
       }
-
       try {
-        console.log('MermaidDiagram: Starting chart render');
         setIsLoading(true);
         setError(null);
         setSvgContent('');
-
-        // Validate syntax
-        console.log('MermaidDiagram: Validating syntax');
         await mermaidService.parse(chartContent);
-        console.log('MermaidDiagram: Syntax validation passed');
-
-        // Render chart
-        console.log('MermaidDiagram: Rendering chart with ID:', chartId);
         const { svg } = await mermaidService.render(chartId, chartContent);
-        console.log('MermaidDiagram: Render successful, SVG length:', svg.length);
-
-        // Set SVG content
         setSvgContent(svg);
         setIsLoading(false);
-        console.log('MermaidDiagram: Chart rendered successfully');
       } catch (err) {
-        console.error('MermaidDiagram: Render error:', err);
         setError(err instanceof Error ? err.message : 'Failed to render diagram');
         setIsLoading(false);
       }
     };
-
     renderChart();
   }, [chartContent, chartId]);
+
+  // Fullscreen handlers
+  const openFullscreen = useCallback(() => {
+    if (svgContent) {
+      const { width, height } = getSvgDimensions(svgContent);
+      setZoom(fitZoom(width, height));
+    }
+    setIsFullscreen(true);
+  }, [svgContent]);
+
+  const closeFullscreen = useCallback(() => setIsFullscreen(false), []);
+
+  // Escape key to close overlay
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeFullscreen(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isFullscreen, closeFullscreen]);
+
+  // Lock body scroll while overlay is open
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isFullscreen]);
 
   if (!chartContent) {
     return (
@@ -179,9 +207,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart, className = '' }
           </svg>
           <strong>Mermaid Diagram Error</strong>
         </div>
-        <p className="text-red-600 dark:text-red-400 text-sm">
-          {error}
-        </p>
+        <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
         <details className="mt-2">
           <summary className="text-sm text-red-600 dark:text-red-400 cursor-pointer hover:underline">
             Show diagram source
@@ -194,39 +220,139 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({ chart, className = '' }
     );
   }
 
-  return (
-    <div className={`my-6 ${className}`}>
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 px-4 py-2 text-sm border-b border-gray-200 dark:border-gray-700">
-          <span className="text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">
-            MERMAID DIAGRAM
+  const overlay = isFullscreen ? createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex flex-col bg-black/80"
+      onClick={(e) => { if (e.target === e.currentTarget) closeFullscreen(); }}
+    >
+      {/* Overlay toolbar */}
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0">
+        <span className="text-gray-300 text-sm font-medium uppercase tracking-wide select-none">
+          Mermaid Diagram
+        </span>
+
+        <div className="flex items-center gap-1">
+          {/* Zoom out */}
+          <button
+            onClick={() => setZoom(z => Math.max(ZOOM_MIN, parseFloat((z - ZOOM_STEP).toFixed(2))))}
+            disabled={zoom <= ZOOM_MIN}
+            className="px-2 py-1 text-gray-300 hover:text-white hover:bg-gray-700 rounded text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            title="Zoom out"
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+
+          {/* Zoom level */}
+          <span className="w-14 text-center text-gray-300 text-sm tabular-nums select-none">
+            {Math.round(zoom * 100)}%
           </span>
-          {isLoading && (
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
-              <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
-              <span className="text-xs">Rendering...</span>
-            </div>
-          )}
-        </div>
-        <div className="p-6 bg-white dark:bg-gray-900">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <div className="animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full mb-3"></div>
-              <p className="text-gray-500 dark:text-gray-400">Loading diagram...</p>
-            </div>
-          ) : (
-            <div 
-              className="mermaid-diagram overflow-x-auto"
-              dangerouslySetInnerHTML={{ __html: svgContent }}
-              style={{
-                maxWidth: '100%',
-                textAlign: 'center'
-              }}
-            />
-          )}
+
+          {/* Zoom in */}
+          <button
+            onClick={() => setZoom(z => Math.min(ZOOM_MAX, parseFloat((z + ZOOM_STEP).toFixed(2))))}
+            disabled={zoom >= ZOOM_MAX}
+            className="px-2 py-1 text-gray-300 hover:text-white hover:bg-gray-700 rounded text-lg leading-none disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+
+          {/* Fit to screen */}
+          <button
+            onClick={() => {
+              const { width, height } = getSvgDimensions(svgContent);
+              setZoom(fitZoom(width, height));
+              scrollRef.current?.scrollTo(0, 0);
+            }}
+            className="ml-2 px-3 py-1 text-gray-300 hover:text-white hover:bg-gray-700 rounded text-xs font-medium transition-colors"
+            title="Fit to screen"
+          >
+            Fit
+          </button>
+
+          {/* Close */}
+          <button
+            onClick={closeFullscreen}
+            className="ml-2 p-1.5 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors"
+            title="Close (Esc)"
+            aria-label="Close fullscreen"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
-    </div>
+
+      {/* Scrollable diagram area */}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-auto flex items-start justify-center p-8"
+      >
+        <div
+          className="mermaid-diagram bg-white dark:bg-gray-900 rounded-lg p-6 shadow-2xl"
+          dangerouslySetInnerHTML={{ __html: svgContent }}
+          style={{
+            transformOrigin: 'top center',
+            transform: `scale(${zoom})`,
+            transition: 'transform 0.15s ease',
+          }}
+        />
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
+  return (
+    <>
+      <div className={`my-6 ${className}`}>
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
+          <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 px-4 py-2 text-sm border-b border-gray-200 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">
+              Mermaid Diagram
+            </span>
+            <div className="flex items-center gap-2">
+              {isLoading && (
+                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                  <span className="text-xs">Rendering...</span>
+                </div>
+              )}
+              {!isLoading && svgContent && (
+                <button
+                  onClick={openFullscreen}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                  title="View fullscreen"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                  </svg>
+                  Fullscreen
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="p-6 bg-white dark:bg-gray-900">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">Loading diagram...</p>
+              </div>
+            ) : (
+              <div
+                className="mermaid-diagram overflow-x-auto"
+                dangerouslySetInnerHTML={{ __html: svgContent }}
+                style={{ maxWidth: '100%', textAlign: 'center' }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {overlay}
+    </>
   );
 };
 

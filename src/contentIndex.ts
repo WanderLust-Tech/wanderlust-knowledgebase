@@ -12,6 +12,8 @@ export interface Subject {
     color: string;  // For theming
     icon: string;   // For UI
     contentIndex: ContentNode[];
+    /** When true, only Admin-role users see this subject in the selector. */
+    adminOnly?: boolean;
 }
 
 // Chromium Development Content (existing content)
@@ -970,6 +972,108 @@ const frontendContent: ContentNode[] = [
     }
 ];
 
+// Internal (admin-only) — custom browser implementation docs
+const internalContent: ContentNode[] = [
+    {
+        title: "Overview",
+        path: "overview",
+        description: "Internal engineering docs — admin access only"
+    },
+    {
+        title: "Browser Engine Customisations",
+        description: "Feature-level implementation docs for every Chromium addition",
+        children: [
+            { title: "Ad Blocker", path: "features/ad-blocker" },
+            { title: "Privacy Guard", path: "features/privacy-guard" },
+            { title: "Privacy Shield", path: "features/privacy-shield" },
+            { title: "Tracking Dashboard", path: "features/tracking-dashboard" },
+            { title: "Panels", path: "features/panels" },
+            { title: "Sidebar", path: "features/sidebar" },
+            { title: "Sidebar Apps", path: "features/sidebar-apps" },
+            { title: "Page Notes", path: "features/page-notes" },
+            { title: "Super Drag", path: "features/super-drag" },
+            { title: "NTP Bookmarks API", path: "features/ntp-bookmarks-api" },
+            { title: "NTP Feature Roadmap", path: "features/ntp-feature-roadmap" },
+            { title: "Mouse Gestures", path: "features/mouse-gestures" },
+            { title: "Autoscroll", path: "features/autoscroll" },
+            { title: "Vertical Tabs", path: "features/vertical-tabs" },
+            { title: "Most Visited Panel", path: "features/most-visited-panel" },
+            { title: "RSS Infobar Subscribe", path: "features/rss-infobar-subscribe" },
+            { title: "ePub Reader", path: "features/epub-reader" },
+            { title: "BitTorrent Client", path: "features/bittorrent-client" },
+            { title: "Browser Tools", path: "features/browser-tools" },
+            { title: "Tab Utilities", path: "features/tab-utilities" },
+            { title: "Splash Screen", path: "features/splash-screen" },
+            { title: "Typed Input History", path: "features/typed-input-history" },
+            { title: "Incognito Clipboard Privacy", path: "features/incognito-clipboard-privacy" },
+            { title: "Proxy Settings", path: "features/proxy-settings" },
+            { title: "Smart Proxy Routing", path: "features/smart-proxy-routing" },
+            { title: "Startup Cache", path: "features/startup-cache" },
+            { title: "Crash & Resume Downloads", path: "features/crash-resume-downloads" },
+            { title: "Origin Permission Grants", path: "features/origin-permission-grants" },
+            { title: "Scheme Aliases", path: "features/scheme-aliases" },
+            { title: "Content Policy Chain", path: "features/content-policy-chain" },
+            { title: "Security & Privacy Features", path: "features/security-privacy-features" },
+            { title: "UA Overrides", path: "features/ua-overrides" },
+            { title: "Site Injection", path: "features/site-injection" },
+            { title: "De-Googling", path: "features/de-googling" },
+            { title: "Infobars", path: "features/infobars" },
+        ]
+    },
+    {
+        title: "Architecture & Build",
+        description: "Patch system, GNI flags, source layout, and custom tooling",
+        children: [
+            { title: "Custom Browser Architecture", path: "architecture/custom-browser-architecture" },
+            { title: "Feature Management", path: "architecture/feature-management" },
+            { title: "Split View", path: "architecture/split-view" },
+            { title: "Custom Browser Build System", path: "build/custom-browser-build-system" },
+            { title: "Migration from Fork", path: "build/migration-from-fork" },
+            { title: "Custom WebUI — Getting Started", path: "custom-webui/getting-started" },
+            { title: "Custom WebUI — RSS Reader", path: "custom-webui/rss-reader" },
+            { title: "Custom WebUI — Sidebar", path: "custom-webui/sidebar" },
+        ]
+    },
+    {
+        title: "Chromium Version Migrations",
+        description: "Per-milestone rebase notes",
+        children: [
+            { title: "134 → 135", path: "migrations/chromium-134-to-135" },
+            { title: "135 → 136", path: "migrations/chromium-135-to-136" },
+            { title: "136 → 137", path: "migrations/chromium-136-to-137" },
+        ]
+    },
+    {
+        title: "Roadmaps & Backlogs",
+        description: "Feature planning and prioritisation",
+        children: [
+            { title: "Helium Phase A", path: "roadmap/helium-phase-a" },
+            { title: "Helium Phase B", path: "roadmap/helium-phase-b" },
+            { title: "Helium Phase C", path: "roadmap/helium-phase-c" },
+            { title: "Helium Backlog", path: "roadmap/helium-backlog" },
+            { title: "Privacy Hardening Backlog", path: "roadmap/privacy-hardening-backlog" },
+        ]
+    },
+    {
+        title: "Bloomberg Port",
+        children: [
+            { title: "Chromium Patches", path: "bloomberg/bloomberg-chromium-patches" },
+            { title: "Feature Ports", path: "bloomberg/bloomberg-feature-ports" },
+            { title: "Diagnostics", path: "bloomberg/bloomberg-diagnostics" },
+        ]
+    },
+    {
+        title: "Branding",
+        children: [
+            { title: "Branding Setup", path: "branding/branding-setup" },
+            { title: "Branding System", path: "branding/branding-system" },
+            { title: "Android Branding", path: "branding/android-branding" },
+            { title: "Linux Branding", path: "branding/linux-branding" },
+            { title: "iOS Branding", path: "branding/ios-branding" },
+        ]
+    },
+];
+
 // Main subjects configuration
 export const subjects: Subject[] = [
     {
@@ -995,6 +1099,15 @@ export const subjects: Subject[] = [
         color: 'purple',
         icon: '💻',
         contentIndex: frontendContent
+    },
+    {
+        id: 'internal',
+        title: 'Internal Engineering',
+        description: 'Implementation docs for the Wanderlust custom browser — admin access only',
+        color: 'red',
+        icon: '🔒',
+        contentIndex: internalContent,
+        adminOnly: true
     }
 ];
 

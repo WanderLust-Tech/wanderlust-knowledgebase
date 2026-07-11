@@ -91,11 +91,12 @@ A request is recorded when both hosts are non-empty, different, and the
 resource URL uses `http://` or `https://`. Internal schemes (`chrome://`,
 `chrome-extension://`, `data:`, etc.) are skipped.
 
-> **Note:** This is host-level comparison, not eTLD+1. `api.example.com`
-> loaded from `www.example.com` will appear as a cross-host relationship
-> even though both share the `example.com` registrable domain. A future
-> improvement can use `net::registry_controlled_domains` to compare
-> registrable domains instead.
+> **Note:** The throttle uses a two-label registrable-domain heuristic
+> (`api.example.com` → `example.com`) rather than the full
+> `net::registry_controlled_domains` table. This covers the common case
+> correctly but will misclassify multi-label TLDs (e.g. `.co.uk`).
+> A future improvement can switch to `GetDomainAndRegistry()` once the
+> `//net` include path issue in official builds is resolved.
 
 ---
 
@@ -171,7 +172,7 @@ Navigate to `chrome://tracking-dashboard` directly, or add a toolbar button
 | Area | Description | Notes |
 |---|---|---|
 | Session persistence | Persist recorded relationships to a per-profile LevelDB store so the graph survives a browser restart. The `TrackingRelationshipService` would need a `Load()` / `Save()` path; the in-memory map stays the authoritative copy. | Currently all data is in-memory and lost on close. |
-| eTLD+1 comparison | Use `net::registry_controlled_domains::GetDomainAndRegistry()` to compare registrable domains instead of raw hosts. `api.example.com` and `www.example.com` would then not appear as cross-party. | See the third-party detection note above. |
+| ~~eTLD+1 comparison~~ | ~~Use `GetDomainAndRegistry()`~~ — Implemented as a two-label heuristic in `tracking_relationship_throttle.cc`. Handles the common case (`api.example.com` / `www.example.com` → same party). Multi-label TLDs (`.co.uk`) are a known edge case. | Upgrade to full `net::registry_controlled_domains` when official-build include path is resolved. |
 | Toolbar quick-access button | A toolbar button that shows a badge with the tracker count for the current tab, and opens the dashboard on click. The per-tab count is already available via `TrackingRelationshipService::GetTrackerCountForSite()`. | Pattern: same as `PrivacyShieldButton`. |
 | Filter by first-party site | Add a search/filter input to the dashboard React app to highlight or isolate a single first-party node and its edges. | Pure frontend change — no new C++ required. |
 

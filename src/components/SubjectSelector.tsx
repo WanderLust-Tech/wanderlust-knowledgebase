@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useSubject } from '../contexts/SubjectContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Subject } from '../contentIndex';
 
 interface SubjectSelectorProps {
@@ -8,6 +9,8 @@ interface SubjectSelectorProps {
 
 const SubjectSelector: React.FC<SubjectSelectorProps> = ({ sidebar = false }) => {
   const { currentSubject, subjects, switchToSubject } = useSubject();
+  const { hasRole } = useAuth();
+  const visibleSubjects = subjects.filter(s => !s.adminOnly || hasRole('Admin'));
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -20,6 +23,8 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ sidebar = false }) =>
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'purple':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'red':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
     }
@@ -33,6 +38,8 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ sidebar = false }) =>
         return 'border-green-200 dark:border-green-700';
       case 'purple':
         return 'border-purple-200 dark:border-purple-700';
+      case 'red':
+        return 'border-red-200 dark:border-red-700';
       default:
         return 'border-gray-200 dark:border-gray-700';
     }
@@ -104,7 +111,7 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ sidebar = false }) =>
                 Select Knowledge Base
               </h3>
               <div className="space-y-2">
-                {subjects.map((subject) => (
+                {visibleSubjects.map((subject) => (
                   <button
                     key={subject.id}
                     onClick={() => handleSubjectSelect(subject.id)}
