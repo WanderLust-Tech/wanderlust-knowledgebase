@@ -120,8 +120,34 @@ Transitions:
 
 All transitions go through the pref. The pref-change observer in each
 `SidebarContainerView` re-reads state from the service, updates its
-`width_` field, calls `BrowserView::DeprecatedLayoutImmediately()`, and
-(for docked containers only) spawns or closes the `UndockedSidebarWidget`.
+`width_` field, and triggers a layout pass (animated — see below).
+
+### Collapse / expand animation
+
+`SidebarContainerView` inherits `gfx::AnimationDelegate` and owns a
+`gfx::SlideAnimation collapse_animation_`. When `OnCollapsedPrefChanged`
+fires for a **docked** container:
+
+1. The current `width_` is captured as `anim_start_width_`.
+2. `UpdatePrefs()` is called to compute the target state, setting `width_`
+   to the target value.
+3. `anim_end_width_ = width_` is captured; `width_` is restored to the
+   start value.
+4. `is_animating_ = true` and the animation starts.
+5. `AnimationProgressed` interpolates `width_` linearly and calls
+   `BrowserView::DeprecatedLayoutImmediately()` each frame.
+6. `AnimationEnded` sets `width_ = anim_end_width_`, clears `is_animating_`,
+   and does a final layout pass.
+7. During animation, `Layout(PassKey)` skips hiding the `WebView` — the
+   `if (is_collapsed_)` guard becomes `if (is_collapsed_ && !is_animating_)`
+   so the web content stays visible while sliding.
+
+`UndockedSidebarWidget` applies the same pattern to the widget's own bounds.
+`OnCollapsedPrefChanged` captures the current screen-space bounds as start,
+computes the target bounds using the same geometry as `UpdateBounds`, and
+starts a `gfx::SlideAnimation`. `AnimationProgressed` interpolates both `x`
+and `width` per frame (right-edge anchoring adjusts `x` as `width` grows or
+shrinks). `AnimationEnded` snaps to the exact target bounds.
 
 ## Lifecycle
 
@@ -492,13 +518,13 @@ The peek state is **runtime-only** — not persisted. A browser restart always s
 
 | | |
 |---|---|
-| **No animation** | All transitions (collapse/expand, dock/undock) are instant. A `gfx::SlideAnimation` on the docked container's `width_` and the undocked widget's bounds would smooth this out. |
 | **Multiple WebContents** | Each `SidebarContainerView` (per-BrowserView + the undocked one) lazily creates its own. See "WebContents lifecycle" above. |
 | **No header pop-out button** | Dock/undock is only reachable from the right-click context menu. |
 | **Primary-display only for initial spawn** | The first `UpdateBounds` after `ShowForProfile` uses the primary display's work area. Once the user drags the widget to a secondary monitor, `OnDragSettled` correctly uses `display::Screen::GetDisplayMatching(bounds)` so snap/peek behave on that display — but the initial spawn doesn't yet remember which display the widget was on last session. |
 | **No drag-to-resize on undocked widget** | The widget's bounds are computed from prefs; the inner `SidebarContainerView::OnResize` writes `kSidebarUndockedWidth` on resize-end, but the widget doesn't propagate the resize cursor from its own edges yet. (`views::Widget`'s standard resize edges are gone because `remove_standard_frame=true`.) |
 | **Drag affordance is invisible** | The whole pane-strip background is drag-targetable, but there's no visual cue. Users learn to drag from non-button space by accident or by reading docs. A subtle grip pattern (3 horizontal dots, a hover background) on the empty pane-strip area would make it discoverable. |
 | **Auto-hide polls every 100ms** | Cheaper alternatives exist (per-platform mouse hooks, `aura::WindowEventDispatcher` filters), but the polling timer is simple and the cost is negligible. If profiling ever flags it, the panels subsystem's `PanelMouseWatcher` is a more efficient reference implementation. |
+| **English-only context menu strings** | "Undock Sidebar" / "Dock Sidebar" / "Expand" / "Collapse" are `u""` literals in `ShowContextMenuForViewImpl`. Should be `IDS_SIDEBAR_*` from generated_resources. |
 
 ## Integration patches
 

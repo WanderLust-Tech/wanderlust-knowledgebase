@@ -20,6 +20,7 @@ primary-frame commit so the surfacing reflects the page currently shown.
 | [`branding_buildflags.h`](../src/custom/custom_browser_config.gni) | Emits `BUILDFLAG(ENABLE_AD_BLOCKER)` for `#if`-gating |
 | [`custom_prefs.cc`](../src/custom/browser/prefs/custom_prefs.cc#L53) | `prefs::kEnableAdBlock` (`custom.enable_ad_block`) — user toggle, defaults to `true` when the build flag is on |
 | Engine + bridge sources | [`browser/sources.gni`](../src/custom/browser/sources.gni#L212) — `custom_browser_net` |
+| Cosmetic filter attachment | [`patches/chrome-browser-ui-tab_helpers.cc.patch`](../src/custom/patches/chrome-browser-ui-tab_helpers.cc.patch) — `CosmeticFilterTabHelper::CreateForWebContents` under the buildflag |
 | UI sources (omnibox icon + bubble) | [`browser/ui/sources.gni`](../src/custom/browser/ui/sources.gni) under `if (enable_ad_blocker)` |
 | PageActionIconType enum | [`page_action_icon_type.h`](../src/chrome/browser/ui/page_action/page_action_icon_type.h) — `kAdBlock = 35`, conditional on `ENABLE_AD_BLOCKER` |
 | Icon construction | [`page_action_icon_controller.cc`](../src/chrome/browser/ui/views/page_action/page_action_icon_controller.cc) — `case kAdBlock:` in the switch |
@@ -114,7 +115,9 @@ to empty state).
 | [`net/blockers/ad_block_throttle.{cc,h}`](../src/custom/browser/net/blockers/ad_block_throttle.cc) | URLLoaderThrottle. Calls the engine first, then the hardcoded fallback. PostTasks block records to UI thread, then `CancelWithError` |
 | [`net/blockers/ad_block_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/ad_block_tab_helper.cc) | `WebContentsUserData<AdBlockTabHelper>` + `WebContentsObserver`. Stores `[{url, destination, time}]` for the current page load; resets on primary-main-frame committed navigations |
 | [`net/blockers/blockers_worker.{cc,h}`](../src/custom/browser/net/blockers/blockers_worker.cc) | Bridge between Chromium types (`network::mojom::RequestDestination`) and the engine (`FilterOption`). Process-wide singleton via `BlockersWorker::Get()`. Lazy `parse()` of the bundled rule list under `base::Lock` |
-| [`net/blockers/bundled_filter_rules.{cc,h}`](../src/custom/browser/net/blockers/bundled_filter_rules.cc) | Compiled-in ABP-format rule list. Curated, ~50 rules. The single point of edit for adding/removing rules — no filesystem dependency |
+| [`net/blockers/bundled_filter_rules.{cc,h}`](../src/custom/browser/net/blockers/bundled_filter_rules.cc) | Compiled-in ABP-format rule list. Generated from EasyList at build time via `download_easylist.py`; falls back to a curated ~50-rule set if the script has not been run |
+| [`net/blockers/cosmetic_filter_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/cosmetic_filter_tab_helper.cc) | `WebContentsUserData` + `WebContentsObserver`. On every committed primary-frame navigation, fetches the engine's element-hiding CSS from `BlockersWorker::GetCosmeticStylesheet()` and injects it via `ExecuteJavaScript` into the page's `<head>` |
+| [`tools/download_easylist.py`](../src/custom/tools/download_easylist.py) | Build-time script. Downloads `easylist.txt` from easylist.to (or accepts `--input` for a local file) and writes `bundled_filter_rules.cc` as a series of raw-string-literal C++ chunks (≤16 384 bytes each to stay under MSVC limits) |
 | [`net/blockers/ad_block_client.{cc,h}`](../src/custom/browser/net/blockers/ad_block_client.cc) | Vendored ABP filter engine (Brian Bondy / Brave origin). Parses ABP text, matches URLs. ~1200 lines. Modified in Phase 5 to restore the half-finished refactor of HashSet (see comments in `add()` and `deserialize()`) |
 | [`net/blockers/{filter,bloom_filter,cosmetic_filter,hash_set,hash_item,hash_fn,bad_fingerprint{s}}.{cc,h}`](../src/custom/browser/net/blockers/) | Engine internals — hash sets, bloom filters, fingerprint tables. ~9000 lines including the 7000-line fingerprint data table |
 
@@ -155,10 +158,23 @@ you're reading the file comments which still reference phase numbers.
 | 5 | Modernized the vendored ABP engine (`raw_ptr` + `delete` → `unique_ptr`, `std::mutex` → `base::Lock`, removed `content::ResourceType` → `network::mojom::RequestDestination`, fixed the half-finished HashSet refactor) | `blockers_worker.{cc,h}`, `hash_set.h` |
 | 6 | Compiled-in ABP rule list, `BlockersWorker::Get()` singleton, throttle wired to call the engine before the hardcoded fallback | `bundled_filter_rules.{cc,h}`, plus rewrites of `blockers_worker.cc` + `ad_block_throttle.cc` |
 | 7 | User-facing toggle in chrome://settings, throttle gated on the pref so it pays nothing when off | `custom_content_browser_client.cc`, `PrivacyPage.tsx` |
+| 8 | Full EasyList integration. `InitAdBlock()` gains a `.dat`-first path: tries `chrome::DIR_RESOURCES/easylist.dat` via `deserialize()`, falls back to text parse of `kBundledFilterRules`, then serializes a fresh `.dat` via `SaveDatFile()`. `download_easylist.py` generates `bundled_filter_rules.cc` from easylist.to at build time | `blockers_worker.{cc,h}`, `tools/download_easylist.py` |
+| 9 | Cosmetic filtering. `CosmeticFilterTabHelper` (WebContentsUserData) observes every committed primary-frame navigation, fetches element-hiding CSS from `BlockersWorker::GetCosmeticStylesheet()`, and injects a `<style data-cosmetic-filter>` tag via `ExecuteJavaScript` | `cosmetic_filter_tab_helper.{cc,h}`, patch in `tab_helpers.cc` |
 
-## Adding a rule
+## Updating the filter list
 
-Edit [`bundled_filter_rules.cc`](../src/custom/browser/net/blockers/bundled_filter_rules.cc). The file is a single `const char kBundledFilterRules[]` containing newline-separated ABP-syntax filters. The engine parses it once at startup; no codegen step.
+The recommended path is to re-run `download_easylist.py`, which regenerates `bundled_filter_rules.cc` from the latest EasyList:
+
+```bash
+python src/custom/tools/download_easylist.py \
+    --output src/custom/browser/net/blockers/bundled_filter_rules.cc
+```
+
+Pass `--input easylist.txt` to use a locally-downloaded copy instead of fetching from easylist.to.
+
+After regenerating, delete the stale `easylist.dat` from the build's resources directory so `InitAdBlock()` re-serializes the fresh rules on the next launch.
+
+To add a single custom rule without regenerating, edit [`bundled_filter_rules.cc`](../src/custom/browser/net/blockers/bundled_filter_rules.cc) directly — the file is a series of raw-string-literal chunks concatenated into `kBundledFilterRules`. Append to the last chunk.
 
 ABP syntax cheat-sheet (subset the engine supports):
 
@@ -183,15 +199,15 @@ The engine itself is process-wide. `BlockersWorker::Get()` returns a `base::NoDe
 
 ## Known gaps / latent issues
 
-- **Bundled rule list is curated, not EasyList.** ~50 rules cover the most visible offenders (Google Ads, DoubleClick, GA, Hotjar, Segment, Mixpanel, social-graph beacons). Production-quality coverage would want EasyList (~50K rules) and EasyPrivacy. The engine handles that volume fine; what's missing is the build-time generation step that pulls EasyList sources, parses them, and either bakes them into the binary or ships a precompiled `.dat`. The engine's `serialize()` + `deserialize()` exist for exactly this — `BlockersWorker::InitAdBlock` would gain a `.dat`-first / `parse()`-fallback path.
-
 - **`base_host` is the request initiator's host, not the top frame's.** Set in `ad_block_throttle.cc:WillStartRequest` from `request->request_initiator->host()`. For cross-frame requests (an iframe loading a sub-resource) this returns the iframe's origin, not the top-level frame's. ABP host-anchored rules (`||example.com^`) don't care about this; rules with `$third-party` / `$domain=...` modifiers will be slightly off for cross-frame initiators. None of the bundled rules use those modifiers, so this is a latent footgun, not an active bug. Reliable fix: synchronously access the WebContents on UI by deferring the request — but the latency cost on every URL is too high.
 
 - **`kEnableSmartAdBlock` is unused.** Registered in `custom_prefs.cc` alongside `kEnableAdBlock`, but no code reads it. Placeholder slot for a future "engine + heuristics" mode.
 
 - **Pref toggle has a per-request latency.** Reading `kEnableAdBlock` on every `CreateURLLoaderThrottles` call adds a `GetBoolean` to the request path. PrefService caches the boolean, so it's a hash lookup, but if profiling later shows it's expensive we can switch to a `PrefChangeRegistrar` + `std::atomic<bool>` cache.
 
-- **No cosmetic filtering.** The engine has cosmetic-filter machinery (element-hiding rules like `##.ad-banner`) but the throttle only does network blocking — it can't hide DOM elements after the fact. Adding cosmetic filtering would mean a renderer-side component that receives the active rules and applies them on each page load. Out of scope for the current pipeline.
+- **Cosmetic filtering injects on every navigation, not incrementally.** `CosmeticFilterTabHelper` re-injects the entire `<style>` block on every committed primary-frame navigation. For EasyList's element-hiding CSS (~several hundred KB) this may cause a brief style-recalc on slow pages. A future improvement: diff the CSS against the previous injection and only update if changed, or inject per-domain rules only.
+
+- **EasyPrivacy not bundled.** `download_easylist.py` only fetches EasyList. EasyPrivacy (tracker-specific rules) can be appended by passing a combined file to `--input`. The engine handles the combined volume fine.
 
 ## Testing
 

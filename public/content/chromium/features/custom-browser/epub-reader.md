@@ -41,6 +41,10 @@ EpubReaderUI  (content::WebUIController)
    │     loadEpubFile       → reads local file bytes on a ThreadPool task,
    │                          returns base64 data so epub.js can parse it
    │                          (file:// URLs can't be fetched from chrome://)
+   │     getEpubPosition    → returns { cfi, progress } for a given EPUB URL,
+   │                          or null if no position has been saved yet
+   │     setEpubPosition    → writes { cfi, progress } for a given EPUB URL
+   │                          into the per-URL position map pref
    │
    └── React App  (chrome://epub-reader/)
          main.tsx  → createRoot → <App>
@@ -96,6 +100,7 @@ minimal stubs; replace with `@types/epubjs` if upstream ships one.
 | `epub_reader.font_size` | int | `16` (px) | Body font size applied via epub.js `themes.fontSize()` |
 | `epub_reader.theme` | string | `"auto"` | Colour theme — `auto`, `light`, `dark`, or `sepia` |
 | `epub_reader.scrolled_mode` | bool | `false` | `true` → epub.js `flow: "scrolled"`, `false` → `"paginated"` |
+| `epub_reader.last_position` | string | `"{}"` | JSON map from EPUB URL → `{ "cfi": string, "progress": number }`. Written by `setEpubPosition`; read by `getEpubPosition` on load to restore the last reading location. |
 
 Prefs are registered in [`custom_prefs.cc`](../src/custom/browser/prefs/custom_prefs.cc)
 under `#if BUILDFLAG(ENABLE_EPUB_READER)`.  Constants live in
@@ -138,7 +143,8 @@ explicit `chrome.send` calls are needed.
 | File | Purpose |
 |---|---|
 | [`browser/ui/webui/epub_reader/epub_reader_ui.{cc,h}`](../src/custom/browser/ui/webui/epub_reader/epub_reader_ui.cc) | `EpubReaderUIConfig` + `EpubReaderUI` — registers the WebUI data source and message handler |
-| [`browser/ui/webui/epub_reader/epub_reader_dom_handler.{cc,h}`](../src/custom/browser/ui/webui/epub_reader/epub_reader_dom_handler.cc) | Pref get/set and file-byte proxy for local EPUBs |
+| [`browser/ui/webui/epub_reader/epub_reader_dom_handler.{cc,h}`](../src/custom/browser/ui/webui/epub_reader/epub_reader_dom_handler.cc) | Pref get/set, file-byte proxy for local EPUBs, and reading-position persistence |
+| [`browser/epub/epub_navigation_throttle.{cc,h}`](../src/custom/browser/epub/epub_navigation_throttle.cc) | `NavigationThrottle` — intercepts `http(s)://…*.epub` navigations and redirects to `chrome://epub-reader/?url=<encoded>` |
 | [`common/webui_url_constants.h`](../src/custom/common/webui_url_constants.h) | `kChromeUIEpubReaderHost` / `kChromeUIEpubReaderURL` |
 | [`common/custom_pref_names.h`](../src/custom/common/custom_pref_names.h) | `kEpubReader*` pref name constants |
 | [`components/custom_epub_reader/`](../src/custom/components/custom_epub_reader/) | React app root — BUILD.gn, index.html, App.tsx, cr.ts, types.ts |
@@ -159,13 +165,22 @@ chrome://epub-reader/?url=https://example.com/book.epub
 The URL is read from `location.search` on mount — no round-trip to C++ is
 needed for the URL itself.
 
-## Known gaps
+## Navigation throttle
 
-- **No NavigationThrottle.** Clicking a `.epub` link or dragging a `.epub` file
-  onto the browser does not automatically redirect to `chrome://epub-reader/`.
-  A `NavigationThrottle` that intercepts `file://*.epub` navigations and
-  rewrites them to `chrome://epub-reader/?url=<encoded>` has not been
-  implemented yet.
+`EpubNavigationThrottle` (gated by `BUILDFLAG(ENABLE_EPUB_READER)`) is
+registered in `CustomContentBrowserClient::CreateThrottlesForNavigation`. It
+intercepts any `http://` or `https://` navigation whose URL path ends with
+`.epub` (case-insensitive) and redirects it to
+`chrome://epub-reader/?url=<percent-encoded-epub-url>` using the standard
+`CANCEL_AND_IGNORE` + `WebContents::OpenURL` throttle pattern. The original
+navigation is cleanly aborted before a new top-level navigation to the reader
+begins.
+
+**Limitation:** `file://` `.epub` navigations are not intercepted — the
+throttle only handles http/https schemes. Users can still open local EPUBs
+by navigating directly to `chrome://epub-reader/?url=file:///path/to/book.epub`.
+
+## Known gaps
 
 - **No file picker.** There is no "Open file…" button in the toolbar; users
   must construct the URL manually or navigate directly.
@@ -174,6 +189,3 @@ needed for the URL itself.
   servers may fail to load under the default CSP because the epub.js iframe
   does not inherit the `chrome://` page's origin. No `img-src` override is
   currently set.
-
-- **No position persistence.** The current reading location is not saved; the
-  book always opens at the beginning.

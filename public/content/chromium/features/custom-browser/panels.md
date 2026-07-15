@@ -261,10 +261,29 @@ entries back to the `.grdp`.
 
 ## Pref schema
 
-No user-facing prefs. Panel layout state (active collection, bounds) is held
-in-memory only — there is no on-disk persistence of panel positions across
-sessions. `PanelManager` accepts settings only via its `DisplaySettingsProvider`,
-which is constructed eagerly and is not pref-backed.
+| Pref key | Type | Default | Purpose |
+|---|---|---|---|
+| `panel_manager.session` | `string` (JSON) | `"[]"` | Serialized list of open panels. Persisted on shutdown, restored at next launch. |
+
+### Session format
+
+`panel_manager.session` is a JSON array. Each element represents one panel:
+
+```json
+[
+  {
+    "app_name": "my_extension_app",
+    "url": "https://example.com/panel",
+    "x": 100, "y": 200, "width": 400, "height": 300
+  }
+]
+```
+
+**Save:** `PanelManager::SaveSessionToPrefs(PrefService*)` — called on browser shutdown. Iterates all live panels and writes their `app_name`, last committed URL, and `GetBounds()` rect.
+
+**Restore:** `PanelManager::RestoreSessionFromPrefs(PrefService*, Profile*)` — called during browser startup. Parses the JSON array and calls `CreatePanel(app_name, profile, url, bounds, CREATE_AS_DETACHED)` for each entry, then `ShowInactive()` + `LoadContents(url)`.
+
+`RegisterPrefs(PrefRegistrySimple*)` must be called from the profile prefs registration path before either method is usable.
 
 ## Known limitations
 
@@ -276,7 +295,7 @@ which is constructed eagerly and is not pref-backed.
 | **Empty `CreateTabList`** | Panels host a single `WebContents` but `chrome.windows.get({populate:true})` returns no `tabs` array, matching how apps and devtools windows behave. |
 | **No minimized-panel frame chrome art** | `PaintFrameEdge` draws nothing because `IDR_WINDOW_*_CORNER/EDGE` and `IDR_PANEL_*_CORNER/EDGE` are gone. Titlebar background paints fine via `FillRect`. Affects only minimized panels. |
 | **Detached panels not reachable via extension API** | The `kDetachedPanel` `CreateType` was removed from upstream `windows.json`. The collection still exists; it's just unreachable from JS. Restoring it requires re-adding the enum value to the API schema. |
-| **No session restore** | Panel positions and the list of open panels are not persisted across browser restarts. |
+| **Session restore restores as detached** | Panels saved at shutdown are restored as `CREATE_AS_DETACHED` (free-floating) regardless of their original collection. Docked restore would require saving the collection type and re-running the docking layout algorithm, which has cascading resize side-effects. |
 | **Stacked panels — drag-only** | The only way to create a stack is to drag one panel onto another. There's no extension API for "create me a stack". Stack-teardown reset state (the `secondary_stack_window_ = nullptr` family) is also still commented out — won't bite until a user actually stacks panels. |
 
 ## Test extension

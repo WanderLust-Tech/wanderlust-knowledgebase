@@ -30,30 +30,27 @@ React (remote_ntp)
 
 ## 1. Mojo interface (`remote_ntp.mojom`)
 
-Three structs and one push method on `RemoteNtpClient`:
+Two structs and one push method on `RemoteNtpClient`:
 
 ```mojom
-// A single bookmark entry (URL or folder marker).
+// A bookmark tree node. URL bookmarks have a non-empty url and empty children.
+// Folder nodes have an empty url and a children array that may itself contain
+// nested folder nodes — enabling arbitrary nesting depth without depth limits.
 struct NtpBookmarkEntry {
   int64 id;
   mojo_base.mojom.String16 title;
-  string url;        // empty string when is_folder == true
+  string url;                         // empty for folder nodes
   bool is_folder;
+  array<NtpBookmarkEntry> children;   // non-empty only for folder nodes
 };
 
-// One level of nesting inside a top-level folder.
-struct NtpBookmarkSubfolder {
-  int64 id;
-  mojo_base.mojom.String16 title;
-  array<NtpBookmarkEntry> children;
-};
-
-// A top-level folder with direct URL children and one level of sub-folders.
+// A top-level bookmark folder (bookmark bar node or "Other Bookmarks").
+// Its children are NtpBookmarkEntry nodes; folder-typed children carry their
+// own children recursively, enabling unlimited nesting depth.
 struct NtpBookmarkFolder {
   int64 id;
   mojo_base.mojom.String16 title;
   array<NtpBookmarkEntry> children;
-  array<NtpBookmarkSubfolder> subfolders;
 };
 
 interface RemoteNtpClient {
@@ -61,6 +58,9 @@ interface RemoteNtpClient {
   BookmarksChanged(array<NtpBookmarkFolder> folders);
 };
 ```
+
+`NtpBookmarkEntry.children` is self-referential via `array<>` indirection — Mojo
+arrays are passed by reference so there is no infinite-size issue.
 
 `BookmarksChanged` is **push-only** — the browser pushes whenever any bookmark
 changes; the renderer never requests it.
@@ -108,11 +108,23 @@ if (bookmark_model_) bookmark_model_->RemoveObserver(this);
    entry using `other->GetTitle()` — only emitted if non-empty
 4. For each folder child of `other_node()`: one `NtpBookmarkFolder` via `add_folder`
 
-**`add_folder` lambda** — builds one `NtpBookmarkFolder` from a node:
-- URL children → `NtpBookmarkEntry` items in `folder->children`
-- Folder children → `NtpBookmarkSubfolder` entries in `folder->subfolders`, each
-  collecting their own URL children (grandchildren of the top-level folder)
-- Grandchildren that are themselves folders are skipped (two levels max)
+**`build_entry` recursive lambda** — converts any `BookmarkNode*` to an `NtpBookmarkEntryPtr` at any depth:
+```cpp
+std::function<NtpBookmarkEntryPtr(const BookmarkNode*)> build_entry;
+build_entry = [&build_entry](const BookmarkNode* node) {
+  auto entry = NtpBookmarkEntry::New();
+  entry->id = node->id(); entry->title = node->GetTitle();
+  entry->is_folder = node->is_folder();
+  if (node->is_folder()) {
+    entry->url = std::string();
+    for (const auto& child : node->children())
+      entry->children.push_back(build_entry(child.get()));
+  } else { entry->url = node->url().spec(); }
+  return entry;
+};
+```
+
+**`add_folder` lambda** — builds one `NtpBookmarkFolder` from a node, calling `build_entry` for each direct child. No depth limit.
 
 **Observer methods** that all call `NotifyAboutBookmarks()`:
 - `BookmarkModelLoaded`
@@ -191,25 +203,23 @@ if (window.custom?.bookmarks?.onBookmarksChanged &&
 }
 ```
 
-JS folder object shape (matches `BookmarkFolder` in bookmarks_api.ts):
+JS folder object shape (matches `BookmarkFolderData` in `DailyLink.ts`):
 ```js
 {
   id: string,          // int64 converted via std::to_string
   title: string,       // std::u16string → V8 string
-  children: [
-    { id: string, title: string, url: string, isFolder: boolean },
-    ...
-  ],
-  subfolders: [
+  children: [          // BookmarkNode — may itself contain children at any depth
     {
-      id: string,
-      title: string,
-      children: [{ id: string, title: string, url: string, isFolder: boolean }, ...]
+      id: string, title: string, url: string,  // url is "" for folder nodes
+      isFolder: boolean,
+      children: [ /* recursive */ ]
     },
     ...
   ]
 }
 ```
+
+The renderer builds the `children` array with a recursive `build_v8_entry` lambda (`std::function`) that mirrors the C++ `build_entry` pattern.
 
 ---
 
@@ -218,16 +228,18 @@ JS folder object shape (matches `BookmarkFolder` in bookmarks_api.ts):
 **File:** `src/api/bookmarks_api.ts`
 
 ```ts
-export interface BookmarkEntry {
-  id: string; title: string; url: string; isFolder: boolean;
-}
-export interface BookmarkSubfolder {
-  id: string; title: string; children: BookmarkEntry[];
-}
-export interface BookmarkFolder {
+// A bookmark tree node — self-referential, matching NtpBookmarkEntry on the C++ side.
+export interface BookmarkNode {
   id: string; title: string;
-  children: BookmarkEntry[];
-  subfolders: BookmarkSubfolder[];
+  url: string;          // empty for folder nodes
+  isFolder: boolean;
+  children: BookmarkNode[];
+}
+
+// Top-level folder (bookmark bar or "Other Bookmarks").
+export interface BookmarkFolderData {
+  id: string; title: string;
+  children: BookmarkNode[];
 }
 
 class BookmarksAPI {
@@ -266,9 +278,12 @@ Maps `BookmarkFolder.subfolders` through to `BookmarkSubfolderData` for the
 
 **File:** `src/components/Bookmarks/BookmarkFolder.tsx`
 
-Renders a collapsible folder section (Bootstrap accordion). Sub-folders are rendered
-as nested `h6` collapsible sections inside the parent's accordion body, indented with
-`ps-3` to distinguish them visually from top-level items.
+Renders a collapsible top-level folder section (Bootstrap accordion). Direct
+children are rendered via `BookmarkNodeView`, which recurses:
+- URL nodes → `<a>` link via `BookmarkLink`
+- Folder nodes → nested collapsible section, indented by `depth * 8px` (capped at 4 levels of indent for readability)
+
+There is no depth limit on the tree — the recursion bottoms out at leaf URL nodes.
 
 ### Full layout
 
@@ -317,11 +332,7 @@ renames, or moves a bookmark within the bar.
 
 ## Extending / next steps
 
-### Deeper nesting (3+ levels)
-The current implementation supports two levels (folder → sub-folder → items).
-Supporting deeper nesting would require a recursive Mojo struct (or a flat node list
-with parent IDs) and recursive rendering in React. Most real-world bookmark libraries
-stay within two levels, so this is low priority.
+### `getFolderChildren()` async pull method
 
 ### `getFolderChildren()` async pull method
 For very large libraries, add a `GetBookmarkFolderChildren(int64 folder_id)` request

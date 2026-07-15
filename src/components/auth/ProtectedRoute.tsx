@@ -23,6 +23,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { isAuthenticated, isLoading, hasRole, user } = useAuth();
 
+  console.log('[ProtectedRoute]', {
+    requiredRole,
+    isLoading,
+    isAuthenticated,
+    userRole: user?.role ?? 'none',
+    hasRequiredRole: requiredRole ? hasRole(requiredRole) : 'n/a',
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-64">

@@ -14,6 +14,8 @@ export interface Subject {
     contentIndex: ContentNode[];
     /** When true, only Admin-role users see this subject in the selector. */
     adminOnly?: boolean;
+    /** Override the content directory used when fetching files. Defaults to `id`. */
+    contentBase?: string;
 }
 
 // Chromium Development Content (existing content)
@@ -219,163 +221,10 @@ const chromiumContent: ContentNode[] = [
         ]
     },
 
-    // PHASE 7.5: CUSTOM BROWSER FEATURES
+    // PHASE 7.5: CHROMIUM FEATURES
     {
-        title: "Custom Browser Features",
-        description: "Wanderlust Custom Browser specific features and implementations",
-        children: [
-            { title: "Features Overview", path: "features/custom-browser/README" },
-            {
-                title: "Core Features",
-                children: [
-                    { title: "Custom Cache Feature", path: "features/custom-browser/custom-cache-feature" },
-                    { title: "Remote New Tab Page System", path: "features/custom-browser/remote-ntp-documentation" },
-                    { title: "RSS Feed Support", path: "features/custom-browser/rss-feed-support" },
-                    { title: "RSS User Guide", path: "features/custom-browser/rss-user-guide" },
-                    { title: "Privacy Guard", path: "features/custom-browser/privacy-guard" },
-                    { title: "Vertical Tabs", path: "features/custom-browser/vertical-tabs" },
-                    { title: "Custom Settings UI", path: "features/custom-browser/custom-settings-ui" },
-                    { title: "Custom Download Shelf", path: "features/custom-browser/custom-download-shelf" },
-                    { title: "Tab Shapes Feature", path: "features/custom-browser/tab-shapes-feature" },
-                    { title: "Ad Blocker", path: "features/custom-browser/ad-blocker" },
-                    { title: "Privacy Shield", path: "features/custom-browser/privacy-shield" },
-                    { title: "De-Googling", path: "features/custom-browser/de-googling" },
-                    { title: "Tracking Dashboard", path: "features/custom-browser/tracking-dashboard" }
-                ]
-            },
-            {
-                title: "Browser UI & Navigation",
-                children: [
-                    { title: "Sidebar", path: "features/custom-browser/sidebar" },
-                    { title: "Sidebar Apps", path: "features/custom-browser/sidebar-apps" },
-                    { title: "Infobars", path: "features/custom-browser/infobars" },
-                    { title: "Panels", path: "features/custom-browser/panels" },
-                    { title: "Browser Tools", path: "features/custom-browser/browser-tools" },
-                    { title: "Splash Screen", path: "features/custom-browser/splash-screen" },
-                    { title: "Tab Utilities", path: "features/custom-browser/tab-utilities" },
-                    { title: "Mouse Gestures", path: "features/custom-browser/mouse-gestures" },
-                    { title: "Autoscroll", path: "features/custom-browser/autoscroll" },
-                    { title: "Super Drag", path: "features/custom-browser/super-drag" }
-                ]
-            },
-            {
-                title: "Privacy & Security",
-                children: [
-                    { title: "Incognito Clipboard Privacy", path: "features/custom-browser/incognito-clipboard-privacy" },
-                    { title: "Origin Permission Grants", path: "features/custom-browser/origin-permission-grants" },
-                    { title: "Scheme Aliases", path: "features/custom-browser/scheme-aliases" },
-                    { title: "Content Policy Chain", path: "features/custom-browser/content-policy-chain" },
-                    { title: "Security & Privacy Features", path: "features/custom-browser/security-privacy-features" },
-                    { title: "Site Injection", path: "features/custom-browser/site-injection" },
-                    { title: "UA Overrides", path: "features/custom-browser/ua-overrides" }
-                ]
-            },
-            {
-                title: "Downloads & Networking",
-                children: [
-                    { title: "Crash & Resume Downloads", path: "features/custom-browser/crash-resume-downloads" },
-                    { title: "Proxy Settings", path: "features/custom-browser/proxy-settings" },
-                    { title: "Smart Proxy Routing", path: "features/custom-browser/smart-proxy-routing" },
-                    { title: "Startup Cache", path: "features/custom-browser/startup-cache" }
-                ]
-            },
-            {
-                title: "Content & Media",
-                children: [
-                    { title: "BitTorrent Client", path: "features/custom-browser/bittorrent-client" },
-                    { title: "ePub Reader", path: "features/custom-browser/epub-reader" },
-                    { title: "RSS Infobar Subscribe", path: "features/custom-browser/rss-infobar-subscribe" },
-                    { title: "Most Visited Panel", path: "features/custom-browser/most-visited-panel" }
-                ]
-            },
-            {
-                title: "Page Utilities",
-                children: [
-                    { title: "Page Notes", path: "features/custom-browser/page-notes" },
-                    { title: "Typed Input History", path: "features/custom-browser/typed-input-history" }
-                ]
-            },
-            {
-                title: "NTP (New Tab Page)",
-                children: [
-                    { title: "NTP Bookmarks API", path: "features/custom-browser/ntp/ntp-bookmarks-api" },
-                    { title: "NTP Feature Roadmap", path: "features/custom-browser/ntp/ntp-feature-roadmap" }
-                ]
-            },
-            {
-                title: "Custom WebUI",
-                children: [
-                    { title: "Getting Started", path: "features/custom-browser/custom-webui/getting-started" },
-                    { title: "RSS Reader WebUI", path: "features/custom-browser/custom-webui/rss-reader" },
-                    { title: "Sidebar WebUI", path: "features/custom-browser/custom-webui/sidebar" }
-                ]
-            },
-            {
-                title: "Branding",
-                children: [
-                    { title: "Branding Setup", path: "features/custom-browser/branding/branding-setup" },
-                    { title: "Branding System", path: "features/custom-browser/branding/branding-system" },
-                    { title: "Branding Analysis", path: "features/custom-browser/branding/branding-analysis" },
-                    { title: "GRD Branding Analysis", path: "features/custom-browser/branding/grd-branding-analysis" },
-                    { title: "Android Branding", path: "features/custom-browser/branding/android-branding" },
-                    { title: "Linux Branding", path: "features/custom-browser/branding/linux-branding" },
-                    { title: "iOS Branding", path: "features/custom-browser/branding/ios-branding" },
-                    { title: "Help URL Branding", path: "features/custom-browser/branding/help-url-branding" },
-                    { title: "URL Schema Branding", path: "features/custom-browser/branding/url-schema-branding" }
-                ]
-            },
-            {
-                title: "Bloomberg Port",
-                children: [
-                    { title: "Bloomberg Chromium Patches", path: "features/custom-browser/bloomberg/bloomberg-chromium-patches" },
-                    { title: "Bloomberg Feature Ports", path: "features/custom-browser/bloomberg/bloomberg-feature-ports" },
-                    { title: "Bloomberg Diagnostics", path: "features/custom-browser/bloomberg/bloomberg-diagnostics" }
-                ]
-            },
-            {
-                title: "Helium Port",
-                children: [
-                    { title: "Helium Phase A", path: "features/custom-browser/helium/helium-phase-a" },
-                    { title: "Helium Phase B", path: "features/custom-browser/helium/helium-phase-b" },
-                    { title: "Helium Phase C", path: "features/custom-browser/helium/helium-phase-c" },
-                    { title: "Helium Backlog", path: "features/custom-browser/helium/helium-backlog" },
-                    { title: "Privacy Hardening Backlog", path: "features/custom-browser/helium/privacy-hardening-backlog" }
-                ]
-            },
-            {
-                title: "Opera Feature Ports",
-                children: [
-                    { title: "Opera Feature Ports", path: "features/custom-browser/opera-feature-ports" }
-                ]
-            },
-            {
-                title: "System Features",
-                children: [
-                    { title: "Feature Flag Management", path: "features/custom-browser/feature-flag-management" },
-                    { title: "Enhanced Scroll Animations", path: "features/custom-browser/enhanced-scroll-animations" },
-                    { title: "JavaScript Content Controls", path: "features/custom-browser/javascript-content-controls" },
-                    { title: "Advanced Download Management", path: "features/custom-browser/advanced-download-management" },
-                    { title: "Reader Mode Integration", path: "features/custom-browser/reader-mode-integration" },
-                    { title: "Multi-Brand System", path: "features/custom-browser/multi-brand-system" },
-                    { title: "Google API Suppression", path: "features/custom-browser/google-api-suppression" },
-                    { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
-                    { title: "Build System Integration", path: "features/custom-browser/build-system-integration" }
-                ]
-            },
-            {
-                title: "Legacy Documentation",
-                children: [
-                    { title: "Custom Features Implementation", path: "features/custom-browser/custom-features-implementation" },
-                    { title: "RSS Restoration Summary", path: "features/custom-browser/rss-feature-restoration-summary" }
-                ]
-            }
-        ]
-    },
-
-    // PHASE 7.6: FEATURES & IMPLEMENTATIONS
-    {
-        title: "Features & Implementations",
-        description: "Chrome feature implementations and development case studies",
+        title: "Chromium Features",
+        description: "Upstream Chromium feature implementations and architecture deep-dives",
         children: [
             {
                 title: "Extension & API Features",
@@ -385,7 +234,7 @@ const chromiumContent: ContentNode[] = [
                 ]
             },
             {
-                title: "Platform Integration Features",
+                title: "Platform Integration",
                 children: [
                     {
                         title: "Native OS Notifications Integration",
@@ -395,7 +244,7 @@ const chromiumContent: ContentNode[] = [
                 ]
             },
             {
-                title: "Performance & Web Acceleration Features",
+                title: "Performance & Web Acceleration",
                 children: [
                     {
                         title: "Web Prerendering: Predictive Page Loading",
@@ -405,10 +254,10 @@ const chromiumContent: ContentNode[] = [
                 ]
             },
             {
-                title: "Privacy & Security Features",
+                title: "Privacy & Security",
                 children: [
-                    { 
-                        title: "Privacy Budget: Anti-Fingerprinting Technology", 
+                    {
+                        title: "Privacy Budget: Anti-Fingerprinting Technology",
                         path: "features/privacy-budget",
                         description: "Comprehensive analysis of Google's Privacy Budget proposal for combating browser fingerprinting"
                     },
@@ -436,15 +285,6 @@ const chromiumContent: ContentNode[] = [
                     { title: "Custom Browser Build System", path: "development/custom-browser-build-system" },
                     { title: "Migration from Fork", path: "development/migration-from-fork" },
                     { title: "UI Automation Testing", path: "development/ui-automation-testing" }
-                ]
-            },
-            {
-                title: "Chromium Version Migrations",
-                children: [
-                    { title: "Chromium 134 → 135 Migration", path: "features/custom-browser/chromium-134-to-135-migration" },
-                    { title: "Chromium 135 → 136 Migration", path: "features/custom-browser/chromium-135-to-136-migration" },
-                    { title: "Chromium 136 → 137 Migration", path: "features/custom-browser/chromium-136-to-137-migration" },
-                    { title: "Chromium 139 → 140 Migration", path: "features/custom-browser/chromium-139-to-140-migration" }
                 ]
             },
             {
@@ -980,44 +820,96 @@ const internalContent: ContentNode[] = [
         description: "Internal engineering docs — admin access only"
     },
     {
-        title: "Browser Engine Customisations",
-        description: "Feature-level implementation docs for every Chromium addition",
+        title: "Browser UI",
+        description: "Visible browser chrome: sidebar, panels, tabs, toolbars, and window-level UI",
         children: [
-            { title: "Ad Blocker", path: "features/ad-blocker" },
-            { title: "Privacy Guard", path: "features/privacy-guard" },
-            { title: "Privacy Shield", path: "features/privacy-shield" },
-            { title: "Tracking Dashboard", path: "features/tracking-dashboard" },
-            { title: "Panels", path: "features/panels" },
-            { title: "Sidebar", path: "features/sidebar" },
-            { title: "Sidebar Apps", path: "features/sidebar-apps" },
-            { title: "Page Notes", path: "features/page-notes" },
-            { title: "Super Drag", path: "features/super-drag" },
-            { title: "NTP Bookmarks API", path: "features/ntp-bookmarks-api" },
-            { title: "NTP Feature Roadmap", path: "features/ntp-feature-roadmap" },
-            { title: "Mouse Gestures", path: "features/mouse-gestures" },
-            { title: "Autoscroll", path: "features/autoscroll" },
-            { title: "Vertical Tabs", path: "features/vertical-tabs" },
-            { title: "Most Visited Panel", path: "features/most-visited-panel" },
-            { title: "RSS Infobar Subscribe", path: "features/rss-infobar-subscribe" },
-            { title: "ePub Reader", path: "features/epub-reader" },
-            { title: "BitTorrent Client", path: "features/bittorrent-client" },
-            { title: "Browser Tools", path: "features/browser-tools" },
-            { title: "Tab Utilities", path: "features/tab-utilities" },
-            { title: "Splash Screen", path: "features/splash-screen" },
-            { title: "Typed Input History", path: "features/typed-input-history" },
-            { title: "Incognito Clipboard Privacy", path: "features/incognito-clipboard-privacy" },
-            { title: "Proxy Settings", path: "features/proxy-settings" },
-            { title: "Smart Proxy Routing", path: "features/smart-proxy-routing" },
-            { title: "Startup Cache", path: "features/startup-cache" },
-            { title: "Crash & Resume Downloads", path: "features/crash-resume-downloads" },
-            { title: "Origin Permission Grants", path: "features/origin-permission-grants" },
-            { title: "Scheme Aliases", path: "features/scheme-aliases" },
-            { title: "Content Policy Chain", path: "features/content-policy-chain" },
-            { title: "Security & Privacy Features", path: "features/security-privacy-features" },
-            { title: "UA Overrides", path: "features/ua-overrides" },
-            { title: "Site Injection", path: "features/site-injection" },
-            { title: "De-Googling", path: "features/de-googling" },
-            { title: "Infobars", path: "features/infobars" },
+            { title: "Sidebar", path: "features/custom-browser/sidebar" },
+            { title: "Sidebar Apps", path: "features/custom-browser/sidebar-apps" },
+            { title: "Panels", path: "features/custom-browser/panels" },
+            { title: "Infobars", path: "features/custom-browser/infobars" },
+            { title: "Browser Tools", path: "features/custom-browser/browser-tools" },
+            { title: "Splash Screen", path: "features/custom-browser/splash-screen" },
+            { title: "Tab Utilities", path: "features/custom-browser/tab-utilities" },
+            { title: "Tab Shapes", path: "features/custom-browser/tab-shapes-feature" },
+            { title: "Vertical Tabs", path: "features/custom-browser/vertical-tabs" },
+            { title: "Custom Download Shelf", path: "features/custom-browser/custom-download-shelf" },
+            { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
+            { title: "Split View", path: "architecture/split-view" },
+        ]
+    },
+    {
+        title: "Input & Interaction",
+        description: "How users interact with the browser: gestures, scrolling, and drag behaviours",
+        children: [
+            { title: "Mouse Gestures", path: "features/custom-browser/mouse-gestures" },
+            { title: "Autoscroll", path: "features/custom-browser/autoscroll" },
+            { title: "Super Drag", path: "features/custom-browser/super-drag" },
+            { title: "Enhanced Scroll Animations", path: "features/custom-browser/enhanced-scroll-animations" },
+            { title: "Typed Input History", path: "features/custom-browser/typed-input-history" },
+        ]
+    },
+    {
+        title: "Privacy & Security",
+        description: "Ad blocking, fingerprinting protection, tracking prevention, and content policy",
+        children: [
+            { title: "Ad Blocker", path: "features/custom-browser/ad-blocker" },
+            { title: "Privacy Guard", path: "features/custom-browser/privacy-guard" },
+            { title: "Privacy Shield", path: "features/custom-browser/privacy-shield" },
+            { title: "Tracking Dashboard", path: "features/custom-browser/tracking-dashboard" },
+            { title: "Incognito Clipboard Privacy", path: "features/custom-browser/incognito-clipboard-privacy" },
+            { title: "Content Policy Chain", path: "features/custom-browser/content-policy-chain" },
+            { title: "De-Googling", path: "features/custom-browser/de-googling" },
+            { title: "Google API Suppression", path: "features/custom-browser/google-api-suppression" },
+            { title: "Origin Permission Grants", path: "features/custom-browser/origin-permission-grants" },
+            { title: "Site Injection", path: "features/custom-browser/site-injection" },
+            { title: "UA Overrides", path: "features/custom-browser/ua-overrides" },
+            { title: "Scheme Aliases", path: "features/custom-browser/scheme-aliases" },
+            { title: "Security & Privacy Features", path: "features/custom-browser/security-privacy-features" },
+        ]
+    },
+    {
+        title: "Network & Downloads",
+        description: "Proxy, routing, BitTorrent, and download management",
+        children: [
+            { title: "Proxy Settings", path: "features/custom-browser/proxy-settings" },
+            { title: "Smart Proxy Routing", path: "features/custom-browser/smart-proxy-routing" },
+            { title: "BitTorrent Client", path: "features/custom-browser/bittorrent-client" },
+            { title: "Crash & Resume Downloads", path: "features/custom-browser/crash-resume-downloads" },
+            { title: "Advanced Download Management", path: "features/custom-browser/advanced-download-management" },
+            { title: "Startup Cache", path: "features/custom-browser/startup-cache" },
+        ]
+    },
+    {
+        title: "Content & Reading",
+        description: "RSS, ePub, reader mode, page notes, and content consumption features",
+        children: [
+            { title: "RSS Feed Support", path: "features/custom-browser/rss-feed-support" },
+            { title: "RSS User Guide", path: "features/custom-browser/rss-user-guide" },
+            { title: "RSS Infobar Subscribe", path: "features/custom-browser/rss-infobar-subscribe" },
+            { title: "ePub Reader", path: "features/custom-browser/epub-reader" },
+            { title: "Reader Mode Integration", path: "features/custom-browser/reader-mode-integration" },
+            { title: "Most Visited Panel", path: "features/custom-browser/most-visited-panel" },
+            { title: "Page Notes", path: "features/custom-browser/page-notes" },
+            { title: "JavaScript Content Controls", path: "features/custom-browser/javascript-content-controls" },
+        ]
+    },
+    {
+        title: "New Tab Page",
+        description: "Remote NTP system, bookmarks API, and NTP feature roadmap",
+        children: [
+            { title: "Remote New Tab Page System", path: "features/custom-browser/remote-ntp-documentation" },
+            { title: "NTP Bookmarks API", path: "features/custom-browser/ntp/ntp-bookmarks-api" },
+            { title: "NTP Feature Roadmap", path: "features/custom-browser/ntp/ntp-feature-roadmap" },
+        ]
+    },
+    {
+        title: "Settings & Configuration",
+        description: "Custom settings UI, feature flags, and browser-level configuration",
+        children: [
+            { title: "Custom Settings UI", path: "features/custom-browser/custom-settings-ui" },
+            { title: "Feature Flag Management", path: "features/custom-browser/feature-flag-management" },
+            { title: "Custom Cache Feature", path: "features/custom-browser/custom-cache-feature" },
+            { title: "Feature Management", path: "architecture/feature-management" },
         ]
     },
     {
@@ -1025,51 +917,64 @@ const internalContent: ContentNode[] = [
         description: "Patch system, GNI flags, source layout, and custom tooling",
         children: [
             { title: "Custom Browser Architecture", path: "architecture/custom-browser-architecture" },
-            { title: "Feature Management", path: "architecture/feature-management" },
-            { title: "Split View", path: "architecture/split-view" },
-            { title: "Custom Browser Build System", path: "build/custom-browser-build-system" },
-            { title: "Migration from Fork", path: "build/migration-from-fork" },
-            { title: "Custom WebUI — Getting Started", path: "custom-webui/getting-started" },
-            { title: "Custom WebUI — RSS Reader", path: "custom-webui/rss-reader" },
-            { title: "Custom WebUI — Sidebar", path: "custom-webui/sidebar" },
+            { title: "Custom Browser Build System", path: "development/custom-browser-build-system" },
+            { title: "Migration from Fork", path: "development/migration-from-fork" },
         ]
     },
     {
-        title: "Chromium Version Migrations",
-        description: "Per-milestone rebase notes",
+        title: "Custom WebUI",
+        description: "React-based settings and WebUI framework",
         children: [
-            { title: "134 → 135", path: "migrations/chromium-134-to-135" },
-            { title: "135 → 136", path: "migrations/chromium-135-to-136" },
-            { title: "136 → 137", path: "migrations/chromium-136-to-137" },
+            { title: "Getting Started", path: "features/custom-browser/custom-webui/getting-started" },
+            { title: "RSS Reader WebUI", path: "features/custom-browser/custom-webui/rss-reader" },
+            { title: "Sidebar WebUI", path: "features/custom-browser/custom-webui/sidebar" },
         ]
     },
     {
-        title: "Roadmaps & Backlogs",
-        description: "Feature planning and prioritisation",
+        title: "Branding & Identity",
+        description: "Multi-brand system, per-platform branding, and GRD configuration",
         children: [
-            { title: "Helium Phase A", path: "roadmap/helium-phase-a" },
-            { title: "Helium Phase B", path: "roadmap/helium-phase-b" },
-            { title: "Helium Phase C", path: "roadmap/helium-phase-c" },
-            { title: "Helium Backlog", path: "roadmap/helium-backlog" },
-            { title: "Privacy Hardening Backlog", path: "roadmap/privacy-hardening-backlog" },
+            { title: "Multi-Brand System", path: "features/custom-browser/multi-brand-system" },
+            { title: "Branding Setup", path: "features/custom-browser/branding/branding-setup" },
+            { title: "Branding System", path: "features/custom-browser/branding/branding-system" },
+            { title: "Branding Analysis", path: "features/custom-browser/branding/branding-analysis" },
+            { title: "GRD Branding Analysis", path: "features/custom-browser/branding/grd-branding-analysis" },
+            { title: "Android Branding", path: "features/custom-browser/branding/android-branding" },
+            { title: "Linux Branding", path: "features/custom-browser/branding/linux-branding" },
+            { title: "iOS Branding", path: "features/custom-browser/branding/ios-branding" },
+            { title: "Help URL Branding", path: "features/custom-browser/branding/help-url-branding" },
+            { title: "URL Schema Branding", path: "features/custom-browser/branding/url-schema-branding" },
         ]
     },
     {
         title: "Bloomberg Port",
+        description: "Bloomberg-specific Chromium patches and feature ports",
         children: [
-            { title: "Chromium Patches", path: "bloomberg/bloomberg-chromium-patches" },
-            { title: "Feature Ports", path: "bloomberg/bloomberg-feature-ports" },
-            { title: "Diagnostics", path: "bloomberg/bloomberg-diagnostics" },
+            { title: "Chromium Patches", path: "features/custom-browser/bloomberg/bloomberg-chromium-patches" },
+            { title: "Feature Ports", path: "features/custom-browser/bloomberg/bloomberg-feature-ports" },
+            { title: "Diagnostics", path: "features/custom-browser/bloomberg/bloomberg-diagnostics" },
         ]
     },
     {
-        title: "Branding",
+        title: "Helium",
+        description: "Helium phase planning, backlog, and privacy hardening",
         children: [
-            { title: "Branding Setup", path: "branding/branding-setup" },
-            { title: "Branding System", path: "branding/branding-system" },
-            { title: "Android Branding", path: "branding/android-branding" },
-            { title: "Linux Branding", path: "branding/linux-branding" },
-            { title: "iOS Branding", path: "branding/ios-branding" },
+            { title: "Helium Phase A", path: "features/custom-browser/helium/helium-phase-a" },
+            { title: "Helium Phase B", path: "features/custom-browser/helium/helium-phase-b" },
+            { title: "Helium Phase C", path: "features/custom-browser/helium/helium-phase-c" },
+            { title: "Helium Backlog", path: "features/custom-browser/helium/helium-backlog" },
+            { title: "Privacy Hardening Backlog", path: "features/custom-browser/helium/privacy-hardening-backlog" },
+        ]
+    },
+    { title: "Opera Feature Ports", path: "features/custom-browser/opera-feature-ports" },
+    {
+        title: "Version Updates",
+        description: "Per-milestone rebase and migration notes",
+        children: [
+            { title: "Chromium 134 → 135", path: "features/custom-browser/version-updates/chromium-134-to-135-migration" },
+            { title: "Chromium 135 → 136", path: "features/custom-browser/version-updates/chromium-135-to-136-migration" },
+            { title: "Chromium 136 → 137", path: "features/custom-browser/version-updates/chromium-136-to-137-migration" },
+            { title: "Chromium 139 → 140", path: "features/custom-browser/version-updates/chromium-139-to-140-migration" },
         ]
     },
 ];
@@ -1107,7 +1012,8 @@ export const subjects: Subject[] = [
         color: 'red',
         icon: '🔒',
         contentIndex: internalContent,
-        adminOnly: true
+        adminOnly: true,
+        contentBase: 'chromium'
     }
 ];
 

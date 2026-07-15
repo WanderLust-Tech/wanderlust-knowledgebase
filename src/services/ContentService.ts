@@ -146,10 +146,15 @@ class ContentService {
    * Enhanced to handle directory-style paths with multiple fallback strategies
    */
   private async loadFromStaticFiles(path: string): Promise<{ content: string; metadata: ContentMetadata }> {
+    // SPAs return 200 OK with index.html for missing files. Treat any HTML
+    // response as a miss so we continue to the next fallback strategy.
+    const isMarkdown = (r: Response) =>
+      r.ok && !(r.headers.get('content-type') ?? '').includes('text/html');
+
     // Strategy 1: Try exact path match first
     try {
       const response = await fetch(`/content/${path}.md`);
-      if (response.ok) {
+      if (isMarkdown(response)) {
         const markdownContent = await response.text();
         const metadata = this.extractMetadata(markdownContent, path);
         return { content: markdownContent, metadata };
@@ -161,7 +166,7 @@ class ContentService {
     // Strategy 2: Try path with /overview.md suffix (common pattern)
     try {
       const response = await fetch(`/content/${path}/overview.md`);
-      if (response.ok) {
+      if (isMarkdown(response)) {
         const markdownContent = await response.text();
         const metadata = this.extractMetadata(markdownContent, `${path}/overview`);
         return { content: markdownContent, metadata };
@@ -173,7 +178,7 @@ class ContentService {
     // Strategy 3: Try path with /index.md suffix
     try {
       const response = await fetch(`/content/${path}/index.md`);
-      if (response.ok) {
+      if (isMarkdown(response)) {
         const markdownContent = await response.text();
         const metadata = this.extractMetadata(markdownContent, `${path}/index`);
         return { content: markdownContent, metadata };
@@ -185,7 +190,7 @@ class ContentService {
     // Strategy 4: Try README.md in the directory
     try {
       const response = await fetch(`/content/${path}/README.md`);
-      if (response.ok) {
+      if (isMarkdown(response)) {
         const markdownContent = await response.text();
         const metadata = this.extractMetadata(markdownContent, `${path}/README`);
         return { content: markdownContent, metadata };

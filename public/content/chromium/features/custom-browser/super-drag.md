@@ -115,7 +115,7 @@ Each gesture direction maps to a user-configurable `SuperDragService::Action`:
 | `COPY_TEXT` (101) | Copy selected text to clipboard |
 | `SAVE_LINK` (102) | Save link to default location |
 | `SAVE_LINK_AS` (103) | Save link with file picker |
-| `SAVE_IMAGE_AS` (104) | Save image with file picker *(non-functional — see Known gaps)* |
+| `SAVE_IMAGE_AS` (104) | Save image with file picker |
 | `OPEN_IMAGE_IN_NEW_TAB` (105) | Open image URL in background tab |
 
 ### Default direction → action mappings
@@ -220,10 +220,6 @@ that `SuperDragUpdated` is returning `true` (confirm `OnDragUpdated` log shows
 fires.
 
 ## Known gaps
-
-- **`SAVE_IMAGE_AS` is non-functional.** The `SaveFrame` API changed in
-  Chromium 134 and the implementation needs to be updated before this action
-  works.
 
 - **Mouse gesture analyzer builds up `motion_list_` as a raw path string.**
   A drag that tracks `"uuu"` won't match the pref key `"u"`. The drop handler

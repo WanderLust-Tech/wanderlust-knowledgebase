@@ -28,22 +28,35 @@ const EnhancedArticleView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [contentSource, setContentSource] = useState<'api' | 'static' | 'cache'>('static');
 
+  // When mounted under a literal route like /internal/*, the :subject param is
+  // absent. Fall back to the first path segment so the subject is still resolved.
+  const effectiveSubject = subjectParam ?? location.pathname.split('/')[1];
+
+  console.log('[EnhancedArticleView]', {
+    pathname: location.pathname,
+    subjectParam,
+    pathParam,
+    effectiveSubject,
+    resolvedSubject: getSubjectById(effectiveSubject ?? ''),
+    currentSubjectId: currentSubject.id,
+    user: user?.email ?? 'not signed in',
+  });
+
   // Handle subject validation and switching
   useEffect(() => {
-    if (subjectParam && getSubjectById(subjectParam)) {
-      // Valid subject, ensure context is updated
-      if (currentSubject.id !== subjectParam) {
-        switchToSubject(subjectParam);
+    if (effectiveSubject && getSubjectById(effectiveSubject)) {
+      if (currentSubject.id !== effectiveSubject) {
+        switchToSubject(effectiveSubject);
       }
-    } else if (subjectParam) {
-      // Invalid subject, should redirect to valid subject
-      console.warn(`Invalid subject: ${subjectParam}`);
+    } else if (effectiveSubject) {
+      console.warn(`[EnhancedArticleView] Invalid subject: ${effectiveSubject}`);
     }
-  }, [subjectParam, currentSubject, switchToSubject]);
+  }, [effectiveSubject, currentSubject, switchToSubject]);
 
   // Redirect legacy URLs or invalid subjects to chromium
-  if (!subjectParam || !getSubjectById(subjectParam)) {
+  if (!effectiveSubject || !getSubjectById(effectiveSubject)) {
     const redirectPath = pathParam ? `/chromium/${pathParam}` : '/chromium';
+    console.warn('[EnhancedArticleView] Redirecting to chromium — effectiveSubject not resolved', { effectiveSubject, redirectPath });
     return <Navigate to={redirectPath} replace />;
   }
 
@@ -68,7 +81,7 @@ const EnhancedArticleView: React.FC = () => {
   const loadContent = async () => {
     if (!path || path.trim() === '') {
       // For chromium root path, load learning-path-guide by default
-      if (subjectParam === 'chromium') {
+      if (effectiveSubject === 'chromium') {
         const loadingId = addLoading({ message: 'Loading learning path guide...' });
         setIsLoading(true);
         setError(null);
@@ -112,8 +125,11 @@ const EnhancedArticleView: React.FC = () => {
     setError(null);
 
     try {
-      // Construct the subject-aware path for content loading
-      const subjectAwarePath = subjectParam ? `${subjectParam}/${path}` : path;
+      // Construct the subject-aware path for content loading.
+      // Use contentBase if defined (e.g. 'internal' subject reads from 'chromium' files).
+      const subject = getSubjectById(effectiveSubject ?? '');
+      const contentBase = subject?.contentBase ?? effectiveSubject;
+      const subjectAwarePath = contentBase ? `${contentBase}/${path}` : path;
       const result = await contentService.getContent(subjectAwarePath);
       
       setContent(result.content);
@@ -132,7 +148,7 @@ const EnhancedArticleView: React.FC = () => {
       
       // Enhanced error content with debugging information
       const errorDetails = error instanceof Error ? error.message : 'Unknown error';
-      setContent(`# Content Loading Error\n\nThe requested article "${path}" could not be loaded.\n\n## Error Details\n\`\`\`\n${errorDetails}\n\`\`\`\n\n## Debugging Information\n\n- **Subject**: ${subjectParam}\n- **Path**: ${path}\n- **Full URL**: ${location.pathname}\n- **Attempted Paths**: \n  - \`/content/${subjectParam ? subjectParam + '/' : ''}${path}.md\`\n  - \`/content/${subjectParam ? subjectParam + '/' : ''}${path}/overview.md\`\n  - \`/content/${subjectParam ? subjectParam + '/' : ''}${path}/index.md\`\n  - \`/content/${subjectParam ? subjectParam + '/' : ''}${path}/README.md\`\n\n## Possible Solutions\n\n1. **Check File Exists**: Verify the markdown file exists at one of the attempted paths\n2. **Check Content Index**: Ensure the content is properly indexed in the search system\n3. **Refresh Search Index**: Run \`npm run build-index\` to rebuild the content index\n4. **Check Network**: Verify you have a stable connection to the development server\n\n## Available Content\n\nTry navigating to:\n- [Getting Started Overview](/getting-started/overview)\n- [Architecture Overview](/architecture/overview)\n- [Introduction](/introduction/overview)\n\nIf the issue persists, please check the browser console for additional error details.`);
+      setContent(`# Content Loading Error\n\nThe requested article "${path}" could not be loaded.\n\n## Error Details\n\`\`\`\n${errorDetails}\n\`\`\`\n\n## Debugging Information\n\n- **Subject**: ${effectiveSubject}\n- **Path**: ${path}\n- **Full URL**: ${location.pathname}\n- **Attempted Paths**: \n  - \`/content/${effectiveSubject ? effectiveSubject + '/' : ''}${path}.md\`\n  - \`/content/${effectiveSubject ? effectiveSubject + '/' : ''}${path}/overview.md\`\n  - \`/content/${effectiveSubject ? effectiveSubject + '/' : ''}${path}/index.md\`\n  - \`/content/${effectiveSubject ? effectiveSubject + '/' : ''}${path}/README.md\`\n\n## Possible Solutions\n\n1. **Check File Exists**: Verify the markdown file exists at one of the attempted paths\n2. **Check Content Index**: Ensure the content is properly indexed in the search system\n3. **Refresh Search Index**: Run \`npm run build-index\` to rebuild the content index\n4. **Check Network**: Verify you have a stable connection to the development server\n\n## Available Content\n\nTry navigating to:\n- [Getting Started Overview](/getting-started/overview)\n- [Architecture Overview](/architecture/overview)\n- [Introduction](/introduction/overview)\n\nIf the issue persists, please check the browser console for additional error details.`);
       setMetadata({
         title: 'Content Loading Error',
         category: 'error',
@@ -330,7 +346,7 @@ const EnhancedArticleView: React.FC = () => {
           <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
             <h4 className="font-semibold mb-2">Debug Information</h4>
             <div className="space-y-1 text-gray-600 dark:text-gray-400">
-              <div>Subject: {subjectParam} (Current: {currentSubject.id})</div>
+              <div>Subject: {effectiveSubject} (Current: {currentSubject.id})</div>
               <div>Path: {path}</div>
               <div>Full URL: {location.pathname}</div>
               <div>Source: {contentSource}</div>

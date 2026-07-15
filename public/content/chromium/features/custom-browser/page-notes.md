@@ -143,7 +143,7 @@ interface SharedAnnotation {
 | Editor | `<textarea>` pre-populated with: (1) the in-progress draft from `localStorage` if one exists and differs from the saved note, otherwise (2) the first saved note for the page. Draft is auto-saved 300ms after each keystroke. Draft is cleared on Save/Delete. |
 | Save / Update / Delete | **Save** → `notesSave` (insert, `id == 0`); **Update** → `notesSave` with existing id; **Delete** → `notesDelete`. All clear the localStorage draft key. |
 | Multi-note list | Shown only when a page has more than one note. Clicking a row loads it into the editor. |
-| All notes | Collapsible section — fetches via `notesList` on expand. Shows `url` + truncated text + date. Hover → **✕** to delete. |
+| All notes | Collapsible section — fetches via `notesList` on expand. Shows `url` + truncated text + date. Hover → **✕** to delete. Includes an `<input type="search">` that filters the list client-side by URL or note text (no new IPC needed). |
 | Shared annotations | Collapsible section — fetches via `sharedNotesGetForUrl` on expand. Shows author name, annotation text, date. Hover → **✕** to delete (own annotations). **Share note publicly** button posts the current editor contents via `sharedNotesPost`. Shows a "backend not configured" notice until `PageNotesBackendClient` is wired up. |
 
 ## Live URL tracking
@@ -171,35 +171,42 @@ The handler stores `raw_ptr<TabStripModel> observed_tab_strip_model_` and remove
 
 [`src/custom/browser/page_notes/page_notes_backend_client.h`](../src/custom/browser/page_notes/page_notes_backend_client.h)
 
-HTTP client for a shared annotations backend. **All methods are stubs** that call back with `success=false`. The React layer renders a "backend not configured" notice in this state, so the feature is safely disabled until the backend is wired up.
+HTTP client for a shared annotations backend. Implemented with real `network::SimpleURLLoader` calls. The React layer renders a "backend not configured" notice when `kBaseUrl` is empty, so the feature degrades gracefully until the endpoint is provisioned.
 
 ### Backend protocol
 
 ```
 GET  <kBaseUrl>/annotations?url=<encoded_normalized_url>
+     Authorization: Bearer <token>   (omitted when no token cached)
      → { "annotations": [ { id, url, text, user_name, timestamp } ] }
 
 POST <kBaseUrl>/annotations
+     Authorization: Bearer <token>
      Body: { "url": "...", "text": "...", "auth_token": "..." }
      → 201 { "id": "...", "timestamp": 1700000000 }
 
 DELETE <kBaseUrl>/annotations/<uuid>
-     Header: Authorization: Bearer <auth_token>
+     Authorization: Bearer <token>
      → 204 No Content
 ```
 
-### Setup checklist
+### Implementation notes
 
-1. **Replace `kBaseUrl`** in `page_notes_backend_client.h` with the production endpoint.
-2. **Implement OAuth2 token acquisition** via `ProfileOAuth2TokenService::StartRequest()` with the registered scope. Pass the access token to `PostAnnotation` / `DeleteAnnotation`. The `auth_token` parameter on each stub method is intentionally present as a placeholder.
-3. **Replace stub bodies** with real `services/network::SimpleURLLoader` calls:
-   - Build the request URL / headers.
-   - Call `DownloadToStringOfUnboundedSizeUntilCrashAndDie()` (or a bounded variant).
-   - Parse response JSON with `base::JSONReader::Read()`.
-4. **Register the OAuth2 scope** in the allowlist (e.g., a custom scope constant alongside `GaiaConstants`).
-5. **Fire `notesSharedChanged` listener** from `DoSharedNotesPost`'s callback so the React list refreshes automatically on a successful post.
+- **Constructor** takes a `Profile*` and grabs `url_loader_factory_` from `profile->GetDefaultStoragePartition()->GetURLLoaderFactoryForBrowserProcess()`.
+- **`GetAnnotationsForUrl`** issues a GET, parses `{ "annotations": [...] }` via `base::JSONReader`, and calls back with the list.
+- **`PostAnnotation` / `DeleteAnnotation`** issue POST/DELETE, treat any 2xx as success.
+- Each `SimpleURLLoader` is kept alive by moving it into its own completion callback closure; `kMaxResponseSize = 2 MB` caps response buffering.
+- All requests carry a `net::DefineNetworkTrafficAnnotation` annotation as required by Chromium's network auditing.
+- **`SetCachedToken(token)`** stores an OAuth2 bearer token that is attached as an `Authorization` header on subsequent requests.
 
-A `PageNotesBackendClient` is created once in `SidebarDOMHandler::OnPageLoaded` and stored as `backend_client_`. It is destroyed when the handler is destroyed (panel navigates away).
+### Remaining setup
+
+1. **Set `kBaseUrl`** in `page_notes_backend_client.cc` to the production endpoint.
+2. **Wire OAuth2 token acquisition** — call `SetCachedToken()` after a successful `ProfileOAuth2TokenService::StartRequest()`. The field is already plumbed; only the token-request flow is missing.
+3. **Register the OAuth2 scope** in the allowlist alongside `GaiaConstants`.
+4. **Fire `notesSharedChanged` listener** from `DoSharedNotesPost`'s callback so the React list refreshes automatically on a successful post.
+
+A `PageNotesBackendClient` is created once in `SidebarDOMHandler::OnPageLoaded` (passing `profile_`) and stored as `backend_client_`. It is destroyed when the handler is destroyed (panel navigates away).
 
 ## Draft persistence
 
@@ -230,7 +237,7 @@ Stored in prefs as an integer so the sidebar reopens to the last-used panel on r
 - `NOTES_BUTTON = 8` in `ButtonKind` enum.
 - `notes_button_` — `SidebarTopPaneButton` positioned after RSS, before the expand/collapse and options buttons at the bottom.
 - Icon: currently `IDR_HISTORY_ICON` (placeholder). Replace with a dedicated pencil/note icon when one is added to `custom_theme_resources`.
-- Tooltip: `IDS_TOOLTIP_SIDEBAR_NOTES` (localised via `generated_resources.grdp`; `IDS_TOOLTIP_SIDEBAR_NTP_SETTINGS` added at the same time).
+- Tooltip: `"Page Notes"` (hardcoded; add `IDS_TOOLTIP_SIDEBAR_NOTES` when localization pass is done).
 
 ### `SidebarContainerView::TopPaneButtonPressed`
 
@@ -264,10 +271,9 @@ case sidebar::SidebarService::TYPE_NOTES:
 | Item | Notes |
 |---|---|
 | Notes icon | `IDR_HISTORY_ICON` is a placeholder. Add a pencil/note icon to `custom_theme_resources` and update `sidebar_top_pane.cc`. |
-| ~~Tooltip string~~ | ~~Hardcoded `u"Page Notes"`~~ — Fixed. `IDS_TOOLTIP_SIDEBAR_NOTES` added to `generated_resources.grdp` and wired in `sidebar_top_pane.cc`. `IDS_TOOLTIP_SIDEBAR_NTP_SETTINGS` done at the same time. |
+| Tooltip string | Hardcoded `u"Page Notes"`. Add `IDS_TOOLTIP_SIDEBAR_NOTES` to the GRD file when a localization pass is done. |
 | Multiple notes per URL | The editor shows the first note for a page; multiple appear as a clickable list below. Future: per-note expand/edit flow. |
-| Search | No search across all notes. `NotesList` returns all — a client-side filter in `NotesPage` would cover basic search without new IPCs. |
 | Export | No export. A `notesExport` IPC could return all notes as JSON or Markdown. |
-| Backend implementation | `PageNotesBackendClient` is fully stubbed. See the **Setup Checklist** in the Shared annotations section above. |
-| Auth for shared annotations | `DoSharedNotesPost` / `DoSharedNotesDelete` pass an empty `auth_token`. Implement `ProfileOAuth2TokenService::Consumer` to acquire a real token before enabling writes. |
+| Backend endpoint | `kBaseUrl` in `page_notes_backend_client.cc` must be set to the production URL before shared annotations are usable. |
+| Auth for shared annotations | `SetCachedToken()` exists but nothing calls it yet. Implement `ProfileOAuth2TokenService::Consumer` to acquire a bearer token and call `SetCachedToken()` before the first shared-notes request. |
 | `notesSharedChanged` listener | `DoSharedNotesPost` does not yet fire an event on success. Add a `FireWebUIListener("notesSharedChanged")` call in the `PostAnnotation` callback to trigger an automatic list refresh. |
