@@ -182,10 +182,25 @@ by navigating directly to `chrome://epub-reader/?url=file:///path/to/book.epub`.
 
 ## Known gaps
 
-- **No file picker.** There is no "Open file…" button in the toolbar; users
-  must construct the URL manually or navigate directly.
+- ~~**No file picker.**~~ **Stale — already implemented.** Checked
+  2026-07-23: `Toolbar.tsx` has a real "Open file…" button (a hidden
+  `<input type="file" accept=".epub,application/epub+zip">` triggered by
+  the button click), wired through `App.tsx` to
+  `useEpubBook`'s `openFromFile`, which reads the picked `File` directly
+  via `FileReader.readAsArrayBuffer` and passes the resulting
+  `ArrayBuffer` straight to `ePub()` — no C++ round-trip needed at all
+  since a user-picked `File` object is already directly accessible to the
+  page. This entry was just out of date.
 
-- **epub.js cross-origin image loading.** EPUBs with images hosted on external
-  servers may fail to load under the default CSP because the epub.js iframe
-  does not inherit the `chrome://` page's origin. No `img-src` override is
-  currently set.
+- ~~**epub.js cross-origin image loading.**~~ **Fixed 2026-07-23.**
+  `epub_reader_ui.cc` had `ScriptSrc`/`StyleSrc`/`WorkerSrc` CSP overrides
+  for epub.js's needs but no `ImgSrc` override at all, leaving images at
+  the mercy of the default WebUI img-src
+  (`chrome://resources`/`'self'`/`chrome://theme` only) — too strict for
+  both the blob: URLs epub.js decompresses each in-archive image into
+  *and* any genuinely externally-hosted images an EPUB might reference.
+  Added `img-src 'self' blob: data: https:;`. The rendition iframe is a
+  blob:/local-scheme document created by this page, so per Chromium's CSP
+  inheritance rules for local-scheme documents it inherits this page's
+  policy rather than getting its own — meaning this override was actually
+  the missing piece, not a dead end.

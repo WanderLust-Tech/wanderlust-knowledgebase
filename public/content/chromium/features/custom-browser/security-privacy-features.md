@@ -583,18 +583,67 @@ interfaces including private LAN addresses).
 to the about-page JSON. The About page in `custom_settings` renders this as a
 "Chromium" row in the version table when the field is present.
 
-### Bundled extensions hidden and non-removable
+### Bundled extensions mechanism (currently unused)
 
-Extensions listed in `extensions::kOurExtensionIds[]`
-(`custom/extensions/common/custom_extension.h`) are suppressed at two layers:
+`extensions::kOurExtensionIds[]` / `kOurExtensionFilenames[]`
+(`custom/extensions/common/custom_extension.h`/`.cc`) is generic
+infrastructure for shipping first-party extensions that auto-install on
+first run and are hidden/non-removable from the user's perspective, at two
+layers:
 
 1. **`chrome://extensions` page** — `ShouldDisplayInExtensionSettings()` in the
    patched `extensions/browser/ui_util.cc` returns `false` for any bundled ID,
    hiding the extension from the upstream extensions page.
 
-2. **`chrome://custom-settings/extensions`** — `CustomExtensionsHandler` filters
-   bundled IDs out of the extension list and ignores `HandleRemoveExtension` /
-   `HandleSetExtensionEnabled` calls for them, making them immune to user action.
+2. **`chrome://custom-settings/extensions`** (the custom React WebUI, see
+   [pages-inventory.md](custom-webui/pages-inventory.md)) — `CustomExtensionsHandler`'s
+   `IsBundledInternalExtension()` gates `HandleRemoveExtension` /
+   `HandleSetExtensionEnabled`, making bundled IDs immune to user action, and
+   `mayDisable` reflects the lock in the UI.
+
+As of 2026-07-21, `kOurNumExtensions = 0` and both arrays are empty — the
+only extension ever shipped this way (a test "Adblock for Youtube" CRX) was
+removed for being outdated and untested, along with the `.crx` file itself
+and its entry in `browser/extensions/sources.gni`. The mechanism above is
+left in place, dormant, ready to hold a future first-party bundled
+extension without needing any of the five patched-upstream-file
+special-casings above to change — they all loop
+`for (i = 0; i < kOurNumExtensions; ++i)`, so an empty list makes every one
+of them an unconditional no-op.
+
+### Battery Status API disabled
+
+`content/browser/browser_interface_binders.cc` (patched) never serves real
+battery data to web pages in `BUILDFLAG(CUSTOM_BROWSER)` builds — charge
+level and charging state are a fingerprinting vector that persists across
+cookie clears, unlike most other signals this browser already resists.
+
+**How it works:** `PopulateFrameBinders()` registers a `BindBatteryMonitor`
+handler for `device::mojom::BatteryMonitor` unconditionally (both builds),
+but the function body differs: the non-custom build binds the real
+`device::mojom::BatteryMonitor` service as upstream does; the
+`CUSTOM_BROWSER` build's version is an empty stub that lets the
+`mojo::PendingReceiver` go out of scope, closing the connection immediately
+with no data ever served.
+
+> **Why the binder must stay registered even though it does nothing:**
+> `navigator.getBattery()` (`third_party/blink/renderer/modules/battery/
+> navigator_battery.idl`) has no `RuntimeEnabled` feature-flag guard — it's
+> gated only by `[SecureContext]`, so it's callable from any HTTPS page in
+> every build, this fork included. An earlier version of this patch simply
+> omitted the `map->Add<device::mojom::BatteryMonitor>(...)` registration
+> for `CUSTOM_BROWSER` builds instead of stubbing it — which crashed the
+> renderer outright (`RESULT_CODE_KILLED_BAD_MESSAGE`, "no binder found for
+> interface ... for the frame/document scope") on any page whose JS called
+> `navigator.getBattery()`, including some YouTube ads/analytics script
+> that runs specifically on video and video-preview pages. Chromium treats
+> a renderer requesting a completely unregistered interface as a sign of a
+> misbehaving process and kills it outright — a much harsher failure mode
+> than a normal refused/closed Mojo connection, which
+> `blink::BatteryDispatcher` already handles gracefully (its pending
+> `QueryNextStatus()` callback is just dropped). Fixed 2026-07-21 by
+> keeping the registration but stubbing the implementation instead of
+> removing the registration.
 
 ### Telemetry pruning (opt-in, default off)
 

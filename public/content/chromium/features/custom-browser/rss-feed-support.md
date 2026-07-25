@@ -354,18 +354,59 @@ The RSS feature follows Chrome's established patterns:
 ## 🚀 Future Enhancements
 
 ### Planned Features
-- **Enhanced Feed Reader**: Additional RSS reader interface improvements
-- **Advanced Notification Customization**: More user-configurable notification options  
-- **Feed Categories**: Advanced organization and categorization of RSS feeds
+- **Advanced Notification Customization**: More user-configurable notification options
 - **Social Features**: Feed sharing and recommendation system
 - **Mobile Interface**: Touch-optimized RSS reader interface
 
 ### Technical Improvements
 - **Performance Optimization**: Further RSS detection algorithm improvements
-- **Better Validation**: Enhanced feed format support (JSON Feed, additional formats)
 - **Smart Caching**: More intelligent feed discovery and content caching
 - **Background Sync**: Enhanced automatic feed updates in background
 - **Offline Reading**: Cached content for offline feed reading
+
+> **Corrected 2026-07-22**: this list previously included "Feed Categories:
+> advanced organization and categorization of RSS feeds" and "Better
+> Validation: enhanced feed format support (JSON Feed, additional
+> formats)" as planned/future work — both are already implemented and were
+> stale claims. Categorization exists today via `Group`
+> (`AddGroup`/`RemoveGroup`/`UpdateGroup` in `ReaderDOMHandler`, sidebar
+> folder navigation in `custom_reader`'s `Sidebar.tsx`), and JSON Feed
+> parsing is already listed under "Format Support" above. See the proposal
+> review right below for how these were caught.
+
+## 📄 Confluence proposal review (2026-07-22)
+
+A "RSS Feed Subscription" proposal doc was reviewed against the actual
+implementation (same template/author as the Custom HTML/JS Infobar
+proposal — see that feature's docs for the same pattern). About 90% of the
+proposal's "Core Capabilities" already exist and were built well before
+the proposal was written: automatic detection + InfoBar prompt, multi-format
+parsing (RSS 1.0/2.0, Atom, JSON Feed), OPML import/export, a full WebUI
+reader with search, categorization via groups/folders, per-item read/unread
+tracking with unread counts, bookmarking (`FeedItem.read`/`.bookmarked`,
+`Feed.unreadCount` in `custom_reader/types.ts`), retry-with-backoff on
+fetch failures, real-time UI updates, dark mode, and a working extension
+API. The proposal's Monetization Strategy, ML-based recommendation engine,
+cross-device cloud sync, social sharing, and mobile PWA sections are
+generic scope-creep unrelated to this being an internal browser feature —
+disregarded, same as the infobar proposal's equivalent section.
+
+Two things it asked for turned out to be genuine, currently-missing gaps
+(confirmed by reading `rss_types.h`'s `RSSChannelInfo` struct and the
+`custom_reader` React app directly, not just the docs):
+
+- **No pre-populated/suggested feeds for new users.** No starter feed list
+  or onboarding flow exists anywhere in the codebase. Worth adding as a
+  short, static, category-tagged list of well-known feeds shown when a
+  profile has zero subscriptions — not the proposal's ML-recommendation
+  version.
+- **No feed health tracking at all.** `RSSChannelInfo` has no
+  failure/last-successful-fetch field, so a feed that's been silently
+  failing for weeks looks identical to a healthy one in the sidebar today.
+  Worth adding as a subtle broken/stale indicator per feed — not the
+  proposal's full analytics-dashboard version.
+
+Neither has been implemented yet as of this writing.
 
 ## 🔧 Troubleshooting
 

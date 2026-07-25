@@ -338,6 +338,56 @@ Files to modify:
 
 ---
 
+## "User Customization" proposal review (2026-07-22)
+
+A Confluence "User Customization" proposal (same template/author as the
+Custom HTML/JS Infobar, RSS Feed Subscription, and Dockable Sidebar
+proposals — see those features' docs for the same pattern) was reviewed
+against the actual browser. Its Monetization Strategy section (subscription
+tiers, a theme marketplace with creator revenue sharing, RGB-hardware
+partnership deals with Razer/Corsair/ASUS, conservative MRR projections)
+is generic scope-creep unrelated to this being an internal browser
+feature — disregarded, same as the other three proposals.
+
+Nearly every "Core Capability" the proposal asked for already exists,
+spread across features documented elsewhere: tab styling
+([tab-shapes-feature.md](tab-shapes-feature.md)), mouse/gesture/scroll/drag
+customization ([mouse-gestures.md](mouse-gestures.md),
+[autoscroll.md](autoscroll.md), [super-drag.md](super-drag.md)), disk
+cache location/size ([custom-cache-feature.md](custom-cache-feature.md)),
+network/DNS/proxy settings ([proxy-settings.md](proxy-settings.md),
+[smart-proxy-routing.md](smart-proxy-routing.md)), custom NTP layouts and
+wallpapers ([remote-ntp-documentation.md](remote-ntp-documentation.md)),
+custom startup screens ([splash-screen.md](splash-screen.md)), visual
+theming/branding ([multi-brand-system.md](multi-brand-system.md)), and
+Opera-GX-style features ported directly
+([opera-feature-ports.md](opera-feature-ports.md)). Custom CSS/JS
+injection — the one item that sounded like it might be missing — is also
+already covered: [site-injection.md](site-injection.md) is a per-site
+stylesheet/script override system driven by a user-editable rules
+directory (`rules.ini` + payload files), no extension required. That
+system styles *web content*; the browser's own chrome is themed via
+multi-brand-system.md instead.
+
+Two things the proposal asked for are genuine gaps, not already-covered
+ground:
+
+- **Cross-device sync of customization settings doesn't work today, by
+  design.** This browser redirects Chrome Sync to a local loopback server
+  (`kEnableLocalSyncBackend`, see "Longer-term / separate projects" above)
+  rather than Google's real sync servers, as part of de-googling. All the
+  customization prefs documented across the features above ride the same
+  `PrefService` Chrome Sync would otherwise carry — so the *storage* side
+  is already sync-ready, but nothing actually transports it anywhere.
+  Making cross-device sync real needs the **Custom sync server** item in
+  the roadmap table above (4/5 complexity) — a self-hosted sync backend
+  implementing `HttpPostProviderFactory` against the same protobuf schema,
+  not a small add.
+- **No theme/community marketplace exists**, and — consistent with how
+  every one of these four proposal reviews has gone — this isn't
+  recommended as something to build. It's a platform/business-model
+  feature, not an engineering gap in the current customization surface.
+
 ## Related docs
 
 - [security-privacy-features.md](security-privacy-features.md) — per-feature

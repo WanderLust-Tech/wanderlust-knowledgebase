@@ -890,6 +890,7 @@ const internalContent: ContentNode[] = [
             { title: "Reader Mode Integration", path: "features/custom-browser/reader-mode-integration" },
             { title: "Most Visited Panel", path: "features/custom-browser/most-visited-panel" },
             { title: "Page Notes", path: "features/custom-browser/page-notes" },
+            { title: "AI Page Assistant", path: "features/custom-browser/ai-page-assistant" },
             { title: "JavaScript Content Controls", path: "features/custom-browser/javascript-content-controls" },
         ]
     },

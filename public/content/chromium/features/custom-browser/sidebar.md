@@ -80,15 +80,16 @@ matching `Set...` setter, which writes through to the pref.
 | Pref | Type | Default | Read by |
 |---|---|---|---|
 | `sidebar.enabled` | bool | true | Master toggle; `SidebarContainerView::VisibilityChanged` releases the WebView when this goes false |
-| `sidebar.position` | int (`Position`) | `POSITION_RIGHT` | `SidebarContainerView::Layout` (which edge to anchor pane vs WebView) |
+| `sidebar.position` | int (`Position`) | `POSITION_RIGHT` | `SidebarContainerView::Layout` (which edge to anchor pane vs WebView) when *docked*. Also doubles as "last known left/right side" for the undocked widget (added 2026-07-22, see "Top/bottom docking" below) — `SidebarService::SetPosition()`, `UndockedSidebarWidget::OnDragSettled` |
 | `sidebar.width` | int | `kSidebarDefaultMinWidth` (443) | `SidebarContainerView::UpdatePrefs` when *docked* and not collapsed |
 | `sidebar.type` | int (`Type`) | `TYPE_BOOKMARKS` | Which pane to show — drives the URL loaded into the WebView |
 | `sidebar.is_undocked` | bool | false | `SidebarContainerView::OnUndockedPrefChanged` hides/shows itself; spawns/closes `UndockedSidebarWidget` |
 | `sidebar.is_collapsed` | bool | true | Width source: `kPaneWidth` when true, `sidebar.width` (or `sidebar.undocked_width`) when false |
 | `sidebar.undocked_width` | int | `kSidebarDefaultWidth` | `UndockedSidebarWidget::UpdateBounds` width when expanded + undocked |
-| `sidebar.undocked_edge` | int (`UndockedEdge`) | `EDGE_RIGHT` | `UndockedSidebarWidget::UpdateBounds` — which screen edge to anchor against. Updated by `OnDragSettled` when the user drops the widget near a screen edge |
+| `sidebar.undocked_edge` | int (`UndockedEdge`: `EDGE_LEFT`/`EDGE_RIGHT`/`EDGE_TOP`/`EDGE_BOTTOM`, the latter two added 2026-07-22) | `EDGE_RIGHT` | `UndockedSidebarWidget::ComputeSnappedBounds` — which screen edge to anchor against. Updated by `OnDragSettled` when the user drops the widget near a screen edge |
 | `sidebar.undocked_auto_hide` | bool | true | `UndockedSidebarWidget::OnAutoHideTick` — when true the widget shrinks to a 4px peek strip after the delay |
 | `sidebar.undocked_auto_hide_delay_ms` | int | 5000 | `UndockedSidebarWidget::OnAutoHideTick` — how long the cursor must stay off the widget before it hides |
+| `sidebar.undocked_display_id` | int64 | `display::kInvalidDisplayId` (-1) | `UndockedSidebarWidget::InitWidget` — which display to spawn the widget on at cold-launch (added 2026-07-22). Written by `OnDragSettled` on every settle |
 | `sidebar.click_disposition` / `click_type` | int | — | Click-handling behavior (single/double-click; foreground/background tab) |
 | `sidebar.exclusive_folder_open`, etc. | bool | — | Bookmark-pane-specific behavior overrides |
 
@@ -514,17 +515,106 @@ Re-entrancy: `UpdateBounds`, `ApplyPeekState`, `ApplyNormalState`, and the manua
 
 The peek state is **runtime-only** — not persisted. A browser restart always starts in the normal (collapsed or expanded) state.
 
+## Top/bottom docking (undocked only, added 2026-07-22)
+
+The undocked floating widget can now snap to any of the four screen edges,
+not just left/right. **Docked mode is unaffected — it's still left/right
+only, by design.** There is no docked top/bottom; `SidebarService::Position`
+only has `POSITION_LEFT`/`POSITION_RIGHT`/`HIDDEN`.
+
+### What changed
+
+- `SidebarService::UndockedEdge` gained `EDGE_TOP`/`EDGE_BOTTOM` alongside
+  the existing `EDGE_LEFT`/`EDGE_RIGHT`.
+- `UndockedSidebarWidget::OnDragSettled` now measures the widget's distance
+  to all four work-area edges (not just left/right) and snaps to whichever
+  is nearest, within `kSnapDistance` (80px) — same tie-breaking mechanism
+  as before, just over four candidates instead of two.
+- A new shared helper, `UndockedSidebarWidget::ComputeSnappedBounds`,
+  replaces what used to be three near-duplicate geometry blocks in
+  `InitWidget`, `UpdateBounds`, and `OnCollapsedPrefChanged`'s animation-target
+  computation. It branches on edge orientation:
+  - **Horizontal edge** (LEFT/RIGHT): the original tall, narrow strip —
+    `thickness` is the width, height is 80% of the work area, centered
+    vertically.
+  - **Vertical edge** (TOP/BOTTOM): a wide, short ribbon — mirrors the
+    above with width/height (and x/y) swapped. `thickness` becomes the
+    *height* instead.
+- The collapse/expand animation (`AnimationProgressed`) now detects which
+  axis is actually changing (`anim_start_bounds_.height() !=
+  anim_end_bounds_.height()` means a vertical edge) rather than always
+  assuming width/x — this is self-contained (no extra service lookup) and
+  stays correct even if the edge changed again mid-animation.
+- `ApplyPeekState` (the auto-hide peek strip) similarly branches: for
+  top/bottom it shrinks *height* to `kPeekStripWidth` and pins *y*; for
+  left/right it's the original width/x behavior.
+
+### Docking always falls back to left/right
+
+`SidebarService::SetPosition()` is new — `sidebar.position` (the docked
+position pref) previously had no C++ setter at all, only a getter; it was
+only ever changed by the Settings WebUI writing the raw pref through the
+`settings_private` allowlist.
+
+`OnDragSettled` now writes `sidebar.position` whenever the widget snaps
+**horizontally** (LEFT or RIGHT) — but deliberately leaves it untouched
+when snapping top/bottom. That means `sidebar.position` always holds
+"whichever side was last genuinely left/right", regardless of how many
+times the widget has since been dragged to the top or bottom edge. A new
+shared helper, `SidebarContainerView::ResolveUndockedPosition`, is what
+the undocked container's pane-strip/content split (`position_`) now reads
+instead of inlining the LEFT/RIGHT ternary that used to be duplicated in
+both `Layout()` and `UpdatePrefs()`:
+
+```cpp
+// static
+int SidebarContainerView::ResolveUndockedPosition(
+    sidebar::SidebarService* service) {
+  switch (service->GetUndockedEdge()) {
+    case sidebar::SidebarService::EDGE_LEFT:
+      return sidebar::SidebarService::POSITION_LEFT;
+    case sidebar::SidebarService::EDGE_RIGHT:
+      return sidebar::SidebarService::POSITION_RIGHT;
+    case sidebar::SidebarService::EDGE_TOP:
+    case sidebar::SidebarService::EDGE_BOTTOM:
+      // No docked top/bottom exists — use the last known left/right side.
+      return service->GetPosition();
+  }
+}
+```
+
+Net effect: dock-toggling a sidebar that's currently snapped to the top or
+bottom edge always produces a sensible left- or right-docked sidebar —
+whichever side it was on before it ever went to a vertical edge (or the
+pref default, `POSITION_RIGHT`, if it never has).
+
+### Known simplification: shared thickness value
+
+Top/bottom orientation reuses the *same* `sidebar.undocked_width` pref as
+its thickness (mapped to height instead of width) rather than tracking an
+independent size per orientation. Practically: resizing the widget while
+it's snapped to the top or bottom edge also changes the thickness it'll
+use next time it's snapped left or right, and vice versa. A fully
+independent-per-orientation size would need a second pref
+(`sidebar.undocked_height` or similar) plus parallel plumbing through
+`SidebarService`/`ComputeSnappedBounds`/`SidebarContainerView::OnResize` —
+not implemented, since nothing so far has needed genuinely independent
+sizing per axis. The default expanded thickness (`kDefaultExpandedWidth`,
+320) also reads as reasonable for a *width* but rather tall for a
+top/bottom ribbon's *height* until the user resizes it down — a real, if
+minor, first-run cosmetic wrinkle worth knowing about.
+
 ## Known limitations
 
 | | |
 |---|---|
 | **Multiple WebContents** | Each `SidebarContainerView` (per-BrowserView + the undocked one) lazily creates its own. See "WebContents lifecycle" above. |
-| **No header pop-out button** | Dock/undock is only reachable from the right-click context menu. |
-| **Primary-display only for initial spawn** | The first `UpdateBounds` after `ShowForProfile` uses the primary display's work area. Once the user drags the widget to a secondary monitor, `OnDragSettled` correctly uses `display::Screen::GetDisplayMatching(bounds)` so snap/peek behave on that display — but the initial spawn doesn't yet remember which display the widget was on last session. |
-| **No drag-to-resize on undocked widget** | The widget's bounds are computed from prefs; the inner `SidebarContainerView::OnResize` writes `kSidebarUndockedWidth` on resize-end, but the widget doesn't propagate the resize cursor from its own edges yet. (`views::Widget`'s standard resize edges are gone because `remove_standard_frame=true`.) |
-| **Drag affordance is invisible** | The whole pane-strip background is drag-targetable, but there's no visual cue. Users learn to drag from non-button space by accident or by reading docs. A subtle grip pattern (3 horizontal dots, a hover background) on the empty pane-strip area would make it discoverable. |
+| ~~**No header pop-out button**~~ **Fixed 2026-07-22.** | `SidebarTopPane` now has a dock/undock toggle button (a themed `kOpenInNewIcon` vector icon, `IDS_TOOLTIP_SIDEBAR_DOCK_TOGGLE` tooltip) right above the expand/collapse button, wired through a new `SidebarTopPaneDelegate::TopPaneDockToggleButtonPressed()` → `SidebarContainerView::TopPaneDockToggleButtonPressed()` → `service->SetUndocked(!service->IsUndocked())` — the exact same toggle the right-click menu's `kCmdToggleDock` performs, just discoverable without knowing to right-click. |
+| ~~**Primary-display only for initial spawn**~~ **Fixed 2026-07-22.** | New `sidebar.undocked_display_id` pref (`SidebarService::GetUndockedDisplayId()`/`SetUndockedDisplayId()`, `Int64Pref`, default `display::kInvalidDisplayId`). `OnDragSettled` now persists `display.id()` on every settle, not just snapped ones. `InitWidget()` looks it up via `Screen::GetDisplayWithDisplayId()` and falls back to primary only if never dragged or the display no longer exists (monitor unplugged). |
+| ~~**No drag-to-resize on undocked widget**~~ **Fixed 2026-07-22.** | The inner `resize_area_` already wrote `kSidebarUndockedWidth` on resize-end, but nothing told the *widget* to actually resize — its bounds only came from `UpdateBounds()`, called from the `kSidebarIsCollapsed` pref observer. Fix: (1) `SidebarContainerView::OnResize` now writes `kSidebarUndockedWidth` live on every call while undocked (not just at resize-end — docked doesn't need this since `browser_view_->DeprecatedLayoutImmediately()` already gives live feedback independent of prefs), and (2) `UndockedSidebarWidget` now also observes `kSidebarUndockedWidth` and calls `UpdateBounds()` on change. Reuses the existing pref-driven architecture rather than adding a live width-change callback between the container and the widget. |
+| ~~**Drag affordance is invisible**~~ **Fixed 2026-07-22.** | New `SidebarDragGripView` (a small `views::View` local to `sidebar_top_pane.cc`) paints 3 vertically-stacked dots and a hover background in the blank space between the content-pane buttons and the bottom cluster. Constructed only when `SidebarTopPane`'s new `show_drag_grip` ctor param is true — passed as `!browser_view_` from `SidebarContainerView::InitViews()`, so it only appears on the pane instance hosted inside `UndockedSidebarWidget` (a docked sidebar's pane strip is much shorter and can't be dragged as a window at all, so a grip there would be misleading). It's a plain `View`, not a `Button` — `OnMousePressed` returns `false` so the press bubbles to `UndockedSidebarWidget::OnMousePressed` exactly as it did before this view occupied that space (see `View::OnMousePressed`'s doc comment: returning false lets the event bubble through parent views). Purely a visual change; nothing about what's draggable changed. |
 | **Auto-hide polls every 100ms** | Cheaper alternatives exist (per-platform mouse hooks, `aura::WindowEventDispatcher` filters), but the polling timer is simple and the cost is negligible. If profiling ever flags it, the panels subsystem's `PanelMouseWatcher` is a more efficient reference implementation. |
-| **English-only context menu strings** | "Undock Sidebar" / "Dock Sidebar" / "Expand" / "Collapse" are `u""` literals in `ShowContextMenuForViewImpl`. Should be `IDS_SIDEBAR_*` from generated_resources. |
+| ~~**English-only context menu strings**~~ **Already fixed — this entry was stale.** | Checked 2026-07-22: `ShowContextMenuForViewImpl` already calls `l10n_util::GetStringUTF16(IDS_SIDEBAR_DOCK/UNDOCK/EXPAND/COLLAPSE)` — no raw `u""` literals anywhere in the function. All four strings exist in `generated_resources.grdp`. This limitation must have been fixed in an undocumented pass; the doc just never caught up. |
 
 ## Integration patches
 

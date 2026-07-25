@@ -155,6 +155,54 @@ Semantics:
   whether via the X close button, tab navigation, tab close, or an
   explicit `infobar->RemoveSelf()`. May be a null callback.
 
+## Dynamic height (2026-07-22)
+
+`height` passed to `Create()` no longer has to be the infobar's height for
+its whole lifetime — the hosted page can grow or shrink it afterward just
+by changing its own rendered content height (e.g. expanding a details
+section, or loading in content asynchronously). No JS API, `postMessage`,
+or `chrome.*` call is needed; it works for any URL scheme the delegate can
+load (`chrome://`, `chrome-extension://`, `data:`, `https://` — the same
+list `Create()`'s doc comment already allows), since it rides Chromium's
+existing renderer-auto-resize primitive rather than anything bespoke.
+
+**How it works** (`custom/browser/ui/views/infobars/custom_infobar.{h,cc}`):
+
+- `ViewHierarchyChanged` hands the hosted `WebContents`' delegate role to
+  `web_view_` (`hosted->SetDelegate(web_view.get())`) — nothing else had
+  claimed it, so this is safe. `views::WebView` already implements
+  `content::WebContentsDelegate::ResizeDueToAutoResize()` by calling
+  `SetPreferredSize()` on itself whenever the renderer reports a new
+  content size.
+- `Layout()` calls `web_view_->EnableSizingFromWebContents(min, max)` with
+  **identical min/max width** (pinned to the infobar's actual available
+  width) but a `[kMinHeight, kMaxHeight]` height range — only re-issued
+  when the width changes (e.g. window resize), since the call forwards
+  straight to the render widget host when the frame is live. Same width
+  top and bottom means the renderer can only vary the height it reports
+  back, never the width.
+- `ChildPreferredSizeChanged(View* child)` (a `views::View` override) is
+  the reaction point: when `web_view_`'s preferred size changes, it reads
+  the new height off `child->GetPreferredSize()`, re-clamps to
+  `[kMinHeight, kMaxHeight]`, stores it in `current_height_`, and calls
+  `SetTargetHeight()` (`infobars::InfoBar`'s existing public API for
+  changing height post-construction — already used internally by the
+  open/close slide animation). `SetTargetHeight` triggers
+  `RecalculateHeight()` → `InfoBarView::PlatformSpecificOnHeightRecalculated()`
+  → `InvalidateLayout()`, so the infobar animates smoothly to the new
+  height and the tab's content area reflows to match — no extra plumbing
+  needed on our side.
+- `Layout()` now sizes `web_view_` off `current_height_` (seeded from
+  `delegate()->height()` at attach time, then kept in sync by
+  `ChildPreferredSizeChanged`) instead of reading `delegate()->height()`
+  directly every pass.
+
+**Known limit:** still hard-clamped to `[kMinHeight=0, kMaxHeight=72]` —
+same range `Create()`'s `height` argument was always clamped to. A page
+can shrink/grow within that band but can't request something taller (by
+design; a large HTML infobar would start competing with actual page
+content for the user's attention).
+
 ## Extension API reference
 
 ```js
@@ -250,24 +298,48 @@ the textbook "extension infobar":
 
 The remaining known gap is the extension renderer process — restoring
 `chrome.*` API access inside the bar page requires a proper Views renderer
-wrapping `ExtensionViewHost`. The legacy `extension_infobar.cc` is a
-reference but needs significant API modernization.
+wrapping `ExtensionViewHost`. There's no legacy reference implementation
+in-tree anymore (see "Dead code removed" below) — it'd need to be built
+fresh against modern Chromium APIs.
 
-## Dead-code notes
+## Dead code removed (2026-07-22)
 
-These files exist in tree but are not in any active build target. They're
-left behind from the legacy/incomplete paths and should be deleted in a
-future cleanup pass:
+The legacy/incomplete extension-infobar path (superseded entirely by
+`CustomInfobarDelegate`/`CustomInfobar`, see "Why the extension path routes
+through `CustomInfobarDelegate`" above) has been deleted:
 
-- [`custom/browser/extensions/extension_infobar_delegate.{cc,h}`](../src/custom/browser/extensions/extension_infobar_delegate.cc) —
-  still in [`custom/browser/extensions/sources.gni`](../src/custom/browser/extensions/sources.gni)
-  under `if (custom_extension_infobar)`, so it compiles, but its
-  `Create` is no longer called. (Replacing it with a stub or removing
-  it requires also removing its sources.gni entry and confirming nothing
-  else in the extensions tree still references the header.)
-- [`custom/browser/ui/views/infobars/extension_infobar.{cc,h}`](../src/custom/browser/ui/views/infobars/extension_infobar.cc) —
-  the legacy Views renderer. Not compiled by any target. Useful as a
-  reference if/when we restore the extension-renderer-aware path.
+- `custom/browser/extensions/extension_infobar_delegate.{cc,h}` — was still
+  compiled (listed in `custom/browser/extensions/sources.gni` under
+  `if (custom_extension_infobar)`), but nothing called its `Create` anymore.
+- `custom/chrome/browser/extensions/extension_infobar_delegate.{cc,h}` — an
+  orphaned duplicate of the above, referenced by no build file at all.
+- `custom/browser/ui/views/infobars/extension_infobar.{cc,h}` — the legacy
+  Views renderer. Not compiled by any target, and its
+  `#include "chrome/browser/extensions/extension_infobar_delegate.h"`
+  pointed at a plain-Chromium path that no longer exists upstream (the
+  native extension-infobars feature was removed from real Chrome years
+  ago) — it wouldn't have compiled if anything had tried to build it.
+- The `AsExtensionInfoBarDelegate()` virtual + forward declaration these
+  added to upstream `components/infobars/core/infobar_delegate.{h,cc}`
+  (patched files) — nothing else called or overrode it once the class
+  above was gone, so it became dead API surface on a base class used by
+  every infobar in the browser. Removed via `npm run update_patches`
+  after editing; the sibling `AsRSSInfoBarDelegate()` hunk (a real,
+  still-used feature) was left untouched.
+
+`custom/browser/extensions/sources.gni`'s `custom_browser_extensions_api`
+list also had a stale, dangling entry
+(`api/infobars/infobar_extension_api.cc`, singular — not the same file as
+the real, plural-named `infobars_extension_api.cc`) pointing at a file that
+didn't exist on disk. Turns out `custom_browser_extensions_api` itself
+isn't consumed by any `sources +=` anywhere in the tree (confirmed by
+grepping the whole source tree and every patch) — the real
+`chrome.infobars.show()` wiring goes through
+`custom/browser/extensions/api/infobars/BUILD.gn`'s own `source_set`
+instead. The RSS and sidebar extension API entries also appended to that
+same unused list; **not touched** here since verifying how those two
+features actually get compiled is a separate investigation, out of scope
+for this infobar-specific cleanup.
 
 ## Testing
 
