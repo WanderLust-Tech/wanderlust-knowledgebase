@@ -876,6 +876,7 @@ const internalContent: ContentNode[] = [
             { title: "BitTorrent Client", path: "features/custom-browser/bittorrent-client" },
             { title: "Crash & Resume Downloads", path: "features/custom-browser/crash-resume-downloads" },
             { title: "Advanced Download Management", path: "features/custom-browser/advanced-download-management" },
+            { title: "Instagram Downloader", path: "features/custom-browser/instagram-downloader" },
             { title: "Startup Cache", path: "features/custom-browser/startup-cache" },
         ]
     },
