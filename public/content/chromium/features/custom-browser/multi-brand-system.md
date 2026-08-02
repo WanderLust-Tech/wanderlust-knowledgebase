@@ -283,6 +283,43 @@ class BrandManager {
 - **Start Menu**: Proper Start Menu integration
 - **File Associations**: Brand-specific file type associations
 
+#### Fixed 2026-07-27: Start Menu shortcut / "Installed Apps" name
+
+The mini_installer produced a Start Menu shortcut and a Windows Settings
+→ Apps → Installed Apps entry both literally reading **"Chromium"**
+instead of the custom browser name, despite all other in-app branding
+(window title, About page, etc.) already being correct.
+
+Root cause: `InstallUtil::GetShortcutName()`/`GetDisplayName()`
+(`chrome/installer/util/install_util.cc`) resolve `IDS_PRODUCT_NAME` from
+a small, separately-compiled installer-only resource pack
+(`installer_util_strings`, built by a `generate_embedded_i18n()` target
+in `chrome/installer/util/BUILD.gn`). That target read the **raw,
+unbranded** `//chrome/app/chromium_strings.grd` directly — the *only*
+consumer of `chromium_strings.grd` in the whole build that did. Every
+other consumer (the main resources pak, via the `branded_strings` target
+in `chrome/app/BUILD.gn`) already reads a rebranded *copy* of that file,
+generated at build time by `//custom/branding:chromium_strings` (see
+"Resource Generation" above) — which is why everything else was already
+correctly branded and only the installer's shortcut/uninstall-registry
+name wasn't.
+
+Fix (patched in `chrome/installer/util/BUILD.gn`): when
+`is_custom_browser`, point the installer's `generate_strings` target at
+the same rebranded output
+(`$root_gen_dir/custom/chromium_strings/chromium_strings.grd`, with a
+`deps` on `//custom/branding:chromium_strings` so it's generated first)
+instead of the raw source — the same rebranding step every other
+consumer already goes through. `branding = "chromium"` (which selects
+which resource ID to request, not which file backs its value) is left
+unchanged, since this fork only has one install mode and the "chromium"
+brand entry in `create_installer_string_rc.py`'s `MODE_SPECIFIC_STRINGS`
+is already mode-independent for `IDS_PRODUCT_NAME`.
+
+Verified via `npm run build -- --target mini_installer`, then running
+the resulting installer and checking both the Start Menu shortcut and
+Settings → Apps → Installed Apps.
+
 ### Linux Integration
 - **Desktop Files**: Proper .desktop file configuration
 - **Package Information**: Distribution package metadata

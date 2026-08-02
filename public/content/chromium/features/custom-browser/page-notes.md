@@ -171,42 +171,70 @@ The handler stores `raw_ptr<TabStripModel> observed_tab_strip_model_` and remove
 
 [`src/custom/browser/page_notes/page_notes_backend_client.h`](../src/custom/browser/page_notes/page_notes_backend_client.h)
 
-HTTP client for a shared annotations backend. Implemented with real `network::SimpleURLLoader` calls. The React layer renders a "backend not configured" notice when `kBaseUrl` is empty, so the feature degrades gracefully until the endpoint is provisioned.
+HTTP client for wanderlust-api's shared annotations endpoints
+(`Controllers/SharedAnnotationsController.cs`). Implemented with real
+`network::SimpleURLLoader` calls, real auth, and a real production
+endpoint — completed 2026-08-01.
 
 ### Backend protocol
 
 ```
-GET  <kBaseUrl>/annotations?url=<encoded_normalized_url>
-     Authorization: Bearer <token>   (omitted when no token cached)
-     → { "annotations": [ { id, url, text, user_name, timestamp } ] }
+GET  <kBaseUrl>?url=<encoded_normalized_url>
+     → 200 [ { id, url, text, userName, timestamp } ]        (anonymous)
 
-POST <kBaseUrl>/annotations
-     Authorization: Bearer <token>
-     Body: { "url": "...", "text": "...", "auth_token": "..." }
-     → 201 { "id": "...", "timestamp": 1700000000 }
+POST <kBaseUrl>                        Authorization: Bearer <jwt>
+     Body: { "url": "...", "text": "..." }
+     → 200/201 { id, url, text, userName, timestamp }
 
-DELETE <kBaseUrl>/annotations/<uuid>
-     Authorization: Bearer <token>
+POST <kBaseUrl>/<id>/delete            Authorization: Bearer <jwt>
      → 204 No Content
 ```
+
+`<kBaseUrl>` is `BUILDFLAG(CUSTOM_OMAHA_PUBLIC_URL) + "/api/sharedannotations"`
+— wanderlust-api, the same backend already serving Omaha/releases/whatsnew,
+not a separate "annotations service." IONOS hosting blocks the DELETE
+verb, hence the `/delete` suffix (same convention as every other
+wanderlust-api mutation).
 
 ### Implementation notes
 
 - **Constructor** takes a `Profile*` and grabs `url_loader_factory_` from `profile->GetDefaultStoragePartition()->GetURLLoaderFactoryForBrowserProcess()`.
-- **`GetAnnotationsForUrl`** issues a GET, parses `{ "annotations": [...] }` via `base::JSONReader`, and calls back with the list.
-- **`PostAnnotation` / `DeleteAnnotation`** issue POST/DELETE, treat any 2xx as success.
+- **`GetAnnotationsForUrl`** issues a GET, parses the plain JSON array response via `base::JSONReader`, and calls back with the list. Anonymous — no auth needed for reads.
+- **`PostAnnotation` / `DeleteAnnotation`** call `EnsureAuthenticated()` first (see below), then issue POST, treating any 2xx as success.
 - Each `SimpleURLLoader` is kept alive by moving it into its own completion callback closure; `kMaxResponseSize = 2 MB` caps response buffering.
 - All requests carry a `net::DefineNetworkTrafficAnnotation` annotation as required by Chromium's network auditing.
-- **`SetCachedToken(token)`** stores an OAuth2 bearer token that is attached as an `Authorization` header on subsequent requests.
+- **`SetCachedToken(token)`** stores a wanderlust-api bearer token that is attached as an `Authorization` header on write requests.
 
-### Remaining setup
+### Authentication — reuses cloud-sync sign-in, not Chromium's native Gaia
 
-1. **Set `kBaseUrl`** in `page_notes_backend_client.cc` to the production endpoint.
-2. **Wire OAuth2 token acquisition** — call `SetCachedToken()` after a successful `ProfileOAuth2TokenService::StartRequest()`. The field is already plumbed; only the token-request flow is missing.
-3. **Register the OAuth2 scope** in the allowlist alongside `GaiaConstants`.
-4. **Fire `notesSharedChanged` listener** from `DoSharedNotesPost`'s callback so the React list refreshes automatically on a successful post.
+Rather than wiring Chromium's native `ProfileOAuth2TokenService` (which
+this fork otherwise de-googles), `EnsureAuthenticated()` reuses whichever
+of the browser's own already-working Google/Microsoft sign-ins
+(`CloudSyncManager`, originally built for cloud bookmark sync) is
+currently signed in:
+
+1. If `cached_token_` is already set, proceed immediately.
+2. Otherwise, ask `CloudSyncManagerFactory::GetForProfile(profile_)` which
+   provider (if either) is signed in, and call its
+   `Get{Google,Microsoft}AccessToken()` pass-through (new methods on
+   `CloudSyncManager`, added alongside its existing `IsGoogleSignedIn()`/
+   `GetGoogleUserInfo()` accessors) to get that provider's access token.
+3. POST `{ provider, accessToken }` to wanderlust-api's
+   `POST /api/auth/external-login` (`AuthController.cs`) — a new endpoint
+   that verifies the token against Google's `userinfo` endpoint or
+   Microsoft Graph's `/me`, finds-or-creates a wanderlust-api `User` by
+   email, and mints a normal wanderlust-api JWT (`ApiResponse<AuthResponse>`,
+   same shape as `/api/auth/login`).
+4. Cache the returned JWT via `SetCachedToken()` and proceed.
+
+If neither cloud-sync provider is signed in, the write is attempted
+unauthenticated and the server returns 401 — there's no separate
+"sign in to share" prompt to build; signing into cloud sync at all is
+sufficient.
 
 A `PageNotesBackendClient` is created once in `SidebarDOMHandler::OnPageLoaded` (passing `profile_`) and stored as `backend_client_`. It is destroyed when the handler is destroyed (panel navigates away).
+
+`DoSharedNotesPost`/`DoSharedNotesDelete` both route their write result through `SidebarDOMHandler::OnSharedAnnotationWritten`, which fires `FireWebUIListener("notesSharedChanged")` on success — `NotesPage.tsx` listens for this event to refetch the shared list (replacing an earlier fixed-300ms-delay refetch hack).
 
 ## Draft persistence
 
@@ -254,7 +282,8 @@ case sidebar::SidebarService::TYPE_NOTES:
 |---|---|
 | `src/custom/browser/page_notes/page_notes_service.h/.cc` | KeyedService — in-memory store + async JSON I/O |
 | `src/custom/browser/page_notes/page_notes_service_factory.h/.cc` | BCKF — profile scoping, OTR redirect |
-| `src/custom/browser/page_notes/page_notes_backend_client.h/.cc` | Stub HTTP client for shared annotations backend |
+| `src/custom/browser/page_notes/page_notes_backend_client.h/.cc` | Real HTTP client for wanderlust-api's shared annotations endpoints, incl. the cloud-sync-token external-login exchange |
+| `src/custom/browser/sync/cloud_sync_manager.h/.cc` | Gained `GetGoogleAccessToken()`/`GetMicrosoftAccessToken()` pass-throughs, reused by `PageNotesBackendClient` |
 | `src/custom/browser/ui/webui/sidebar/sidebar_dom_handler.h/.cc` | 8 message handlers (5 local notes + 3 shared), live URL tracking via WebContentsObserver + TabStripModelObserver |
 | `src/custom/common/webui_url_constants.h` | `kChromeUISidebarNotesURL = "chrome://sidebar/notes"` |
 | `src/custom/browser/sidebar/sidebar_service.h` | `TYPE_NOTES = 6` |
@@ -274,6 +303,3 @@ case sidebar::SidebarService::TYPE_NOTES:
 | Tooltip string | Hardcoded `u"Page Notes"`. Add `IDS_TOOLTIP_SIDEBAR_NOTES` to the GRD file when a localization pass is done. |
 | Multiple notes per URL | The editor shows the first note for a page; multiple appear as a clickable list below. Future: per-note expand/edit flow. |
 | Export | No export. A `notesExport` IPC could return all notes as JSON or Markdown. |
-| Backend endpoint | `kBaseUrl` in `page_notes_backend_client.cc` must be set to the production URL before shared annotations are usable. |
-| Auth for shared annotations | `SetCachedToken()` exists but nothing calls it yet. Implement `ProfileOAuth2TokenService::Consumer` to acquire a bearer token and call `SetCachedToken()` before the first shared-notes request. |
-| `notesSharedChanged` listener | `DoSharedNotesPost` does not yet fire an event on success. Add a `FireWebUIListener("notesSharedChanged")` call in the `PostAnnotation` callback to trigger an automatic list refresh. |

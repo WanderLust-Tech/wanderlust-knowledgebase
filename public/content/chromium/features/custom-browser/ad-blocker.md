@@ -1,10 +1,28 @@
 # Ad blocker
 
+**2026-07-31:** closed the "full EasyList/EasyPrivacy integration is an
+open TODO" gap flagged by `FEATURE_DEEP_DIVE_ROADMAP.md`. The engine
+itself was never the gap — the vendored Adblock Plus engine already had a
+complete ABP-syntax parser/matcher (`||`, `##`, `@@`, `$domain=`,
+resource-type modifiers, bloom-filter/hash-set indexing). The actual gap
+was what it was fed: a ~65-line hand-curated hostname list, not real
+EasyList/EasyPrivacy data, and no cosmetic (`##`) rules at all.
+`tools/download_easylist.py` (a working but never-invoked script) has
+been extended to also fetch EasyPrivacy, and has now actually been run
+against the live easylist.to feeds — `bundled_filter_rules.cc` is
+regenerated with the real ~3.7 MB combined EasyList + EasyPrivacy
+ruleset. Also added `npm run update_easylist` so refreshing it later is a
+documented one-liner instead of a step nobody remembers to run. See
+"Updating the filter list" below for specifics, and "Known gaps" — the
+real modifier-fidelity/regex/third-party-context gaps found during this
+pass are documented there, unchanged by this update (this pass fixed the
+*data*, not the engine's known limitations).
+
 Gated by `BUILDFLAG(ENABLE_AD_BLOCKER)`. Drops requests to known ad and
 tracker hosts before the network fetch starts via a `blink::URLLoaderThrottle`
 attached to every navigable request. Matches go through a vendored
-Adblock-Plus filter engine (curated 50-rule bundled list, expandable to
-EasyList in a future iteration) with a tiny hardcoded substring list as a
+Adblock-Plus filter engine (real EasyList + EasyPrivacy bundled data, see
+2026-07-31 above) with a tiny hardcoded substring list as a
 belt-and-braces fallback if the engine fails to initialize.
 
 When something is blocked, a per-tab helper records the entry, an omnibox
@@ -115,9 +133,9 @@ to empty state).
 | [`net/blockers/ad_block_throttle.{cc,h}`](../src/custom/browser/net/blockers/ad_block_throttle.cc) | URLLoaderThrottle. Calls the engine first, then the hardcoded fallback. PostTasks block records to UI thread, then `CancelWithError` |
 | [`net/blockers/ad_block_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/ad_block_tab_helper.cc) | `WebContentsUserData<AdBlockTabHelper>` + `WebContentsObserver`. Stores `[{url, destination, time}]` for the current page load; resets on primary-main-frame committed navigations |
 | [`net/blockers/blockers_worker.{cc,h}`](../src/custom/browser/net/blockers/blockers_worker.cc) | Bridge between Chromium types (`network::mojom::RequestDestination`) and the engine (`FilterOption`). Process-wide singleton via `BlockersWorker::Get()`. Lazy `parse()` of the bundled rule list under `base::Lock` |
-| [`net/blockers/bundled_filter_rules.{cc,h}`](../src/custom/browser/net/blockers/bundled_filter_rules.cc) | Compiled-in ABP-format rule list. Generated from EasyList at build time via `download_easylist.py`; falls back to a curated ~50-rule set if the script has not been run |
+| [`net/blockers/bundled_filter_rules.{cc,h}`](../src/custom/browser/net/blockers/bundled_filter_rules.cc) | Compiled-in ABP-format rule list. Generated from the real EasyList + EasyPrivacy feeds via `download_easylist.py` (`npm run update_easylist`) — regenerated 2026-07-31, ~3.7 MB of real filter text |
 | [`net/blockers/cosmetic_filter_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/cosmetic_filter_tab_helper.cc) | `WebContentsUserData` + `WebContentsObserver`. On every committed primary-frame navigation, fetches the engine's element-hiding CSS from `BlockersWorker::GetCosmeticStylesheet()` and injects it via `ExecuteJavaScript` into the page's `<head>` |
-| [`tools/download_easylist.py`](../src/custom/tools/download_easylist.py) | Build-time script. Downloads `easylist.txt` from easylist.to (or accepts `--input` for a local file) and writes `bundled_filter_rules.cc` as a series of raw-string-literal C++ chunks (≤16 384 bytes each to stay under MSVC limits) |
+| [`tools/download_easylist.py`](../src/custom/tools/download_easylist.py) | Build-time script, run via `npm run update_easylist`. Downloads `easylist.txt` + `easyprivacy.txt` from easylist.to (or accepts `--easylist-input`/`--easyprivacy-input` for local files), concatenates them, and writes `bundled_filter_rules.cc` as a series of raw-string-literal C++ chunks (≤16 384 bytes each to stay under MSVC limits). Sends a browser-like User-Agent — easylist.to 403s urllib's default UA |
 | [`net/blockers/ad_block_client.{cc,h}`](../src/custom/browser/net/blockers/ad_block_client.cc) | Vendored ABP filter engine (Brian Bondy / Brave origin). Parses ABP text, matches URLs. ~1200 lines. Modified in Phase 5 to restore the half-finished refactor of HashSet (see comments in `add()` and `deserialize()`) |
 | [`net/blockers/{filter,bloom_filter,cosmetic_filter,hash_set,hash_item,hash_fn,bad_fingerprint{s}}.{cc,h}`](../src/custom/browser/net/blockers/) | Engine internals — hash sets, bloom filters, fingerprint tables. ~9000 lines including the 7000-line fingerprint data table |
 
@@ -158,19 +176,19 @@ you're reading the file comments which still reference phase numbers.
 | 5 | Modernized the vendored ABP engine (`raw_ptr` + `delete` → `unique_ptr`, `std::mutex` → `base::Lock`, removed `content::ResourceType` → `network::mojom::RequestDestination`, fixed the half-finished HashSet refactor) | `blockers_worker.{cc,h}`, `hash_set.h` |
 | 6 | Compiled-in ABP rule list, `BlockersWorker::Get()` singleton, throttle wired to call the engine before the hardcoded fallback | `bundled_filter_rules.{cc,h}`, plus rewrites of `blockers_worker.cc` + `ad_block_throttle.cc` |
 | 7 | User-facing toggle in chrome://settings, throttle gated on the pref so it pays nothing when off | `custom_content_browser_client.cc`, `PrivacyPage.tsx` |
-| 8 | Full EasyList integration. `InitAdBlock()` gains a `.dat`-first path: tries `chrome::DIR_RESOURCES/easylist.dat` via `deserialize()`, falls back to text parse of `kBundledFilterRules`, then serializes a fresh `.dat` via `SaveDatFile()`. `download_easylist.py` generates `bundled_filter_rules.cc` from easylist.to at build time | `blockers_worker.{cc,h}`, `tools/download_easylist.py` |
+| 8 | Documented as "full EasyList integration" with a `.dat`-first `InitAdBlock()` path (`deserialize()` from `chrome::DIR_RESOURCES/easylist.dat`, falling back to text parse, then `SaveDatFile()`). **Correction (2026-07-31): this `.dat`-first path was never actually implemented** — `blockers_worker.cc` only ever had a `TODO` referencing it; `InitAdBlock()` has always gone straight to `AdBlockClient::parse(kBundledFilterRules)` with no file I/O. Treat this row as the phase's *intent*, not something present in the current code. What Phase 8 *did* land: `download_easylist.py` itself, and `bundled_filter_rules.cc`'s generated-file shape — just never actually run against real EasyList data until 2026-07-31 (see top of doc) | `blockers_worker.{cc,h}`, `tools/download_easylist.py` |
 | 9 | Cosmetic filtering. `CosmeticFilterTabHelper` (WebContentsUserData) observes every committed primary-frame navigation, fetches element-hiding CSS from `BlockersWorker::GetCosmeticStylesheet()`, and injects a `<style data-cosmetic-filter>` tag via `ExecuteJavaScript` | `cosmetic_filter_tab_helper.{cc,h}`, patch in `tab_helpers.cc` |
 
 ## Updating the filter list
 
-The recommended path is to re-run `download_easylist.py`, which regenerates `bundled_filter_rules.cc` from the latest EasyList:
+The recommended path is `npm run update_easylist` (or directly:
+`python src/custom/tools/download_easylist.py`), which fetches the
+latest EasyList **and** EasyPrivacy from easylist.to and regenerates
+`bundled_filter_rules.cc` from both, combined.
 
-```bash
-python src/custom/tools/download_easylist.py \
-    --output src/custom/browser/net/blockers/bundled_filter_rules.cc
-```
-
-Pass `--input easylist.txt` to use a locally-downloaded copy instead of fetching from easylist.to.
+Pass `--easylist-input <file>` and/or `--easyprivacy-input <file>` to use
+locally-downloaded copies for either list instead of fetching from
+easylist.to (e.g. for offline regeneration, or a vendored snapshot).
 
 After regenerating, delete the stale `easylist.dat` from the build's resources directory so `InitAdBlock()` re-serializes the fresh rules on the next launch.
 
@@ -207,7 +225,65 @@ The engine itself is process-wide. `BlockersWorker::Get()` returns a `base::NoDe
 
 - **Cosmetic filtering injects on every navigation, not incrementally.** `CosmeticFilterTabHelper` re-injects the entire `<style>` block on every committed primary-frame navigation. For EasyList's element-hiding CSS (~several hundred KB) this may cause a brief style-recalc on slow pages. A future improvement: diff the CSS against the previous injection and only update if changed, or inject per-domain rules only.
 
-- **EasyPrivacy not bundled.** `download_easylist.py` only fetches EasyList. EasyPrivacy (tracker-specific rules) can be appended by passing a combined file to `--input`. The engine handles the combined volume fine.
+- **No runtime auto-refresh.** `download_easylist.py` is a manual/developer-run step (`npm run update_easylist`) — there is no in-binary network fetcher, component updater, or scheduled refresh. Filter data goes stale between manual regenerations. A future iteration could wire this into the existing update-notification/autoupdate infrastructure, but that's a separate, larger effort from just closing the "no real EasyList data" gap.
+
+- **Unknown `$` modifiers are silently ignored, not rejected.** The vendored parser recognizes the common ABP modifiers (`domain=`, resource-type keywords, `third-party`, etc.) but silently drops newer ones (`$important`, `$badfilter`, `$redirect=`, `$csp=`, `$ping`, `$websocket`, `$genericblock`, `$popup`, `$1p`/`$strict1p`) rather than erroring. A real EasyList/EasyPrivacy import (as of 2026-07-31, both are genuinely bundled) parses without error, but any rule relying on one of these modifiers is more permissive than a fully spec-compliant engine would be.
+
+- **`/regex/` filters parse but never match.** `FTRegex` rules are recognized by the tokenizer but only evaluated under `#ifdef ENABLE_REGEX`, which isn't defined in this build — any EasyList/EasyPrivacy rule using regex syntax is silently inert.
+
+## Deferred: migrating to Chromium's own `subresource_filter`/`url_pattern_index`
+
+Considered and deliberately **not** done as part of the 2026-07-31 pass
+(scoped out in favor of the lower-risk "feed real data into the existing
+engine" fix above) — worth revisiting as its own dedicated future effort,
+not a quick follow-up:
+
+Chromium already vendors, and this fork's build already links (via the
+same `//chrome/browser:browser` target the ad-blocker code is spliced
+into), a **second, production-grade EasyList-aware ruleset matcher** that
+this fork doesn't use at all:
+
+- `components/url_pattern_index/` — a FlatBuffer-indexed, N-gram-prefiltered
+  URL pattern matcher, whose own README describes it as "largely inspired
+  by patterns in EasyList / Adblock Plus filters." Implements `||`
+  domain-anchors, `|` anchors, `^` separator matching — the same core
+  syntax the vendored Bondy engine implements, but with zero-deserialization
+  FlatBuffer lookups instead of runtime text parsing.
+- `components/subresource_filter/` — literally the engine behind real
+  Chrome's own "abusive ads" / Better Ads Standard enforcement. Ships a
+  documented, working conversion pipeline
+  (`FILTER_LIST_GENERATION.md`) that explicitly uses EasyList as its
+  example input:
+  ```sh
+  wget https://easylist.to/easylist/easylist.txt
+  out/Release/ruleset_converter --input_format=filter-list \
+      --output_format=unindexed-ruleset --input_files=easylist.txt \
+      --output_file=easylist_unindexed
+  out/Release/subresource_indexing_tool easylist_unindexed easylist_indexed
+  ```
+  Plus real, already-built `RulesetService`/`ContentRulesetService`
+  (component-updater-integrated versioned ruleset management) and
+  `ActivationStateComputingNavigationThrottle`/
+  `ChildFrameNavigationFilteringThrottle` (real per-frame activation
+  throttles).
+
+Why this wasn't picked for the 2026-07-31 pass: adopting it means writing
+a build-time ruleset-generation step (or shipping a pre-built indexed
+resource), wiring up `RulesetService`, adding new activation throttles
+alongside (or replacing) `AdBlockThrottle`, and — critically — remapping
+this fork's existing per-domain `DomainShieldsManager` override system
+(global toggle + per-host allow/block patterns) onto whatever activation
+model `subresource_filter` expects. That's a real migration of a
+currently-working, currently-shipping feature, not a data refresh — much
+higher risk and scope than fixing what data the existing engine is fed.
+
+If this is picked up later, the win would be: no more hand-rolled bloom
+filter/hash set (`bloom_filter.h`, `hash_set.h`, the 7,145-line
+`bad_fingerprints.h` table all become unnecessary), a real component-updater
+refresh path instead of the current "developer manually re-runs a Python
+script" model, and parity with how real Chrome itself keeps its own ad
+filter current. The cost is real engineering time re-plumbing the
+interception/activation/override path end to end.
 
 ## Testing
 

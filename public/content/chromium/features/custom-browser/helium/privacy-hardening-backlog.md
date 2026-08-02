@@ -60,8 +60,14 @@ Simple pref-default flips and single-point flag changes. Target: one patch each.
 Require new UI surface or non-trivial backend changes.
 
 - [x] **DNS-over-HTTPS UI** *(Bromite)*
-  Already implemented. `kDnsOverHttpsMode` defaults to `"automatic"` in `custom_prefs.cc`.
-  Toggle exposed in `PrivacyPage.tsx`. Custom `PrivateDnsManager` handles advanced routing.
+  Already implemented. `kDnsOverHttpsMode` defaults to `"automatic"` in `custom_prefs.cc`
+  (confirmed 2026-07-31 as the sole, uncontested source of this default — see
+  security-privacy-features.md). Toggle exposed in `PrivacyPage.tsx`.
+  Correction: the custom `PrivateDnsManager` class does **not** handle DoH
+  routing — its `ResolveDoH()` method is an unimplemented `TODO` stub that
+  always fails, and nothing in the real navigation/DNS-resolution path ever
+  calls it. Real DoH is handled entirely by vanilla Chromium's own
+  `SecureDnsConfig`/`StubResolverConfigReader` machinery via the pref above.
 
 - [x] **Client Hints Override** *(Bromite)*
   Two-layer block in `third_party/blink/common/client_hints/`:

@@ -549,23 +549,50 @@ Guest sessions bypass all custom privacy/security features (force-incognito,
 connection control, referrer stripping, etc.); disabling guest mode prevents
 accidental circumvention. Users can re-enable guest mode in settings if needed.
 
-### DNS-over-HTTPS set to "secure" (Cloudflare)
+### DNS-over-HTTPS set to "automatic" (matches upstream Chromium's own default)
 
-`DefaultDnsOverHttpsConfigSource` sets the default value of
-`prefs::kDnsOverHttpsMode` to `"secure"` and `prefs::kDnsOverHttpsTemplates`
-to `https://chrome.cloudflare-dns.com/dns-query` via `SetDefaultPrefValue()`
-under `#if BUILDFLAG(CUSTOM_BROWSER)`.
+**Corrected 2026-07-31** — this section previously described a `"secure"`
+(hardcoded Cloudflare 1.1.1.1) default that was never actually in effect.
+A patch to `DefaultDnsOverHttpsConfigSource`'s constructor did set
+`prefs::kDnsOverHttpsMode` to `"secure"` under `#if BUILDFLAG(CUSTOM_BROWSER)`,
+but `custom_prefs.cc`'s `RegisterLocalState()` — which runs *after* that
+constructor per its own code comment — unconditionally overrode the same
+pref's default back to `"automatic"`, and `SetDefaultPrefValue()` calls
+aren't additive, so the later call always won. The two pieces of code
+contradicted each other; only the `custom_prefs.cc` one was ever live. The
+patch has been removed (`default_dns_over_https_config_source.cc` is back
+to plain vanilla Chromium) so there's a single source of truth.
 
-This forces all DNS lookups through DoH (Cloudflare 1.1.1.1) by default. The
-upstream Chromium default is `"automatic"` (opportunistic upgrade only). Users
-can change the provider or disable DoH in Settings → Privacy and Security →
-Security → Use secure DNS.
+Real, current behavior: `RegisterLocalState()` in `custom_prefs.cc` sets
+the default value of `prefs::kDnsOverHttpsMode` to `"automatic"` via
+`SetDefaultPrefValue()` — DNS lookups upgrade to DoH when the resolver
+supports it, with a silent fallback to plain DNS otherwise. This is
+identical to vanilla Chromium's own default for this pref (Chromium has
+shipped Secure DNS "Automatic" mode broadly since ~2020) — this fork
+isn't overriding anything here so much as making sure the default stays
+`"automatic"` explicitly rather than depending on whatever
+`DefaultDnsOverHttpsConfigSource` happens to ship next. Users can change
+the provider, force `"secure"` mode with a specific DoH provider, or
+disable DoH entirely in Settings → Privacy and Security → Security → Use
+secure DNS.
 
 > **Implementation note:** `kDnsOverHttpsMode` is a **local-state** pref
 > (registered by `DefaultDnsOverHttpsConfigSource::RegisterPrefs` via
 > `SystemNetworkContextManager::RegisterPrefs`). The override lives in
-> `DefaultDnsOverHttpsConfigSource`'s constructor, not in a
+> `custom_prefs.cc`'s `RegisterLocalState()`, not in a
 > `RegisterProfilePrefs()` call.
+
+**Related, also corrected 2026-07-31:** the `custom_dns_over_https_support`
+GN flag (and its `ENABLE_DNS_OVER_HTTPS`/`CUSTOM_DNS_OVER_HTTPS_SUPPORT`
+buildflags/defines, and the `DnsOverHttpsSupport` `base::Feature`) has been
+deleted entirely — it never gated anything in the first place
+(`BUILDFLAG(ENABLE_DNS_OVER_HTTPS)` had zero references anywhere in the
+tree, and `IsFeatureEnabled("DnsOverHttpsSupport")` was never called). The
+real DoH behavior described above was never conditioned on this flag.
+Encrypted Client Hello (ECH) was also investigated as part of this
+cleanup and found to require no fork-side work: this fork has zero
+ECH-specific code anywhere — ECH is purely vanilla Chromium's own
+built-in feature, shipping exactly as upstream ships it.
 
 ### WebRTC IP handling policy
 

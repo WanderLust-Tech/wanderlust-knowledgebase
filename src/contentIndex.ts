@@ -921,6 +921,9 @@ const internalContent: ContentNode[] = [
             { title: "Custom Browser Architecture", path: "architecture/custom-browser-architecture" },
             { title: "Custom Browser Build System", path: "development/custom-browser-build-system" },
             { title: "Migration from Fork", path: "development/migration-from-fork" },
+            { title: "Changelog", path: "features/custom-browser/changelog" },
+            { title: "Mobile Parity Strategy", path: "features/custom-browser/mobile-parity-strategy" },
+            { title: "pathfinder-ui: Unused Video/Social Components", path: "features/custom-browser/pathfinder-ui/dead-components" },
         ]
     },
     {
@@ -930,6 +933,9 @@ const internalContent: ContentNode[] = [
             { title: "Getting Started", path: "features/custom-browser/custom-webui/getting-started" },
             { title: "RSS Reader WebUI", path: "features/custom-browser/custom-webui/rss-reader" },
             { title: "Sidebar WebUI", path: "features/custom-browser/custom-webui/sidebar" },
+            { title: "Pages Inventory", path: "features/custom-browser/custom-webui/pages-inventory" },
+            { title: "Password Manager Import/Export", path: "features/custom-browser/password-manager-import-export" },
+            { title: "Password Manager View/Edit/Checkup", path: "features/custom-browser/password-manager-view-edit-checkup" },
         ]
     },
     {
@@ -969,6 +975,7 @@ const internalContent: ContentNode[] = [
         ]
     },
     { title: "Opera Feature Ports", path: "features/custom-browser/opera-feature-ports" },
+    { title: "Browser Versioning Scheme", path: "features/custom-browser/browser-versioning-scheme" },
     {
         title: "Version Updates",
         description: "Per-milestone rebase and migration notes",

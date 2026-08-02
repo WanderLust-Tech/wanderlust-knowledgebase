@@ -20,6 +20,101 @@ banners) were all closed — see "Second feature-parity pass" below.
 `custom_extensions` now has full, simplified-where-noted parity with
 upstream's `chrome://extensions`.
 
+**2026-07-29:** `custom_profile_picker` and `custom_profile_customization`
+— found to be 100% placeholder stubs earlier the same day — were both
+completed with real `WebUIMessageHandler`s modeled on the still-present
+(unregistered) upstream `ProfilePickerHandler`/`ProfileCustomizationHandler`.
+Local-profiles-only scope; see "`custom_profile_picker`/
+`custom_profile_customization` — completed 2026-07-29" below.
+
+**2026-07-30:** an external cross-repo roadmap audit
+(`FEATURE_DEEP_DIVE_ROADMAP.md`) flagged `custom_sync_confirmation` and
+`custom_management` as placeholders, contradicting this doc's own
+"Complete and live" listing. Re-verified against the actual code: the
+audit was right, this doc was wrong — both are 100% placeholder stubs,
+same pattern as `custom_password_manager`/`custom_profile_picker` before
+them (native `WebUIController` correctly registers the `chrome://` host,
+but `web_ui->AddMessageHandler(...)` is never called, so there's no IPC
+surface at all). Moved to "Needs attention" below.
+
+**2026-07-30, later the same day:** the same roadmap audit's Tier-1
+prioritization picked `custom_password_manager` as the first item to
+finish. Rather than duplicate the working Settings → Passwords logic,
+the password-handling code was **extracted** out of the monolithic
+`CustomSettingsHandler` into a new standalone
+`custom::CustomPasswordManagerHandler`, attached to **both**
+`custom_settings_ui.cc` (so Settings → Passwords keeps working unchanged)
+and `custom_password_manager_ui.cc` (making the standalone page real for
+the first time). See "`custom_password_manager` — completed 2026-07-30"
+below; moved back to "Complete and live".
+
+**2026-07-30, later still:** `custom_sync_confirmation` — the second
+Tier-1 item from `FEATURE_DEEP_DIVE_ROADMAP.md` — was completed the same
+way: a new, deliberately lean `custom::CustomSyncConfirmationHandler`
+(no `ConsentAuditorFactory`/`LoginUIServiceFactory`/`BrowserListObserver`
+machinery, none of which exists anywhere else in this fork) attached to
+the already-registered `custom_sync_confirmation_ui.cc`. "Yes, I'm in"
+and "Settings" really enable sync via `SyncUserSettings::
+SetInitialSyncFeatureSetupComplete`; "Cancel" really signs out via
+`IdentityManager`, reusing `CustomSettingsHandler::HandleSignOut`'s exact
+call. See "`custom_sync_confirmation` — completed 2026-07-30" below;
+moved back to "Complete and live".
+
+**2026-07-30, later still again:** `custom_management` — the third
+Tier-1 item from `FEATURE_DEEP_DIVE_ROADMAP.md` — was completed. This is
+the first fork WebUI handler to read real `policy::PolicyService`/
+`ProfilePolicyConnector`/`ChromeBrowserPolicyConnector` state (not to be
+confused with the fork's own unrelated `custom::SecurityPolicyManager`/
+`UrlAccessController`/`FunctionControlManager` local-pref scaffolding
+under `custom/chrome/browser/security/`). New
+`custom::CustomManagementHandler` surfaces real managed-status,
+policy-force-installed extensions, cloud-reporting signals, managed
+websites, and admin-forced run-on-login applications; drops the upstream
+threat-protection-connectors section and GAIA promotion banner, neither
+of which this fork has infrastructure for. See "`custom_management` —
+completed 2026-07-30" below; moved back to "Complete and live".
+
+**2026-08-01:** two Tier-2 roadmap items landed, both upgrading pages that
+were already listed "Complete and live" (they had real apps + registered
+hosts, just with a genuine functionality gap the roadmap flagged):
+
+- **`custom_whats_new`** went from a 100% hardcoded `{title, body}[]`
+  array with zero IPC surface to a real feed: new
+  `custom::CustomWhatsNewHandler` fetches from a new, decoupled
+  `WhatsNewEntry` table/endpoint in `wanderlust-api`
+  (`GET /api/whatsnew?appId=...`, anonymous by design — a `chrome://`
+  page has no API login session) via a server-to-server
+  `network::SimpleURLLoader` call from the browser process (same pattern
+  `GoogleAuthProvider` already uses) — this sidesteps both the page's CSP
+  (no `connect-src` override existed) and CORS (no `chrome://` origin
+  entry existed) entirely rather than fixing either. Falls back to the
+  original hardcoded entries if the fetch returns nothing, so the page
+  never renders blank. `wanderlust-api`'s existing `BrowserRelease`/
+  `GET /api/releases` (the roadmap's "already-existing release
+  infrastructure") was deliberately *not* reused — it's pure Omaha
+  installer metadata (version/platform/arch/hash) with no title/body
+  field at all, and one row per platform/arch would have meant duplicate
+  cards per release.
+- **`custom_intro`** went from a single static welcome screen (its own
+  header comment admitted "a static welcome placeholder with no action
+  buttons") to a real 2-step first-run wizard: Welcome, then a real
+  cross-browser import step. New `custom::CustomIntroHandler` is a
+  near-verbatim port of the real, previously-orphaned upstream
+  `chrome/browser/ui/webui/settings/import_data_handler.h/.cc` — orphaned
+  because `custom::CustomSettingsUI` unconditionally claims the
+  `"settings"` host before vanilla `SettingsUI` (the class that normally
+  attaches it) is ever reached, so this real Chromium import machinery
+  (`ImporterList`, `ExternalProcessImporterHost`, `ProfileWriter` — all
+  unmodified, real Chromium classes) had literally no live UI attachment
+  point in this fork until now. "Firefox-only" needed no artificial
+  filtering: there's no `ChromeImporter` class in this Chromium version at
+  all, and `EdgeImporter` only reads the legacy pre-Chromium "Spartan"
+  favorites store (bookmarks only) — so `ImporterList::
+  DetectSourceProfiles()` already only ever surfaces Firefox (full:
+  history/bookmarks/passwords/autofill/search engines, via real NSS-based
+  password decryption), legacy Edge (bookmarks-only, if present), and a
+  synthetic "Bookmarks HTML File" option.
+
 Every entry below lives under `src/custom/components/custom_<name>/`
 (`App.tsx` + `main.tsx` + `BUILD.gn`) unless noted, with a matching native
 controller under `src/custom/browser/ui/webui/<name>/` (`<name>_ui.cc`/`.h`
@@ -35,15 +130,37 @@ host for it:
 `custom_certificate_manager`, `custom_chrome_urls`, `custom_credits`,
 `custom_downloads`, `custom_epub_reader`, `custom_extensions`,
 `custom_feedback`, `custom_flags`, `custom_history`, `custom_intro`,
-`custom_management`, `custom_password_manager`, `custom_print`,
+`custom_management`,
+`custom_password_manager`, `custom_print`,
 `custom_privacy_shield`, `custom_profile_customization`,
 `custom_profile_picker`, `custom_proxy_routing`, `custom_reader`,
-`custom_sync_confirmation`, `custom_tab_search`, `custom_terms`,
+`custom_sync_confirmation`,
+`custom_tab_search`, `custom_terms`,
 `custom_top_sites` (backed by the `most_visited` handler/controller, not
 a `custom_top_sites_ui.cc` — same naming mismatch as `custom_settings`
 below, just older), `custom_tracking_dashboard`, `custom_whats_new`.
 
-That's 26 single-purpose pages, live and code-complete.
+That's 26 single-purpose pages, live and code-complete. `custom_credits`,
+`custom_feedback`, and `custom_apps` were all confirmed to actually be
+placeholders as of the 2026-07-30 roadmap audit (despite being listed
+here since 2026-07-19) — all three got real backends on 2026-08-01:
+`custom_credits` now reuses `about_ui::GetCredits()` (the same build-time-
+generated license manifest vanilla `chrome://credits` displays) via a new
+`CustomCreditsHandler`; `custom_apps` now lists/launches/uninstalls real
+installed web apps via `web_app::WebAppProvider` (`CustomAppsHandler`,
+porting the web-app half of upstream's `AppHomePageHandler` into this
+fork's own IPC convention); `custom_feedback` now submits anonymously to
+wanderlust-api's `POST /api/feedback` (`CustomFeedbackHandler`). All three
+are genuinely live now. (`custom_password_manager` was previously removed
+from this list on 2026-07-27 after being found to be a 100%-stub page,
+then re-added on 2026-07-30 once a real handler was built — see
+"`custom_password_manager` — completed 2026-07-30" below.
+`custom_profile_picker`
+and `custom_profile_customization` were briefly removed from this list on
+2026-07-29 after being found to be placeholder stubs, then re-added the
+same day once real handlers were built — see
+"`custom_profile_picker`/`custom_profile_customization` — completed
+2026-07-29" below.)
 
 ### Multi-page hubs
 
@@ -53,10 +170,14 @@ That's 26 single-purpose pages, live and code-complete.
   `custom_settings_ui.cc` + `custom_settings_handler.cc`. This is what
   `chrome://settings` (or whatever this fork's settings host is) actually
   serves.
-- **`custom_sidebar/pages/`** — five sub-pages (Bookmarks, History, Notes,
-  NtpSettings, Rss) backed by the sidebar handler/controller. See
-  [`custom-webui/sidebar.md`](./sidebar.md) for the RSS-adjacent detail on
-  this one, and [`custom-webui/rss-reader.md`](./rss-reader.md) for the
+- **`custom_sidebar/pages/`** — seven sub-pages (Bookmarks, History, Notes,
+  NtpSettings, Rss, Agent, RecentlyClosed) backed by the sidebar
+  handler/controller. RecentlyClosed (added 2026-08-01) shows two live
+  sections — Open Tabs and Recently Closed tabs/windows — ported from
+  `RemoteNtpServiceImpl`'s `TabRestoreService`/`BrowserList` logic since
+  `browser_api`/`window.custom` isn't reachable from `chrome://sidebar`.
+  See [`custom-webui/sidebar.md`](./sidebar.md) for the RSS-adjacent detail
+  on this one, and [`custom-webui/rss-reader.md`](./rss-reader.md) for the
   reader page specifically.
 
 ### Native-only (no React frontend)
@@ -449,10 +570,308 @@ review each one.
   esbuild/TypeScript) passed clean for all five items in one final
   combined build, no warnings.
 
+### `custom_profile_picker`/`custom_profile_customization` — completed 2026-07-29
+
+Both pages were placeholder stubs (each rendering a literal "not wired up
+yet" card, no routing/state/IPC) until this pass — see git history/prior
+revisions of this doc for that state. Native registration was already
+correct (`CustomProfilePickerUI`/`CustomProfileCustomizationUI` and their
+`WebUIConfig`s were properly swapped in via the `chrome_web_ui_configs.cc`/
+`chrome_web_ui_controller_factory.cc` patches); the gap was purely the
+missing `WebUIMessageHandler` on each. Both were modeled directly on the
+real, upstream `ProfilePickerHandler`/`ProfileCustomizationHandler`
+(`chrome/browser/ui/webui/signin/profile_picker_handler.cc` /
+`profile_customization_handler.cc`) — still fully present in this fork's
+tree, just unregistered, so the new handlers reuse proven Chromium logic
+rather than reinventing it.
+
+**Scope, deliberately local-profiles-only**: no Google/Dice sign-in for new
+profiles — that requires the full upstream `ProfilePicker` C++
+flow-controller state machine, a separate, much larger undertaking. The
+"Sign in with Google" button is present but wired to a documented no-op
+(`FireWebUIListener("sign-in-not-available")`) that shows a toast, matching
+this fork's established pattern for partially-scoped features (e.g. the
+password leak-checker, functional but pending OAuth credentials).
+
+**`custom/browser/ui/webui/profile_picker/custom_profile_picker_handler.h/.cc`**
+(new) — `getProfiles` (list via
+`ProfileAttributesStorage::GetAllProfilesAttributesSortedByLocalProfileNameWithCheck()`,
+filtered for `IsOmitted()`, each entry's avatar rendered as a bitmap data
+URL via `profiles::GetSizedAvatarIcon()` + `webui::GetBitmapDataUrl()` —
+same pattern the real handler's `CreateProfileEntry()` uses), `launchProfile`
+(`profiles::SwitchToProfile()`), `createProfile`
+(`ProfileManager::CreateMultiProfileAsync()`, then
+`profiles::OpenBrowserWindowForProfile()` to open a window for the new
+profile and `Browser::OpenGURL()` to navigate it straight to
+`chrome://profile-customization` — necessary because navigating the
+*picker's own* tab would stay in the picker's own profile, not the new
+one), `renameProfile`/`removeProfile` (`ProfileAttributesEntry::SetLocalProfileName()`/
+`webui::DeleteProfileAtPath()`, identical calls to the real handler),
+`signInWithGoogle` (the documented no-op above). Observes
+`ProfileAttributesStorage` for live list updates.
+
+**`custom/browser/ui/webui/profile_customization/custom_profile_customization_handler.h/.cc`**
+(new) — `getProfileInfo`/`getAvailableIcons` (the latter forwards
+`profiles::GetIconsAndLabelsForProfileAvatarSelector()` directly, zero new
+logic — same call the real handler makes), `setAvatarIcon`
+(`profiles::SetDefaultProfileAvatarIndex()`), `setProfileName`, and two
+pieces the real handler doesn't need but this simplified page does since
+it's a plain `chrome://` tab rather than a native bubble: `getSuggestedColors`
+(a fixed preset palette from `chrome_colors::kSelectedColorsInfo` — the
+same array the NTP background-color picker uses — rather than the real
+handler's single `GenerateNewProfileColor()` suggestion, since a
+multi-swatch row needs more than one option) and `setThemeColor`
+(`ThemeServiceFactory::GetForProfile(profile)->SetUserColor()`). `done`/`skip`
+are no-ops — every field already saves live as it's changed, and there's no
+ephemeral-profile finalization needed since profiles created by this fork's
+picker aren't created ephemeral in the first place (unlike upstream's flow).
+Also observes `ProfileAttributesStorage` for live updates (avatar/name/theme
+changed elsewhere).
+
+**Both React apps** (`App.tsx` in each `custom/components/custom_profile_picker/`
+and `custom_profile_customization/`) rewritten from the stub cards to real
+UIs following the `custom_extensions` fetch-on-mount +
+`cr.addWebUIListener` pattern; each directory gained its own `cr.ts`
+IPC-shim copy (the established per-page-copy convention — see
+`getting-started.md`) and added it to `BUILD.gn`'s `sources`.
+
+**GN deps added** to `custom/browser/ui/webui/BUILD.gn`'s `static_library("ui")`:
+`//chrome/browser/themes`, `//chrome/browser/ui/profiles`, and
+`//chrome/browser/new_tab_page/chrome_colors:generate_colors_info` (the
+last one is a header-only dependency for `selected_colors_info.h` — that
+exact target name, not the `chrome_colors` source_set, is the established
+pattern other WebUI signin handlers already use for the same header, per
+`chrome/browser/ui/webui/signin/BUILD.gn`).
+
+**Known scope limits:**
+- No Google/Dice sign-in (see above) — local profiles only.
+- No profile-switch-to-existing-account confirmation flow, no profile
+  statistics in the deletion-confirmation dialog (the real picker shows
+  bookmark/password/etc. counts before deleting; this one just confirms via
+  an in-page confirmation step instead — see below for why not a native
+  dialog).
+- `getSuggestedColors` returns a static preset list rather than
+  context-aware suggestions generated relative to existing profile colors.
+- Full `chrome` build passed clean; compiled the `ui` static library target
+  in isolation first to iterate faster, then verified the complete build.
+
+**Five bugs found during the user's own runtime testing, fixed same day (2026-07-30):**
+
+1. **Installed-profile creation crashed on a DCHECK.** `ProfileImpl::DoFinalInit()`
+   (`chrome/browser/profiles/profile_impl.cc`) has a fork-specific addition
+   (`BUILDFLAG(CUSTOM_DOWNLOAD_SHELF)`) that synchronously creates a
+   per-profile download-cache directory with no `ScopedAllowBlocking` guard
+   — `base::AssertBlockingAllowed()` fired the moment
+   `ProfileManager::CreateMultiProfileAsync()`'s "Add profile" flow ran
+   `DoFinalInit()` on a sequence that correctly disallows blocking (unlike
+   normal startup profile loading, which apparently tolerates it). The same
+   unguarded pattern existed in `~ProfileImpl()`'s matching `DeleteFile()`
+   call, which would have crashed identically on profile deletion. Both
+   pre-existing bugs, never exercised before because nothing in this fork
+   had ever created-then-destroyed a second profile until this feature.
+   Fixed by wrapping both in `ScopedAllowBlockingForProfile`, the exact RAII
+   guard this same file already uses for the analogous profile-directory
+   creation a few lines above.
+2. **Newly-created profiles crashed later, on a null-pointer deref.**
+   `RSSImpl::Shutdown()` (`custom/browser/rss/rss_impl.cc`, called by the
+   KeyedService framework before a profile is destroyed) nulls `profile_`
+   but never stopped `one_shot_peek_timer_`. If that timer was still
+   pending, it fired later via `ScheduleRSS()`, which unconditionally
+   dereferences `profile_->GetOriginalProfile()`. Fixed by calling the
+   already-existing `StopOneShotPeekTimer()` first thing in `Shutdown()`,
+   before nulling `profile_`.
+3. **The picker never closed after launching a profile.** Turned out this
+   page is normally hosted inside the real, untouched upstream
+   `ProfilePickerView` — a dedicated, chrome-less `views::Widget`
+   (`chrome/browser/ui/views/profiles/profile_picker_view.cc`), not a
+   normal `Browser` tab; this fork's `WebUIControllerFactory` patch only
+   swaps in custom content to render *inside* it. `CustomProfilePickerHandler::OnProfileSwitched`
+   now calls the real `ProfilePicker::Hide()` after a successful launch
+   (safely a no-op if the widget isn't open), with a `TabStripModel`-based
+   fallback kept for the non-standard case of reaching this page as a plain
+   tab instead.
+4. **Deleting a profile silently did nothing.** Root cause of the above,
+   part two: `ProfilePickerView` never overrides
+   `GetJavaScriptDialogManager()`, so `window.alert`/`confirm`/`prompt`
+   have nothing to route through and silently resolve as "cancelled" in
+   this widget. The delete button's `window.confirm()` always evaluated
+   false, so `removeProfile` never even fired. Fixed by replacing it with
+   a small in-menu confirmation step (Delete → "This can't be undone" with
+   Cancel/Delete buttons) — no native dialog dependency, matching why real
+   Chromium's own profile picker builds its own in-page confirmation
+   instead of using `window.confirm()` too.
+5. **Dark mode wasn't respected.** Same bug class already hit (and fixed)
+   for `custom_extensions` earlier this session: both pages' root `<main>`
+   set `dark:text-white` for text but never painted a background at all,
+   so the canvas behind the (correctly dark-flipping) cards stayed the
+   default WebUI white regardless of theme. Fixed by wrapping both pages in
+   the same `min-h-screen bg-lightPrimary dark:bg-navy-900` outer +
+   `mx-auto max-w-* px-6 py-* ` inner two-layer structure `custom_downloads`/
+   `custom_settings` already use.
+
+All five fixes verified by compiling their respective object files
+directly; the `profile_impl.cc` fix regenerated its patch (`chrome-browser-profiles-profile_impl.cc.patch`)
+since it's an upstream file — the other four are fork-owned files, no
+patch regeneration needed. Runtime click-through testing was the user's
+own, not the agent's, for this pass.
+
 ## Needs attention
 
-One real gap remains (a second, `custom_settings_ui_old`, was resolved by
-deletion — see below):
+One real gap remains — the orphaned `vertical_tabs_page` frontend (see
+below). `custom_settings_ui_old` was resolved by deletion, and
+`custom_password_manager`/`custom_sync_confirmation`/`custom_management`
+were all completed 2026-07-30 (see below).
+
+### `custom_sync_confirmation` — completed 2026-07-30
+
+Previously a 100% placeholder stub (see prior revisions of this doc) —
+both buttons were rendered `disabled` with no event handlers, and
+`custom_sync_confirmation_ui.cc` only set up the `WebUIDataSource`/CSP
+with no `AddMessageHandler()` call. Resolved as the second Tier-1 item
+from `FEATURE_DEEP_DIVE_ROADMAP.md`'s prioritization. Unlike the other
+pages fixed this way, this one's `chrome://` host was already registered
+(patched into `chrome_web_ui_controller_factory.cc`/
+`chrome_web_ui_configs.cc` earlier) — the gap was purely the missing
+handler.
+
+The real upstream `chrome/browser/ui/webui/signin/sync_confirmation_handler.h/.cc`
+is built around machinery this fork deliberately doesn't have —
+`ConsentAuditorFactory` (legal consent-string recording),
+`LoginUIServiceFactory` (native constrained-dialog close callback), and
+`BrowserListObserver`/`Browser*` (native-window-resize plumbing) — none
+of which exist anywhere else in `src/custom`. Rather than pull all of
+that in, a new, deliberately lean
+`custom/browser/ui/webui/sync_confirmation/custom_sync_confirmation_handler.h/.cc`
+(`custom::CustomSyncConfirmationHandler`) was built as a plain, one-shot
+`content::WebUIMessageHandler` — no observer base classes at all, since
+the page fetches its state once on load and the user clicks exactly one
+of three buttons, unlike `CustomSettingsHandler`'s persistent People
+panel which needs live `IdentityManager`/`SyncService` observation.
+
+Three messages: `customGetSyncConfirmationState` (real signed-in
+account name/email via the same `FindExtendedAccountInfo` full-name →
+given-name → email fallback `HandleGetSignInState` already uses, plus a
+small sync-benefits list built from `syncer::UserSelectableType` +
+`SyncUserSettings::IsTypeManagedByPolicy`), `customSyncConfirm` (both
+"Yes, I'm in" and "Settings" — really enables sync via
+`SyncUserSettings::SetInitialSyncFeatureSetupComplete`, using
+`BASIC_FLOW` vs. `ADVANCED_FLOW_CONFIRM` to distinguish the two, matching
+upstream's own basic/advanced-flow distinction), and `customSyncUndo`
+("Cancel" — really signs out, reusing
+`CustomSettingsHandler::HandleSignOut`'s exact
+`IdentityManager::GetPrimaryAccountMutator()->ClearPrimaryAccount()`
+call, with `signin_metrics::ProfileSignout::kAbortSignin` — a real enum
+value whose own doc comment reads "signin process was aborted... so
+signout", an exact semantic match rather than a repurposed one).
+
+Since this page is a plain `chrome://` tab and not a native constrained
+dialog, button clicks fire a `customSyncConfirmationClosed` WebUIListener
+and the frontend navigates itself (`chrome://settings` for "Settings",
+`chrome://newtab` otherwise) rather than closing a native window.
+
+### `custom_management` — completed 2026-07-30
+
+Previously a 100% placeholder stub (see prior revisions of this doc) —
+`App.tsx` had no data fetch at all, and `custom_management_ui.cc` only
+set up the `WebUIDataSource`/CSP with no `AddMessageHandler()` call.
+Resolved as the third Tier-1 item from `FEATURE_DEEP_DIVE_ROADMAP.md`'s
+prioritization. Like `custom_sync_confirmation`, this page's `chrome://`
+host was already registered (patched into
+`chrome_web_ui_controller_factory.cc`/`chrome_web_ui_configs.cc` earlier,
+with the real upstream `ManagementUIConfig` compiled out via
+`!BUILDFLAG(ENABLE_CUSTOM_WEBUI)`) — the gap was purely the missing
+handler.
+
+This is the **first fork WebUI handler to read real
+`policy::PolicyService`/`ProfilePolicyConnector`/
+`ChromeBrowserPolicyConnector` state** — not to be confused with the
+fork's own unrelated `custom::SecurityPolicyManager`/
+`UrlAccessController`/`FunctionControlManager` local-pref scaffolding
+under `custom/chrome/browser/security/`, which has nothing to do with
+real GPO/CBCM enterprise policy. New
+`custom/browser/ui/webui/management/custom_management_handler.h/.cc`
+(`custom::CustomManagementHandler`) computes the real managed-status
+signal exactly like upstream (`ProfilePolicyConnector::IsManaged()` +
+`ChromeBrowserPolicyConnector::HasMachineLevelPolicies()`), reuses the
+real `chrome/browser/ui/managed_ui.h` free functions
+(`GetManagementPageSubtitle`/`GetAccountManagerIdentity`/
+`GetDeviceManagerIdentity`) rather than re-deriving the "managed by X"
+string by hand, and observes `policy::PolicyService` for
+`POLICY_DOMAIN_CHROME` so a page left open across a policy refresh
+updates live via a `managedDataChanged` WebUIListener — the one place
+this handler needs live observation, unlike the pure one-shot
+`sync-confirmation` handler.
+
+Six messages, matching upstream's non-promotion subset: `getContextualManagedData`,
+`getExtensions` (policy-force-installed extensions with real permission
+messages via `extensions::PermissionMessageProvider::
+GetManagementUIPermissionIDs`, reusing the same `ExtensionRegistry`
+dependency `CustomExtensionsHandler` already uses),
+`initBrowserReportingInfo`/`initProfileReportingInfo` (real
+`enterprise_reporting::kCloudReportingEnabled`/
+`kCloudProfileReportingEnabled` prefs plus on-prem-reporting-extension
+presence — simplified vs. upstream's per-datatype policy-schema parsing,
+since this fork has no such extension policy schema to parse against),
+`getManagedWebsites` (`ManagedConfigurationAPIFactory::GetForProfile`),
+and `getApplications` (`WebAppProvider`'s `GetAppRunOnOsLoginMode` policy
+check). Explicitly dropped: `getThreatProtectionInfo` (no
+enterprise-connectors infrastructure exists in this fork), the whole GAIA
+promotion-banner flow (`PromotionEligibilityChecker`/
+`ManagementPromotionObserver` — no GAIA upsell relevant to a
+local-profiles fork), device-signals consent messaging, and every
+ChromeOS-only code path. Three new GN deps were needed on
+`custom/browser/ui/webui/BUILD.gn`'s `:ui` target for the first time
+(`//components/policy/core/common`, `//chrome/browser/web_applications`,
+`//components/enterprise`) — `ProfilePolicyConnector`/
+`ChromeBrowserPolicyConnector`/`managed_ui.h`/`ManagedConfigurationAPIFactory`
+turned out to already be reachable transitively via the existing
+`//chrome/browser/profiles`/`//chrome/browser/ui` deps, same situation as
+`IdentityManagerFactory` before them.
+
+### `custom_password_manager` — completed 2026-07-30
+
+Previously a 100% placeholder stub (see prior revisions of this doc) —
+`App.tsx` had no routing/state/IPC and
+`custom_password_manager_ui.h/.cc` registered no `WebUIMessageHandler`.
+Resolved as the first Tier-1 item from `FEATURE_DEEP_DIVE_ROADMAP.md`'s
+prioritization.
+
+Rather than duplicate the working Settings → Passwords logic
+(`custom_settings/components/PasswordsPage.tsx` /
+`custom_settings_handler.cc`) or attach the entire 76-message
+`CustomSettingsHandler` monolith to a passwords-only page, the
+password-handling code (list/remove, CSV export/import with OS reauth,
+view/copy with OS reauth, add/edit, local weak/reused checkup, and
+`BulkLeakCheckService` network leak-check plumbing) was **extracted**
+into a new standalone handler:
+`custom/browser/ui/webui/password_manager/custom_password_manager_handler.h/.cc`
+(`custom::CustomPasswordManagerHandler`). This one handler is attached to
+**both** `custom_settings_ui.cc` (Settings → Passwords keeps working
+unchanged) and `custom_password_manager_ui.cc` (making
+`chrome://password-manager` real for the first time) — mirroring
+upstream Chromium's own `password_manager_ui.cc` pattern of several
+small, focused handlers on one page rather than one god-object.
+
+The one subtlety in the extraction: `CustomSettingsHandler`'s
+`select_folder_dialog_` + `FileSelected()` were shared across four
+unrelated pickers (folder, font file, password export, password
+import) dispatched via boolean flags. The new handler got its own,
+independent `password_file_dialog_` member and `FileSelected()`
+override for just the two password-picker flags, rather than trying to
+share the original dialog member across classes.
+
+`custom/components/custom_password_manager/App.tsx` is now
+`PasswordsPage.tsx`'s logic ported near-verbatim (same `cr.sendWithPromise`/
+`chrome.send` messages, same C++ handler underneath), with the
+Settings-page's self-referential "Open password manager" section dropped
+(this page *is* that destination now) and a `/passwords/<host>` deep-link
+path parsed on mount to pre-fill the filter box, so the Settings page's
+"Open password manager" button now lands on a real, working page. See
+[`password-manager-import-export.md`](../password-manager-import-export.md)
+and
+[`password-manager-view-edit-checkup.md`](../password-manager-view-edit-checkup.md)
+for the underlying feature details (both docs describe functionality
+that now lives on two pages instead of one).
 
 ### `vertical_tabs_ui/page/vertical_tabs_page.tsx` — orphaned frontend
 
