@@ -4,17 +4,65 @@ This is a history of the WanderLust custom Chromium fork (`custom-core`,
 the repo mounted at `src/custom` inside the full Chromium checkout),
 covering both the versioned era (`custom_product_version`, starting at
 1.7.25) and everything that came before it. It's compiled from the
-project's real git history (302 commits, 2025-08-14 → 2026-08-02), not
+project's real git history (304 commits, 2025-08-14 → 2026-08-05), not
 hand-maintained release notes — so entries before 1.7.25 are grouped by
 theme and by Chromium rebase, rather than listed one-per-commit.
 
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.7.35)
+## Versioned releases (1.7.25 → 1.7.37)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
+
+### 1.7.37 — 2026-08-05
+
+A per-window "reuse this window for popups" toggle for kiosk/signage
+deployments, and a "View Formatted Source" app-menu action that
+pretty-prints the current page's live DOM.
+
+- **Reuse this window for popups**: a new checkable app-menu item
+  (`IDC_REUSE_WINDOW_FOR_POPUPS`) toggles a per-`Browser` (not
+  per-profile, not per-tab) runtime flag — the same shape as the existing
+  `split_view_active_` toggle. When on, `Browser::AddNewContents` rewrites
+  any `NEW_POPUP`/`NEW_WINDOW` disposition down to `NEW_FOREGROUND_TAB`
+  in the *same* window, so `window.open()` and `target=_blank` links stop
+  spawning new OS windows — useful for kiosk/signage setups where a
+  second window is unwanted. Mirrors an existing Mac-only fullscreen
+  rewrite already in `AddNewContents` for the same disposition check.
+- **View Formatted Source**: a new app-menu action
+  (`IDC_CUSTOM_VIEW_FORMATTED_SOURCE`) that grabs the active page's
+  *live* rendered `document.documentElement.outerHTML` (via a one-shot
+  `content::DevToolsAgentHost`/CDP `Runtime.evaluate` call — not
+  `view-source:`, which only re-fetches the original response bytes) and
+  opens it, pretty-printed, at a new `chrome://formatted-source/?id=...`
+  WebUI page. Content is handed off through a one-shot, in-memory,
+  UUID-keyed store (`FormattedSourceContentStore`) rather than passed via
+  URL, so arbitrarily large pages don't blow out a query string, and the
+  content is consumed exactly once. **Known gap**: the page is wired to
+  load DevTools' own `formatter_worker` pretty-printer client-side, but
+  that GN target's compiled output turned out to be a non-bundled ES
+  module with unresolved imports into the rest of devtools-frontend
+  rather than a self-contained script — integrating it needs a real
+  bundling step this pass didn't have budget for. Until then, the page
+  gracefully falls back to showing the raw (unformatted) HTML in a
+  monospace block, clearly labeled, instead of failing silently.
+
+### 1.7.36 — 2026-08-04
+
+Sidebar Web Panels, per-site letterboxing, and Container Tabs.
+
+- **Sidebar Web Panels**: pin any site into a persistent, resizable side
+  panel (its own `WebContents`, independent navigation from the main
+  tab), managed alongside the sidebar's existing History/Bookmarks
+  panels.
+- **Letterboxing**: per-site viewport-size pinning to reduce fingerprint
+  entropy from window-size signals, in the same privacy-hardening family
+  as this fork's other anti-fingerprinting work.
+- **Container Tabs**: Firefox-style named identity containers, isolating
+  cookies/storage per container so the same site can hold separate
+  logged-in sessions in different tabs.
 
 ### 1.7.35 — 2026-08-02
 
