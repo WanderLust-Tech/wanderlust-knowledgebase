@@ -4,17 +4,47 @@ This is a history of the WanderLust custom Chromium fork (`custom-core`,
 the repo mounted at `src/custom` inside the full Chromium checkout),
 covering both the versioned era (`custom_product_version`, starting at
 1.7.25) and everything that came before it. It's compiled from the
-project's real git history (301 commits, 2025-08-14 → 2026-08-01), not
+project's real git history (302 commits, 2025-08-14 → 2026-08-02), not
 hand-maintained release notes — so entries before 1.7.25 are grouped by
 theme and by Chromium rebase, rather than listed one-per-commit.
 
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.7.34)
+## Versioned releases (1.7.25 → 1.7.35)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
+
+### 1.7.35 — 2026-08-02
+
+A real system tray icon, automatic settings backup/restore, and the
+update-check stub replaced with a real network call.
+
+- **System tray icon**: an always-present Windows notification-area icon
+  (`SystemTrayManager`, new `chrome/browser/system_tray` target) shows an
+  update-available badge (driven by `UpdateManager`), download-completion
+  balloons, and a right-click quick-actions menu. The
+  browser/window-touching parts of the action delegate live in
+  `browser/ui/system_tray_action_delegate` rather than the `system_tray`
+  target itself, to avoid a dependency cycle back through
+  `chrome/browser/ui`.
+- **Settings backup/restore**: `SettingsBackupService` pushes this fork's
+  curated pref set to the signed-in cloud provider automatically (2s
+  debounced, alongside `CloudSyncManager`'s existing bookmark sync) —
+  restore is deliberately never automatic, only the explicit "Restore"
+  button in Settings applies a snapshot. A local export/import path is
+  also exposed for users without cloud sync configured.
+- **`UpdateManager`'s check is real now**: replaced the `rand() % 10` stub
+  with an actual `network::SimpleURLLoader` POST to wanderlust-api's real
+  `/v4/update` Omaha endpoint, and fixed version comparison to read
+  `CUSTOM_PRODUCT_VERSION` (this fork's own version) instead of the
+  now-pinned-to-upstream `CHROME_VERSION_STRING` — comparing fork versions
+  against fork versions. Also fixed `Shutdown()` actually stopping
+  `update_check_timer_`, which previously kept ticking past teardown.
+- Fixed the same shutdown-ordering bug (already seen in `RSSImpl`) in
+  `TabService`: its auto-archive timer could fire after `profile_` was
+  nulled out.
 
 ### 1.7.34 — 2026-08-01
 

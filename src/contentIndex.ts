@@ -832,6 +832,7 @@ const internalContent: ContentNode[] = [
             { title: "Tab Utilities", path: "features/custom-browser/tab-utilities" },
             { title: "Tab Shapes", path: "features/custom-browser/tab-shapes-feature" },
             { title: "Vertical Tabs", path: "features/custom-browser/vertical-tabs" },
+            { title: "Container Tabs", path: "features/custom-browser/container-tabs" },
             { title: "Custom Download Shelf", path: "features/custom-browser/custom-download-shelf" },
             { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
             { title: "Split View", path: "architecture/split-view" },
@@ -922,6 +923,7 @@ const internalContent: ContentNode[] = [
             { title: "Custom Browser Build System", path: "development/custom-browser-build-system" },
             { title: "Migration from Fork", path: "development/migration-from-fork" },
             { title: "Changelog", path: "features/custom-browser/changelog" },
+            { title: "Legacy Browser Gap Closures", path: "features/custom-browser/legacy-browser-gap-closures" },
             { title: "Mobile Parity Strategy", path: "features/custom-browser/mobile-parity-strategy" },
             { title: "pathfinder-ui: Unused Video/Social Components", path: "features/custom-browser/pathfinder-ui/dead-components" },
         ]

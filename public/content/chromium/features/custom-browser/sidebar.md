@@ -1,7 +1,8 @@
 # Sidebar
 
 Gated by `BUILDFLAG(ENABLE_SIDEBAR)`. A right-edge panel that hosts a stack
-of utility surfaces — bookmarks, history, RSS feeds — each backed by its
+of utility surfaces — bookmarks, history, RSS feeds, and (since Web Panels,
+below) user-pinned arbitrary sites — each built-in surface backed by its
 own route on the [`chrome://sidebar` WebUI](custom-webui/sidebar.md). This
 document covers the C++ / Views side: the keyed service, the per-window
 container, the dock/undock subsystem, and the collapsed/expanded state
@@ -31,10 +32,14 @@ SidebarService (per-profile keyed service, no Views, no Browser)
   │      Lives inside the browser window, anchored to the left or right
   │      edge of the content area. Hosts:
   │        ├── SidebarTopPane (the pane-button strip — bookmarks /
-  │        │     history / rss / notes / ntp-settings /
-  │        │     expand-collapse / settings)
+  │        │     history / rss / notes / ntp-settings / agent /
+  │        │     recently-closed / expand-collapse / settings, plus a
+  │        │     dynamically-sized row of Web Panels buttons, one per
+  │        │     user-pinned site — see "Web Panels" below)
   │        ├── views::WebView lazily created by ResetWebViewIfNeeded() —
-  │        │     loads chrome://sidebar/<pane> on first pane click
+  │        │     loads chrome://sidebar/<pane> on first pane click, or
+  │        │     (for a Web Panel) has an externally-owned, kept-alive
+  │        │     WebContents swapped in via WebView::SetWebContents()
   │        └── views::ResizeArea on the inner edge for drag-resize
   │      Visibility flows from SidebarService::IsUndocked() — false-> visible,
   │      true -> SetVisible(false) and BrowserViewLayout skips us.
@@ -64,10 +69,12 @@ nullptr` in its ctor. Code paths in the container that need a `Browser*`
 | [`SidebarService`](../src/custom/browser/sidebar/sidebar_service.cc) | Per-profile `KeyedService`. Pref-backed state for everything sidebar-shaped: enabled flag, position, current pane type, width, dock state, collapsed state, click dispositions. Also observes `HistoryService` for the history pane. No observer pattern — callers wire their own `PrefChangeRegistrar` to whichever prefs they care about. |
 | [`SidebarServiceFactory`](../src/custom/browser/sidebar/sidebar_service_factory.cc) | Standard `BrowserContextKeyedServiceFactory`. `GetForProfile(profile)` returns the (lazy) singleton. |
 | [`SidebarContainerView`](../src/custom/browser/ui/views/frame/sidebar_container_view.cc) | The per-window (or per-undocked-widget) view. Lays out the pane strip + WebView + resize area. Owns the `views::WebView` lazily (created on first pane button press to avoid spinning up a render process for users who never click the sidebar). Implements `views::ContextMenuController` + `ui::SimpleMenuModel::Delegate` for the right-click menu. Also provides `ShowPanel(Type)` to programmatically open a panel (used by `RemoteNtpTabHelper` to open the NTP settings panel from the NTP page), and the static `FindForBrowserView(BrowserView*)` registry that maps a `BrowserView` to its docked `SidebarContainerView`. |
-| [`SidebarTopPane`](../src/custom/browser/ui/views/frame/sidebar_top_pane.cc) | The pane-button strip — bookmarks / history / rss / notes / ntp-settings / expand-collapse / settings. Delegates content-pane clicks to `SidebarContainerView` via `SidebarTopPaneDelegate::TopPaneButtonPressed(Type)`. |
+| [`SidebarTopPane`](../src/custom/browser/ui/views/frame/sidebar_top_pane.cc) | The pane-button strip — bookmarks / history / rss / notes / ntp-settings / agent / recently-closed / expand-collapse / settings — plus a dynamic row of Web Panels buttons rebuilt from `SidebarPinnedPanelsService::GetPanels()`. Delegates content-pane clicks to `SidebarContainerView` via `SidebarTopPaneDelegate::TopPaneButtonPressed(Type)` (built-ins) or `TopPanePinnedPanelPressed(panel_id)` (Web Panels). |
 | [`SidebarTopPaneButton`](../src/custom/browser/ui/views/frame/sidebar_top_pane.cc) | Themed `views::ImageButton` subclass with a selected/hover state. |
 | [`UndockedSidebarWidget`](../src/custom/browser/ui/views/sidebar/undocked_sidebar_widget.cc) | Per-profile floating Widget. PanelView-cribbed init params (`TYPE_WINDOW`, `remove_standard_frame=true`, `z_order=kFloatingWindow`, `NATIVE_WIDGET_OWNS_WIDGET` so `Widget::Close` async-destroys the Widget+view tree and our dtor runs to release the keep-alives — `CLIENT_OWNS_WIDGET` would require `unique_ptr<Widget>` plumbing we haven't wired); Windows-specific `WS_EX_TOOLWINDOW` so it stays out of the taskbar / Alt-Tab. Hosts a `SidebarContainerView(nullptr, profile)`. Owns the right-edge bounds math; observes `kSidebarIsCollapsed` (profile pref) to resize and `kBackgroundModeEnabled` (local_state pref) to (de)activate the keep-alives. |
-| [`SidebarWebContentsDelegate`](../src/custom/browser/sidebar/sidebar_web_contents_delegate.cc) | `WebContentsDelegate` for the sidebar's `WebContents`. Handles `OpenURLFromTab` (forwards to active browser as a new tab), keyboard event routing, and zoom. |
+| [`SidebarWebContentsDelegate`](../src/custom/browser/sidebar/sidebar_web_contents_delegate.cc) | Shared `WebContentsDelegate` for every `WebContents` the sidebar hosts — the built-in `chrome://sidebar/*` one and every pooled Web Panel `WebContents` alike. Handles `OpenURLFromTab` (same-tab nav in place; anything else opens a real browser tab), `AddNewContents` (redirects `window.open()`-created contents into a real browser tab via `chrome::AddWebContents`, since this surface has no tab strip of its own), keyboard event routing, and zoom. |
+| [`SidebarPinnedPanelsService`](../src/custom/browser/sidebar/sidebar_pinned_panels_service.cc) | Per-profile `KeyedService` backing Web Panels — CRUD over a list of `PinnedSidebarPanel {id, url, title, favicon_url}`, persisted as a JSON-string pref (`sidebar.pinned_panels`). Modeled on `WorkspaceService`'s shape rather than `SidebarService`'s dead, unsalvageable `SidebarItem`/`web_apps_list_` code (see "Web Panels" below for why). Deliberately kept separate from `SidebarService::Type`, which stays reserved for the compile-time-fixed built-ins. |
+| [`SidebarPinnedPanelsServiceFactory`](../src/custom/browser/sidebar/sidebar_pinned_panels_service_factory.cc) | Standard `BrowserContextKeyedServiceFactory`. OTR profiles share the parent profile's pins. |
 
 ## State model — the four prefs
 
@@ -114,7 +121,7 @@ Transitions:
 
 - **Collapse / expand** is triggered by:
   - Clicking the expand/collapse button in `SidebarTopPane` (any state)
-  - Clicking any pane button (bookmarks/history/rss) while collapsed — auto-expands and selects that pane
+  - Clicking any pane button (bookmarks/history/rss/etc., or a Web Panel) while collapsed — auto-expands and selects that pane
   - Right-click → "Expand" / "Collapse" in the context menu
 - **Dock / undock** is triggered by:
   - Right-click → "Undock Sidebar" / "Dock Sidebar" in the context menu
@@ -630,10 +637,97 @@ Edit the live `.cc`/`.h` files, not the `.patch` files.
 
 ## WebUI
 
-The pane content — bookmarks list, history list, RSS feed reader, page notes, and NTP settings — is a
-single-bundle React SPA served at `chrome://sidebar`. Routing, IPC,
-backend wiring, and the C++ `SidebarUI` / `SidebarDOMHandler` are
-documented at [`docs/custom-webui/sidebar.md`](custom-webui/sidebar.md).
+The built-in pane content — bookmarks list, history list, RSS feed reader,
+page notes, and NTP settings — is a single-bundle React SPA served at
+`chrome://sidebar`. Routing, IPC, backend wiring, and the C++ `SidebarUI` /
+`SidebarDOMHandler` are documented at
+[`docs/custom-webui/sidebar.md`](custom-webui/sidebar.md). **Web Panels are
+not part of this WebUI bundle** — a pinned site is an arbitrary third-party
+URL loaded directly into its own `WebContents`, not a React route; see
+below.
+
+## Web Panels
+
+Lets a user pin an arbitrary URL as a persistent, live mini-browser panel
+in the sidebar (Vivaldi-style), alongside the built-in panels above.
+
+**Why a separate service instead of extending `SidebarService`.**
+`SidebarService` already carries dead, commented-out code for a similar-
+looking idea — `SidebarItem`, `web_apps_list_`, `LoadWebApps()` — inherited
+from an upstream Kinza-era sidebar-items design. It depends on a
+`SidebarItem` type and an extensions buildflag that were never carried
+into this fork (won't compile if un-commented) and solves a different
+problem besides (vendor-forced default web-app shortcuts read from a
+bundled JSON resource, not user-authored pins). It was left in place as
+historical/dead code rather than deleted, and **Web Panels does not build
+on it** — `SidebarPinnedPanelsService` is a new, independent `KeyedService`
+modeled on `WorkspaceService`'s CRUD/persistence shape instead.
+
+**Data model.** `PinnedSidebarPanel {id, url, title, favicon_url}`
+(`browser/sidebar/pinned_sidebar_panel_types.h`), JSON-serialized as a list
+into the `sidebar.pinned_panels` string pref (`RegisterStringPref`, not
+`RegisterListPref` — matches the `kCustomDomainShields`/
+`kCustomProxyRoutingRules` convention). A `PrefChangeRegistrar` inside
+`SidebarPinnedPanelsService` reloads and re-notifies on any external write
+to that pref (not just the service's own `SaveToPrefs()`) — needed because
+the Settings UI manages the list through dedicated `chrome.send` handlers
+in `CustomSettingsHandler` (`pinnedPanelsGetAll`/`Add`/`Remove`, mirroring
+the `workspaces*` handlers) rather than a raw pref round-trip, but the
+registrar keeps the service correct regardless of who ends up writing the
+pref. A separate string pref, `sidebar.last_pinned_panel_id`, tracks which
+pinned panel (if any) is currently selected — kept out of
+`sidebar.type`/`SidebarService::Type`, which stays reserved for built-ins.
+
+**Top-pane buttons.** `SidebarTopPane` keeps its fixed, compile-time
+`ButtonKind` enum and named button members untouched for the built-ins,
+and adds a separate `std::vector<SidebarTopPaneButton*>` for Web Panels,
+rebuilt via `SetPinnedPanels()` whenever `SidebarPinnedPanelsService`'s
+observer fires. Every pinned button currently renders a generic globe
+vector icon (`vector_icons::kGlobeIcon`) — **per-site favicons are a known
+follow-up**, not yet built (would need `favicon::FaviconService` plumbing,
+not currently used anywhere under `browser/sidebar/`).
+
+**Live rendering — reuses the existing browsing surface, doesn't add one.**
+`SidebarContainerView` already owns a real `views::WebView`/
+`content::WebContents` for the built-in `chrome://sidebar/*` pages, and its
+`LoadURL()` is an unrestricted `GURL` load, not scheme-limited to
+`chrome://`. Web Panels reuses this directly rather than introducing a new
+WebUI page or a raw-WebContents bolt-on:
+
+- **Keep-alive pool.** Each pinned panel's `WebContents` is created once
+  and kept alive in `SidebarContainerView`'s
+  `std::map<std::string /*panel_id*/, std::unique_ptr<content::WebContents>>
+  pinned_panel_web_contents_`, then attached/detached from the single
+  visible `WebView` via `WebView::SetWebContents()` on every switch — so
+  e.g. a pinned Gmail tab doesn't lose scroll position/state every time you
+  glance at Bookmarks. This was an explicit design choice over the cheaper
+  "reload every switch" alternative built-in panels use.
+- **Built-ins are unaffected.** Switching to a built-in panel detaches
+  whatever pinned `WebContents` was attached (`SetWebContents(nullptr)`)
+  before `LoadURL()`, so a built-in panel click can never accidentally
+  re-navigate a pinned panel's pooled `WebContents`. Built-ins keep their
+  existing reload-on-every-switch behavior unchanged.
+- **Link/`window.open()` handling.** `SidebarWebContentsDelegate` (shared
+  across the built-in WebContents and every pooled Web Panel one) overrides
+  `OpenURLFromTab` and `AddNewContents` — both previously unimplemented,
+  which was fine for internal WebUI panels but would have silently
+  swallowed real navigation from a live third-party site. Same-tab
+  navigation happens in place; anything requesting a new tab/window opens
+  a real foreground browser tab via `chrome::AddWebContents` instead of
+  vanishing.
+
+**Settings UI.** A "Web Panels" section in `custom_settings/components/
+SidebarPage.tsx` — pin by URL + optional title, list, remove. **Known v1
+scope trim:** no one-click "pin the current tab" toolbar/context-menu
+action yet (would need a new `IDC_` command + menu wiring); pinning today
+is manual URL entry via Settings.
+
+**Persistence.** Pins and their order survive restart via the
+`sidebar.pinned_panels` pref. The currently-*shown* panel does not
+specially restore a pinned panel on browser restart — `SidebarContainerView`
+still defaults to the last built-in `sidebar.type` on first show, same as
+before this feature; `sidebar.last_pinned_panel_id` is tracked but not yet
+consulted at startup.
 
 ## NTP Settings Panel
 

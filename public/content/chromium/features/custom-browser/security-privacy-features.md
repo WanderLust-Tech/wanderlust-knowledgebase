@@ -495,6 +495,91 @@ The three Blink files are vanilla Chromium and have corresponding patch files in
 
 ---
 
+## Letterboxing (viewport quantization)
+
+> Added after the six numbered features above (canvas fingerprint noise and
+> screen-metrics normalization were too, but neither has its own numbered
+> section here — all three live together in `PrivacyPage.tsx`'s "Fingerprint
+> resistance" section rather than each getting a fully numbered slot in this
+> doc).
+
+Pads the actual *rendered* web-content viewport into fixed-size buckets
+(Tor/Mullvad Browser-style), so `window.innerWidth`/`innerHeight` and CSS
+media queries report a common bucket value shared by many users instead of
+the real one. This is distinct from `privacy_guard.screen_metrics_normalize`
+(feature 6's sibling pref, registered alongside it), which only overrides
+the JS-visible `screen.width`/`screen.height` object values — it never
+touches the real rendered viewport size. Toggling both together is
+recommended: otherwise a site can cross-check `screen.width` against
+`window.innerWidth` as a tell that only one is faked.
+
+### Prefs
+
+| Pref key | Type | Default | Purpose |
+|---|---|---|---|
+| `privacy_guard.letterboxing_enabled` | bool | `false` | Master toggle |
+| `privacy_guard.letterboxing_bucket_width` | int | `200` | Bucket size for the quantized viewport width, in px |
+| `privacy_guard.letterboxing_bucket_height` | int | `100` | Bucket size for the quantized viewport height, in px |
+
+### How it works
+
+Unlike font/canvas/screen-metrics protection (all Blink-`Settings`-level),
+letterboxing is a **Views-layout** feature — no `RenderWidgetHostView`-level
+patch is needed or would even help, since nothing in vanilla Chromium
+exposes a "cap viewport at a bucket, independent of container" primitive
+(Window Controls Overlay and Picture-in-Picture are both structurally
+different and don't apply).
+
+It's implemented in `MultiContentsView::CalculateProposedLayout()` — the
+vanilla Chromium code that decides each tab pane's final rect *after*
+DevTools (handled one layer up, in `ContentsLayoutManager`) and split-view
+insets have already taken their share. `ApplyLetterboxing()` reads the
+three prefs above and, if enabled, quantizes a pane's rect down to the
+nearest bucket multiple, centers it, and returns the smaller rect — applied
+independently to both panes in split view, so the quantized value stays
+correct rather than becoming `total_width − other_pane_width`. The margin
+left over renders through `MultiContentsView`'s own solid background
+(`kColorToolbar`), invisible whenever the pref is off since the
+`ContentsContainerView` children then cover 100% of the available rect.
+
+A `PrefChangeRegistrar` on the three prefs calls `InvalidateLayout()` so
+toggling the setting (or the bucket size) takes effect immediately, without
+needing a window resize to trigger a fresh layout pass.
+
+**Known v1 limitations:**
+- Does not apply in fullscreen (matches existing sidebar/vertical-tab-bar
+  precedent, which also skip themselves in fullscreen).
+- No visual reveal animation for the letterbox bars appearing/disappearing.
+
+### File map
+
+| File | Purpose |
+|---|---|
+| [`browser/prefs/custom_prefs.cc`](../src/custom/browser/prefs/custom_prefs.cc) | Registers all three prefs under `ENABLE_PRIVACY_GUARD`, alongside `kScreenMetricsNormalize` |
+| [`common/custom_pref_names.h`](../src/custom/common/custom_pref_names.h) | Pref key constants |
+| `chrome/browser/ui/views/frame/multi_contents_view.h` / `.cc` (patched) | `ApplyLetterboxing()`, `OnLetterboxingPrefChanged()`, the `PrefChangeRegistrar` member, and the call sites in `CalculateProposedLayout()` |
+| [`components/custom_settings/components/PrivacyPage.tsx`](../src/custom/components/custom_settings/components/PrivacyPage.tsx) | "Letterbox the page viewport" toggle, in the "Fingerprint resistance" section |
+
+The two `multi_contents_view.*` edits are vanilla Chromium files with
+corresponding patches in `src/custom/patches/`:
+
+- `chrome-browser-ui-views-frame-multi_contents_view.h.patch`
+- `chrome-browser-ui-views-frame-multi_contents_view.cc.patch`
+
+### Testing
+
+1. Enable `privacy_guard.letterboxing_enabled`, open DevTools console.
+2. Resize the window through several bucket boundaries; confirm
+   `window.innerWidth`/`innerHeight` snap to multiples of the configured
+   bucket size, with visible solid-color bars filling the remainder.
+3. Open DevTools **docked** and confirm the page viewport is still a clean
+   bucket multiple (not `total_width − devtools_width`).
+4. Enable split view and confirm both panes quantize independently.
+5. Also enable `privacy_guard.screen_metrics_normalize` and confirm
+   `screen.width` matches `window.innerWidth`.
+
+---
+
 ## Shared infrastructure
 
 All six features share the same pref registration path.

@@ -5,6 +5,12 @@ Gated by `BUILDFLAG(ENABLE_SIDEBAR)`. Replaces the legacy
 the side panel used to load (the Kinza-era bundled extension that often
 showed as `ERR_BLOCKED_BY_CLIENT` when the extension wasn't loaded).
 
+**Web Panels are not part of this bundle.** A pinned site
+(`SidebarPinnedPanelsService`) is an arbitrary third-party URL loaded
+directly into its own `WebContents`, not a `chrome://sidebar/*` route or a
+React page — see the "Web Panels" section of
+[`../sidebar.md`](../sidebar.md) for that feature's C++-side architecture.
+
 ## Shape
 
 | Concern | Implementation |
@@ -28,7 +34,7 @@ showed as `ERR_BLOCKED_BY_CLIENT` when the extension wasn't loaded).
 | `hooks/useSidebarRss.ts` | `useFeedList` + `useFeedItems` + `getFaviconUrl` — same IPC names as chrome://reader's hooks so the shared `RSSImpl` backend serves both |
 | `hooks/useBookmarks.ts` | `useBookmarks()` — fetches the tree once and refetches on `bookmarksChanged` |
 | `hooks/useHistory.ts` | `useHistory(query, maxCount)` — debounced search input is the caller's job; refetches on `historyChanged`. Also exports the imperative `removeHistoryEntry(url)` |
-| `hooks/useOpenUrl.ts` | `openUrl(url)` — single entry point for "navigate the active tab". Sidebar links route through this rather than `<a target="_blank">` because `SidebarWebContentsDelegate` doesn't override `OpenURLFromTab` |
+| `hooks/useOpenUrl.ts` | `openUrl(url)` — single entry point for "navigate the active tab" from a WebUI page's own React code (`chrome.send('openUrl', [url])`). Historically also compensated for `SidebarWebContentsDelegate` not overriding `OpenURLFromTab`/`AddNewContents` — **as of the Web Panels feature, that delegate now handles both directly** (same-tab nav in place, new-tab/`window.open()` requests open a real browser tab via `chrome::AddWebContents`), so a plain `<a target="_blank">` now works too. `useOpenUrl` is unchanged/still used by the WebUI pages for consistency, but is no longer the only way link navigation works inside the sidebar's `WebContents`. |
 | `hooks/useRecentlyClosed.ts` | `useOpenTabs()` / `useRecentlyClosed()` — fetch once, refetch on `openTabsChanged` / `recentlyClosedChanged`. Also exports the imperative `switchToOpenTab(tabId, windowId)` and `restoreClosedItem(sessionId)` |
 | `pages/RssPage.tsx` | Compact RSS view: `<select>` feed picker + scrolling item list with favicon, relative time, 2-line summary clamp |
 | `pages/BookmarksPage.tsx` | Recursive tree: collapsible folders + clickable bookmark rows with favicons. Top-level folders default open; nested folders default closed. Search filter prunes the tree client-side (small N, no backend round-trip) |
