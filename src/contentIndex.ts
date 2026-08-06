@@ -980,12 +980,13 @@ const internalContent: ContentNode[] = [
     { title: "Browser Versioning Scheme", path: "features/custom-browser/browser-versioning-scheme" },
     {
         title: "Version Updates",
-        description: "Per-milestone rebase and migration notes",
+        description: "Per-milestone rebase/migration notes and the browser's own update client",
         children: [
             { title: "Chromium 134 → 135", path: "features/custom-browser/version-updates/chromium-134-to-135-migration" },
             { title: "Chromium 135 → 136", path: "features/custom-browser/version-updates/chromium-135-to-136-migration" },
             { title: "Chromium 136 → 137", path: "features/custom-browser/version-updates/chromium-136-to-137-migration" },
             { title: "Chromium 139 → 140", path: "features/custom-browser/version-updates/chromium-139-to-140-migration" },
+            { title: "Omaha Update Client", path: "features/custom-browser/version-updates/omaha-update-client" },
         ]
     },
 ];
