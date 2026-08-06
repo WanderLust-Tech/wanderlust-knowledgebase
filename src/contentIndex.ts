@@ -987,6 +987,7 @@ const internalContent: ContentNode[] = [
             { title: "Chromium 136 → 137", path: "features/custom-browser/version-updates/chromium-136-to-137-migration" },
             { title: "Chromium 139 → 140", path: "features/custom-browser/version-updates/chromium-139-to-140-migration" },
             { title: "Omaha Update Client", path: "features/custom-browser/version-updates/omaha-update-client" },
+            { title: "Omaha Update Client Changelog", path: "features/custom-browser/version-updates/omaha-client-changelog" },
         ]
     },
 ];
