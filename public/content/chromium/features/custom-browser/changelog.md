@@ -4,17 +4,52 @@ This is a history of the WanderLust custom Chromium fork (`custom-core`,
 the repo mounted at `src/custom` inside the full Chromium checkout),
 covering both the versioned era (`custom_product_version`, starting at
 1.7.25) and everything that came before it. It's compiled from the
-project's real git history (304 commits, 2025-08-14 → 2026-08-05), not
+project's real git history (308 commits, 2025-08-14 → 2026-08-07), not
 hand-maintained release notes — so entries before 1.7.25 are grouped by
 theme and by Chromium rebase, rather than listed one-per-commit.
 
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.7.37)
+## Versioned releases (1.7.25 → 1.7.38)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
+1.7.38 is the one exception so far: three small, related pieces of update-
+system work landed as separate commits without a version bump each, so
+this entry bundles all three under one release instead of three.
+
+### 1.7.38 — 2026-08-07
+
+Fixes a stale server URL, adds stable per-install identity to the
+in-browser update checker, and pulls the stub installer/updater into this
+repo's own build system.
+
+- **Fixed `custom_omaha_public_url`**: was pointing at an unused
+  `omaha.wander-lust.tech` placeholder (never actually stood up); corrected
+  to `https://api.wander-lust.tech`, the real `wanderlust-api` server this
+  fork's `UpdateManager` and `custom-omaha-client` both talk to. Also fixed
+  `custom_default_sites_url`, which was still pointing at a leftover
+  `browser.viasat.com` URL from this fork's upstream base rather than
+  `ntp.wander-lust.tech`.
+- **Stable per-install ID for update rollout/A-B bucketing**:
+  `UpdateManager`'s update-check request now includes an `installId` — a
+  UUIDv4 generated once on first run and persisted in Local State (not
+  per-profile, since it must survive profile deletion and identify the
+  installation rather than any one profile), reloaded on every subsequent
+  check. This is what lets `wanderlust-api`'s new `IReleaseRolloutSelector`
+  deterministically bucket a given install into the same staged-rollout/
+  A-B variant across repeated checks, instead of every check looking like
+  a new anonymous client. See `custom-omaha-client`'s own changelog for the
+  matching client-side work and the server-side rollout engine itself.
+- **`custom-omaha-client` is now a DEPS dependency** (`third_party/omaha_client`,
+  opt-in via `npm run build_omaha_client` rather than an automatic sync
+  hook, since it needs a real MSVC dev environment). A new
+  `build/commands/lib/buildOmahaClient.py` reads this fork's own
+  `custom_omaha_public_url`/`custom_windows_app_guid`/`custom_browser_name`
+  and passes them straight into the stub installer's build, so its server
+  URL/app GUID/app name can never again drift out of sync with the
+  browser's the way `custom_omaha_public_url` just had to be fixed above.
 
 ### 1.7.37 — 2026-08-05
 
