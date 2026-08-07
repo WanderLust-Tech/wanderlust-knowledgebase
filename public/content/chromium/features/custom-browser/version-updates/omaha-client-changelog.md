@@ -19,6 +19,44 @@ to hang entries off of.
 
 ## Versioned releases
 
+### 1.1.0.0 — 2026-08-07
+
+Adds staged-rollout / A-B testing support, and a stable per-install
+identity to make it work.
+
+- **Persisted install ID** (`src/client_identity.h/.cc`): a stable GUID,
+  generated once on first run and cached in a small state file
+  (`%LOCALAPPDATA%\<app_name>\update_client_state.json` on Windows,
+  `~/.config/<app_name>/update_client_state.json` elsewhere) — unlike the
+  Omaha `sessionId` (regenerated every check), this stays the same across
+  repeated update checks. Sent as `installId` in the update-check request
+  (`update_request.h/.cc`). UUID generation was factored out of
+  `OmahaClient::MakeSessionId()` into a shared `src/uuid.h/.cc` so both
+  call sites use the same code.
+- **Explicit fresh-install signal**: `--version`'s default changed from
+  `"1.0.0.0"` to `"0.0.0.0"` (matching `Version`'s own default-constructed
+  value) — `wanderlust-api` now treats that sentinel as "brand-new install,
+  nothing to compare against" and always returns the selected release
+  rather than running a version comparison. `win_service.cc`'s matching
+  hardcoded default got the same fix.
+- **Server-side rollout/A-B engine** (`wanderlust-api`): `BrowserReleases`
+  gained a `RolloutWeight` (0-100) and `ExperimentName` per release, so
+  multiple active releases can target the same appId/platform/arch
+  simultaneously. A new `ReleaseRolloutSelector` deterministically buckets
+  each install (via `installId`, not `sessionId`) into exactly one
+  candidate using a weighted waterfall — same install always gets the same
+  variant. A single release at the default weight of 100 covers every
+  bucket, so this is fully backward compatible. See
+  `wanderlust-api/UPDATE_PROTOCOL.md` for the full algorithm.
+- **`custom-browser`'s `UpdateManager` gets the same treatment**: since it
+  has its own separate, in-process Omaha implementation (it does not call
+  this CLI tool — see [Omaha Update Client](omaha-update-client)), it also
+  needed a persisted install ID to participate in the same rollout/A-B
+  rules for existing installs, not just fresh ones. Added a new Local
+  State pref (`custom.auto_update.install_id`, generated via
+  `base::Uuid::GenerateRandomV4()` on first read) and threaded it into the
+  same `installId` request field.
+
 ### 1.0.0.0 — 2026-08-06
 
 Introduces this changelog and the tool's first formal version.
