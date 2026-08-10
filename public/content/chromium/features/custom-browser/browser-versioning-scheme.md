@@ -350,7 +350,10 @@ bundled into that release (the rebase itself, plus three runtime crashes
 and a feature removal that manual QA testing turned up immediately
 after). `custom_product_version` then bumped to `1.8.1` on 2026-08-10 —
 the first `BUILD` increment since the 141 rebase — for the home-page
-quick-pick presets feature.
+quick-pick presets feature, then to `1.8.2` the same day for the favicon
+dominant-color tab tinting feature — both prompted by the same
+feature-comparison review, landed as two separate commits/bumps since
+each is independently revertable.
 
 **`check_versions_match()` rewritten** (`custom/build/commands/lib/
 build.py`, 2026-07-28): previously compared `chrome/VERSION`'s

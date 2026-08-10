@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.1)
+## Versioned releases (1.7.25 → 1.8.2)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,23 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.2 — 2026-08-10
+
+Adds real favicon-based color tinting to the vertical tab bar, the second
+of two features prompted by the same feature-comparison review as 1.8.1.
+
+- **Favicon dominant-color tab tinting**: the vertical tab bar's 3px color
+  stripe now reflects each tab's actual favicon color, extracted via
+  Chromium's existing `color_utils::CalculateKMeanColorOfBitmap` utility
+  (the same one used internally for favicon/theme contrast decisions
+  elsewhere in Chromium). Slots in as a middle priority tier: a manual
+  tab-group color still wins if set, the real favicon color is used when
+  one's been extracted, and the old hostname-heuristic category color
+  (YouTube → red, GitHub → green, etc.) remains the fallback for tabs
+  with no favicon yet. Per-tab results are cached and only recomputed
+  when the favicon bitmap actually changes, not on every loading-spinner
+  flicker.
 
 ### 1.8.1 — 2026-08-10
 

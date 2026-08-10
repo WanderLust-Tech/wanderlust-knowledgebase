@@ -184,6 +184,9 @@
 - [ ] Click the pin button (visible once the bar is expanded) — **Expected:** the bar locks open at a fixed width and stops responding to hover; a resize handle appears on its inner edge.
 - [ ] Drag the resize handle while pinned — **Expected:** bar width changes live and persists after restart.
 - [ ] Open a new tab (`Ctrl+T`) and navigate somewhere — **Expected:** a new button appears in the vertical strip live, with favicon and title updating as the page loads.
+- [ ] Open tabs to a few sites with distinctly-colored favicons (e.g. a red-logo site, a blue-logo site) and expand the bar — **Expected:** each tab button shows a thin color stripe on its bar-position edge roughly matching that site's favicon color, once the favicon finishes loading.
+- [ ] Open a tab to a site with no favicon (or before one loads) — **Expected:** stripe falls back to the hostname-heuristic category color (e.g. YouTube/Netflix → red, GitHub/Stack Overflow → green) instead of showing nothing or a stale color from a previous tab.
+- [ ] Right-click a tab with a visible favicon-color stripe → assign it to a manual tab group with a group color — **Expected:** the stripe switches to the group's chosen color, overriding the favicon-derived color.
 - [ ] Open a link with ctrl-click / middle-click from an existing tab, then right-click empty space in the bar → note a parent/child relationship — **Expected:** with Tree mode enabled (settings), the new tab appears indented as a child with a disclosure triangle on the parent.
 - [ ] Right-click empty space below the tab buttons → "Sort tabs by" → Title — **Expected:** unpinned, ungrouped tabs reorder alphabetically; pinned/grouped tabs stay put.
 - [ ] Right-click empty space → "Save tabs as new session", then close those tabs, then right-click → "Restore session ▸" and pick it — **Expected:** all previously-open tabs reopen as background tabs.
