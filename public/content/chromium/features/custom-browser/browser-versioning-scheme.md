@@ -338,7 +338,19 @@ then to `1.7.28` for the password-manager commit pair, then to `1.7.29`
 for the sync-confirmation commit, then to `1.7.30` for the management
 commit, then to `1.7.31` for the roadmap cleanup batch, then to `1.7.32`
 for the Tier-2 batch (DoH/ECH cleanup, OAuth guard, What's New feed,
-import wizard).
+import wizard). (Versions `1.7.33` through `1.7.38` also landed following
+this same one-bump-per-commit rule — see `changelog.md` for the
+authoritative per-release detail; not reconstructed hunk-by-hunk here.)
+
+For the 2026-08-09 rebase onto Chromium `141.0.7390.125`, `MINOR`
+incremented from `7` to `8` (the 8th distinct Chromium base-version
+upgrade this fork has gone through) and `BUILD` reset to `0` per the rule
+above, giving `1.8.0` — see `changelog.md`'s 1.8.0 entry for everything
+bundled into that release (the rebase itself, plus three runtime crashes
+and a feature removal that manual QA testing turned up immediately
+after). `custom_product_version` then bumped to `1.8.1` on 2026-08-10 —
+the first `BUILD` increment since the 141 rebase — for the home-page
+quick-pick presets feature.
 
 **`check_versions_match()` rewritten** (`custom/build/commands/lib/
 build.py`, 2026-07-28): previously compared `chrome/VERSION`'s

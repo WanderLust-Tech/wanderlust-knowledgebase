@@ -979,6 +979,13 @@ const internalContent: ContentNode[] = [
     { title: "Opera Feature Ports", path: "features/custom-browser/opera-feature-ports" },
     { title: "Browser Versioning Scheme", path: "features/custom-browser/browser-versioning-scheme" },
     {
+        title: "QA & Testing",
+        description: "Manual test checklists for verifying feature behavior across the fork",
+        children: [
+            { title: "Full Feature QA Checklist", path: "features/custom-browser/qa-testing-checklist" },
+        ]
+    },
+    {
         title: "Version Updates",
         description: "Per-milestone rebase/migration notes and the browser's own update client",
         children: [
@@ -986,6 +993,7 @@ const internalContent: ContentNode[] = [
             { title: "Chromium 135 → 136", path: "features/custom-browser/version-updates/chromium-135-to-136-migration" },
             { title: "Chromium 136 → 137", path: "features/custom-browser/version-updates/chromium-136-to-137-migration" },
             { title: "Chromium 139 → 140", path: "features/custom-browser/version-updates/chromium-139-to-140-migration" },
+            { title: "Chromium 140 → 141", path: "features/custom-browser/version-updates/chromium-140-to-141-migration" },
             { title: "Omaha Update Client", path: "features/custom-browser/version-updates/omaha-update-client" },
             { title: "Omaha Update Client Changelog", path: "features/custom-browser/version-updates/omaha-client-changelog" },
         ]

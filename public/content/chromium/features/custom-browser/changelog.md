@@ -11,13 +11,75 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.7.38)
+## Versioned releases (1.7.25 → 1.8.1)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
 1.7.38 is the one exception so far: three small, related pieces of update-
 system work landed as separate commits without a version bump each, so
-this entry bundles all three under one release instead of three.
+this entry bundles all three under one release instead of three. 1.8.0
+bundles a whole Chromium rebase plus everything QA testing turned up
+immediately afterward, for the same reason.
+
+### 1.8.1 — 2026-08-10
+
+Adds one-click home page presets, prompted by a feature-comparison review
+against another Chromium-adjacent browser.
+
+- **Home page quick-pick presets**: Settings → Appearance's home page field
+  now offers one-click buttons for Google/Bing/DuckDuckGo/Yahoo alongside
+  the existing free-text URL field, reducing setup friction for
+  non-power-users. The clicked preset's button highlights; typing a custom
+  URL that doesn't match any preset clears the highlight.
+
+### 1.8.0 — 2026-08-09
+
+Rebases the fork's entire patch stack onto Chromium 141.0.7390.125 (from
+140.0.7339.210), and fixes three runtime crashes plus a data-loss bug that
+manual QA testing surfaced immediately afterward.
+
+- **Chromium 141 patch rebase**: all ~68 failed/rejected patches resolved
+  (context shifts, retired upstream files, enum renumbering, API renames).
+  See [Chromium 140 → 141 migration notes](version-updates/chromium-140-to-141-migration)
+  for the full breakdown, including a critical process-safety lesson
+  learned mid-rebase: `npm run apply_patches` resets a file to pristine and
+  reapplies the raw stored patch whenever its `.patchinfo` is stale, which
+  can silently wipe manual fixes that go beyond the stored patch's literal
+  hunks — never run it before `npm run update_patches` during an active
+  rebase.
+- **Fixed a `workspaces.list` sync-preferences crash**: the pref was
+  registered as `SYNCABLE_PREF` but never added to
+  `ChromeSyncablePrefsDatabase`'s allowlist, crashing on every new-profile
+  creation in DCHECK builds.
+- **Fixed 29 `KeyedService` factories never actually registered at
+  startup**: a whole aggregator function
+  (`custom::EnsureBrowserContextKeyedServiceFactoriesBuilt`, covering
+  TabService, RSS, Sidebar, Accelerator, Toolbar, BossKey, Timezone,
+  ClearData, AiAgent, CloudSync, Bittorrent, ProxyRouting, and more) was
+  never called from anywhere — each factory was instead constructed lazily
+  on first use, which Chromium treats as a hard startup-registration error.
+  Also found and registered three factories missing even from that
+  function entirely (`WorkspaceServiceFactory`, `ContainerServiceFactory`,
+  `SidebarPinnedPanelsServiceFactory` — the last one being the original
+  crash report that led to this discovery).
+- **Fixed a canvas-fingerprint-noise crash**: the "Add noise to canvas
+  readback" privacy setting called an upstream Chromium API
+  (`blink::CanvasNoiseToken::Get()`) whose paired `Set()` initializer is
+  never called anywhere in this Chromium milestone — vanilla or fork. Now
+  self-seeds with a random value on first use instead of DCHECK-crashing
+  (or, in non-DCHECK builds, silently applying the same fixed, predictable
+  noise pattern on every install forever).
+- **Fixed "Restart & Clear Cache"**: its `BrowsingDataRemover::Observer`
+  was passed to `RemoveAndReply()` without ever calling `AddObserver()`
+  first (a hard DCHECK requirement), and self-deleted without
+  deregistering — both fixed.
+- **Removed "View Formatted Source"** (added in 1.7.37): stock Chromium's
+  own `view-source:` does the same job and renders better, so the custom
+  CDP-based pretty-printer and its `chrome://formatted-source` WebUI were
+  removed entirely rather than maintained alongside a redundant native
+  feature.
+- **Added a full manual QA checklist** covering every custom feature across
+  the fork — see [Full Feature QA Checklist](qa-testing-checklist).
 
 ### 1.7.38 — 2026-08-07
 
