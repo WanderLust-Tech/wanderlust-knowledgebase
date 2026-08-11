@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.2)
+## Versioned releases (1.7.25 → 1.8.3)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,26 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.3 — 2026-08-10
+
+Adds responsive layout to the Settings WebUI, the third and last of the
+issues flagged by the same feature-comparison review as 1.8.1/1.8.2 — this
+one wasn't from the comparison's feature list itself, but a real gap
+surfaced while verifying its claims against the actual settings code.
+
+- **Settings sidebar collapses on narrow windows**: the 256px settings
+  sidebar no longer permanently occupies part of the viewport below the
+  `md:` breakpoint — it becomes an off-canvas drawer, opened via a new
+  hamburger button and closed via a backdrop tap or by picking a page.
+  Unaffected at `md:` and up, where it stays the original always-visible
+  static column.
+- **Rule-editor forms reflow to one column on narrow windows**: the
+  Containers, Workspaces, Security (Connection Control), and Smart Proxy
+  Routing pages' add/edit forms were hard-locked to a 2-column grid with
+  no narrower fallback. They now drop to a single column below `sm:`,
+  matching the responsive convention already used by
+  AutofillPage/PasswordsPage/SuperDragPage elsewhere in this WebUI.
 
 ### 1.8.2 — 2026-08-10
 

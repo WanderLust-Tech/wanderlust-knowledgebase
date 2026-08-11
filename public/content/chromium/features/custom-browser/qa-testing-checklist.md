@@ -1193,8 +1193,14 @@
 - [ ] Scroll to **About** — **Expected:** version/build info renders (this is a page nested inside the settings hub, not a standalone `chrome://about`).
 - [ ] Click through every remaining item in the left-nav (there are ~30 sub-pages total; only a handful are itemized above) — **Expected:** each one loads content with no blank panel, no perpetual spinner, and no red error in DevTools console.
 - [ ] Change one control on any page, then reload `chrome://settings` — **Expected:** the change persisted.
+- [ ] Narrow the browser window below roughly 768px wide — **Expected:** the left-nav sidebar disappears and a hamburger button + current page name appear at the top of the content pane instead of a permanently squeezed layout.
+- [ ] Click the hamburger button — **Expected:** the sidebar slides in from the left as an overlay (with a dimmed backdrop behind it), without pushing/resizing the page content.
+- [ ] With the drawer open, click the dimmed backdrop (not a nav item) — **Expected:** the drawer closes, content pane unchanged.
+- [ ] With the drawer open, click a different sidebar item — **Expected:** navigates to that page AND the drawer closes automatically.
+- [ ] Widen the window back past ~768px — **Expected:** sidebar returns to its normal permanent left column; hamburger button and backdrop are both gone.
+- [ ] At a narrow width, open **Containers**, **Workspaces**, **Security**, and **Smart Proxy Routing** and start adding/editing an entry on each — **Expected:** each form's fields stack in a single column (name above color, action above protocol, etc.) instead of being squeezed into two cramped columns.
 
-📷 *Screenshot suggestion: the settings hub left-nav fully expanded, showing the full page list, for a baseline comparison after the next rebase.*
+📷 *Screenshot suggestion: the settings hub left-nav fully expanded, showing the full page list, for a baseline comparison after the next rebase — plus one shot of the narrow-width hamburger/drawer state and one of a rule-editor form in its single-column narrow layout.*
 
 ### Custom Cache & Clear Browsing Data
 
