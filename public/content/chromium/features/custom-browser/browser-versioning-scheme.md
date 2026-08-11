@@ -353,10 +353,11 @@ the first `BUILD` increment since the 141 rebase — for the home-page
 quick-pick presets feature, then to `1.8.2` the same day for the favicon
 dominant-color tab tinting feature, then to `1.8.3`, same day, for
 Settings WebUI responsive layout fixes (collapsing sidebar + reflowing
-form grids) — all three prompted by the same feature-comparison review
-(the third wasn't itself one of the reviewed features, but a real gap
-found while verifying the review's claims), landed as three separate
-commits/bumps since each is independently revertable.
+form grids), then to `1.8.4` on 2026-08-11 for the shareable theme JSON
+format — all four prompted by the same feature-comparison review (1.8.3
+wasn't itself one of the reviewed features, but a real gap found while
+verifying the review's claims), landed as four separate commits/bumps
+since each is independently revertable.
 
 **`check_versions_match()` rewritten** (`custom/build/commands/lib/
 build.py`, 2026-07-28): previously compared `chrome/VERSION`'s

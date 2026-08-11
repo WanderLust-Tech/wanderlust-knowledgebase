@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.3)
+## Versioned releases (1.7.25 → 1.8.4)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -21,12 +21,31 @@ this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
 
+### 1.8.4 — 2026-08-11
+
+Adds a shareable theme JSON format, the last of four features/fixes
+prompted by the same feature-comparison review as 1.8.1–1.8.3, and the
+biggest of the four — the review itself flagged it as higher-effort,
+needing a new schema, loader, and import/export UI.
+
+- **Shareable theme JSON**: a lightweight, hand-authorable light/dark JSON
+  theme format (five named colors: background/element/border/accent/
+  titlebar), applied directly onto Chrome's real `ui::ColorId` tokens via a
+  new `CustomJsonThemeSupplier`, bypassing `ThemeService`'s usual
+  single-seed-color M3/HCT palette pipeline entirely. `chrome://profile-
+  customization` gained an in-app 8-swatch editor with a live preview,
+  plus Export/Import JSON and Reset. Full architecture and schema details:
+  [Shareable Theme JSON](shareable-theme-json). `cornerRadius`/`focusShadow`
+  round-trip through the format but are previewed only on that page for
+  now — see the doc's "Known limitation" section for why, and the deferred
+  follow-up to extend them into `custom_settings`.
+
 ### 1.8.3 — 2026-08-10
 
-Adds responsive layout to the Settings WebUI, the third and last of the
-issues flagged by the same feature-comparison review as 1.8.1/1.8.2 — this
-one wasn't from the comparison's feature list itself, but a real gap
-surfaced while verifying its claims against the actual settings code.
+Adds responsive layout to the Settings WebUI, one of four issues flagged by
+the same feature-comparison review as 1.8.1/1.8.2/1.8.4 — this one wasn't
+from the comparison's feature list itself, but a real gap surfaced while
+verifying its claims against the actual settings code.
 
 - **Settings sidebar collapses on narrow windows**: the 256px settings
   sidebar no longer permanently occupies part of the viewport below the

@@ -836,6 +836,7 @@ const internalContent: ContentNode[] = [
             { title: "Custom Download Shelf", path: "features/custom-browser/custom-download-shelf" },
             { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
             { title: "Split View", path: "architecture/split-view" },
+            { title: "Shareable Theme JSON", path: "features/custom-browser/shareable-theme-json" },
         ]
     },
     {

@@ -1423,6 +1423,12 @@
 - [ ] `chrome://top-sites` (most-visited backed) — **Expected:** grid of top sites loads.
 - [ ] `chrome://bittorrent`, `chrome://epub-reader` — **Expected:** both niche viewers load without a blank page.
 - [ ] Profile menu → **Add profile** — **Expected:** `custom_profile_picker` loads real profile list/create/rename/delete/launch; new-profile flow lands on `custom_profile_customization` (avatar/name/theme color all save live).
+- [ ] On `chrome://profile-customization`, edit a few swatches under "Custom theme" (both Light and Dark tabs) and click **Apply theme** — **Expected:** "Applied" confirmation appears; the actual browser chrome (toolbar/frame/tabs) visibly re-colors according to whichever mode (light/dark) the OS/browser is currently in.
+- [ ] Click **Export JSON** — **Expected:** a `.json` file downloads containing `name`, `light`, `dark`, `cornerRadius`, `focusShadow`.
+- [ ] Edit a color directly in the exported file, then use **Import JSON** to re-select it — **Expected:** the editor's swatches update to match, "Applied" confirms, and the browser chrome reflects the edited color.
+- [ ] Import a JSON file missing `"light"` or `"dark"` — **Expected:** an "Invalid theme" error shows; the previously-applied theme is left untouched (not reset, not partially applied).
+- [ ] Click **Reset** — **Expected:** browser chrome reverts to the default theme; editor swatches reset to the built-in placeholder values.
+- [ ] Restart the browser after applying a custom theme (without resetting first) — **Expected:** the custom colors are still applied post-restart (persisted via prefs, not just in-memory for that session).
 - [ ] `chrome://chrome-urls` — **Expected:** lists all internal `chrome://` URLs, including the custom ones above.
 
 📷 *Screenshot suggestion: a grid/collage of the omnibox autocomplete dropdown showing all `chrome://` custom hosts, useful as a quick post-rebase completeness check.*
