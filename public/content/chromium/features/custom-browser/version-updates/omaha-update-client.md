@@ -99,8 +99,17 @@ src/
   client_identity.{h,cc}  Persisted install id + recorded browser exe path (orphan detection)
   json.{h,cc}             Inline JSON builder + parser (no external dependency)
   result.h                Result<T> — this codebase never throws
+  app.rc, app.ico, resource.h  Windows only: embeds the branded icon (Explorer file icon, window/taskbar/Alt-Tab)
   ui/                     Windows install wizard (see below)
 ```
+
+The `.rc`/`.ico`/icon-resource pipeline required adding a `tool("rc")` to this
+repo's own hand-written GN toolchain (`build/toolchain/win/BUILD.gn`) — it
+previously had no resource-compiler step at all, since nothing needed one
+before. `main.cc` passes `IDI_APP_ICON` as `InstallWindowParams::
+icon_resource_id`; without that, `install_window.cc` falls back to the
+generic default Windows icon (`IDI_APPLICATION`), which is what every build
+before 1.2.5.0 actually shipped.
 
 `Result<T>` (`.ok`/`.value`/`.error`) is used everywhere instead of
 exceptions. Build-time config (`omaha_server_url`, `omaha_app_id`,

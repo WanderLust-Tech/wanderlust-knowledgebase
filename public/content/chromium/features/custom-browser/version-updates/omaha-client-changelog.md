@@ -19,6 +19,33 @@ to hang entries off of.
 
 ## Versioned releases
 
+### 1.2.5.0 — 2026-08-12
+
+Adds a real, branded icon -- every prior build shipped with the generic
+default Windows icon, both for the `.exe` file itself (as shown in
+Explorer) and the wizard window/taskbar/Alt-Tab.
+
+- **Root cause**: no `.rc` resource script existed anywhere in this repo,
+  so nothing ever embedded an icon resource into the built exe. Separately,
+  `InstallWindowParams::icon_resource_id` (which `install_window.cc`'s
+  `Run()` uses to load a window icon, falling back to the generic
+  `IDI_APPLICATION` if it's 0) was never actually set by any caller --
+  `main.cc`'s only `InstallWindowParams` construction left it at its
+  default.
+- **Fix**: added `src/app.rc` (embeds `src/app.ico` -- copied from
+  `custom-browser`'s `custom/app/theme/wanderlust/win/app.ico`, the same
+  source `ui/logo_data.cc`'s PNG frame was extracted from) as resource ID
+  `IDI_APP_ICON` (`src/resource.h`), and pass that ID as
+  `icon_resource_id` in `main.cc`. This repo's own hand-written GN
+  toolchain (`build/toolchain/win/BUILD.gn`) had no resource-compiler step
+  at all -- added a `tool("rc")` invoking `rc.exe` (already on PATH via
+  `build.ps1`'s vcvarsall environment) to compile `.rc` -> `.res` for the
+  link step.
+- Verified: extracted the compiled exe's icon directly (confirms the real
+  Wanderlust logo, not the generic default) and confirmed the running
+  wizard window has a genuinely non-null icon handle via `WM_GETICON`,
+  consistent with the new resource loading correctly.
+
 ### 1.2.4.0 — 2026-08-12
 
 Fully eliminates the console-window flash on a double-click launch that
