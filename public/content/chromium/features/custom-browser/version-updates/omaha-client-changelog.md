@@ -19,6 +19,33 @@ to hang entries off of.
 
 ## Versioned releases
 
+### 1.2.3.0 — 2026-08-12
+
+Fixes the background updater redundantly re-downloading and reinstalling
+the current release forever.
+
+- **Root cause**: `WinService::DoUpdateLoop()` hardcoded
+  `Version::Parse("0.0.0.0")` (the fresh-install sentinel) on every loop
+  iteration, and the Scheduled Task's registered command (plain
+  `--update`, no `--version`) fell back to the same sentinel -- neither
+  background path had any way to know what was actually installed. Always
+  telling the server "nothing is installed" made it look like an update
+  was always needed, every 4 hours, forever.
+- **Persistence**: `client_identity.h`'s state file gains
+  `SetInstalledVersion`/`GetInstalledVersion`, recorded right after every
+  successful install (`cmd_update`, `cmd_install_ui`,
+  `WinService::DoUpdateLoop`). `main()` (when `--version` isn't explicitly
+  passed) and the service loop now read this instead of assuming a fresh
+  install.
+- **Defense in depth**: `OmahaClient::CheckForUpdate()` now downgrades an
+  `UpdateAvailable` response to `NoUpdate` client-side whenever the offered
+  version isn't strictly greater than the current one, regardless of what
+  the server said -- protects every caller uniformly, even against a
+  server-side bug.
+- Verified live via `--check` (read-only) against the real server:
+  installed version far higher than latest → `no_update`; far lower →
+  `update_available`; and the exact equal-version boundary → `no_update`.
+
 ### 1.2.2.0 — 2026-08-12
 
 Fixes a visible console-window flash when the background updater runs
