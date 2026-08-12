@@ -19,6 +19,36 @@ to hang entries off of.
 
 ## Versioned releases
 
+### 1.2.4.0 — 2026-08-12
+
+Fully eliminates the console-window flash on a double-click launch that
+the 1.2.2.0 fix only reduced.
+
+- **Why 1.2.2.0 wasn't enough**: that fix hid the console as early as
+  possible inside `main()` (`GetConsoleProcessList` + `ShowWindow`), but
+  Windows can paint a freshly-allocated console window during process
+  startup *before* `main()` ever runs -- no code inside `main()` can win
+  that race. The only real fix is preventing the console from being
+  created at all, which is a property of the exe's subsystem, not
+  something `main()` can control after the fact.
+- **Fix**: linked as a GUI-subsystem exe (`/SUBSYSTEM:WINDOWS`, new
+  `win_gui_subsystem` config in `build/config/BUILD.gn`) so Windows never
+  auto-allocates a console in the first place. To keep `--check`/`--update`
+  working normally from an actual terminal, `main()` re-attaches to a
+  parent console (`AttachConsole(ATTACH_PARENT_PROCESS)`) -- but *only* if
+  `GetStdHandle(STD_OUTPUT_HANDLE)` is null, i.e. nothing was already set
+  up. This matters: an earlier attempt at this exact fix (reverted, see
+  1.2.2.0's entry) unconditionally reattached and clobbered explicit
+  redirection -- breaking `custom-browser`'s own pipe-based subprocess
+  launch of this tool. The null-check makes it safe.
+- **Verified thoroughly** this time: explicit file redirection
+  (`> file.txt`, standing in for pipe redirection) untouched; PowerShell
+  and Git Bash direct invocation still print output correctly; and for the
+  actual double-click scenario, window enumeration by process ID shows
+  *only* the wizard window (`OmahaInstallWindow`) plus the standard
+  invisible utility windows every process gets (GDI+, IME) -- no
+  `ConsoleWindowClass` window exists at all, not even briefly.
+
 ### 1.2.3.0 — 2026-08-12
 
 Fixes the background updater redundantly re-downloading and reinstalling
