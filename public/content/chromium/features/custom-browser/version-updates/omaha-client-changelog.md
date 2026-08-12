@@ -19,6 +19,32 @@ to hang entries off of.
 
 ## Versioned releases
 
+### 1.2.2.0 — 2026-08-12
+
+Fixes a visible console-window flash when the background updater runs
+unattended.
+
+- **The Scheduled Task fallback ran in the interactive session** (`/RU
+  <user> /IT`, chosen specifically to avoid a password prompt) — so every 4
+  hours, a plain console-subsystem exe with no inherited console got a
+  fresh one auto-allocated by Windows and flashed briefly on screen. The
+  Windows Service path was already invisible (Session 0 has no visible
+  desktop), and the actual downloaded installer already runs silently
+  (`/silent /install` + `CREATE_NO_WINDOW`) — this was the one real gap.
+- **Fix**: at startup, `main.cc` checks `GetConsoleProcessList()` — if this
+  process is the *only* one attached to its console (nobody else asked to
+  see it, e.g. Task Scheduler or a double-click with no inherited
+  terminal), hide that window immediately via `ShowWindow(SW_HIDE)`. If a
+  parent shell is also attached (run interactively), leave it alone.
+  Deliberately *not* the more common `/SUBSYSTEM:WINDOWS` +
+  `AttachConsole` approach -- that was tried first and broke interactive
+  use entirely, since PowerShell/cmd don't reliably wait for or reattach
+  consoles to GUI-subsystem child processes. Verified from both PowerShell
+  and Git Bash (output/exit codes unaffected) and via `Start-Process` with
+  no inherited console (completes normally, no visible window). Side
+  effect: also cleans up the console flash that briefly preceded the
+  `--install-ui` wizard window on a double-click launch (1.2.1.0).
+
 ### 1.2.1.0 — 2026-08-11
 
 Three independent pieces of work: a visual overhaul of the install wizard,
