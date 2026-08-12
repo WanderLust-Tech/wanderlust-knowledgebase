@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.4)
+## Versioned releases (1.7.25 → 1.8.5)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,31 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.5 — 2026-08-11
+
+Fixes the About page's "Check for updates" button: it correctly detected a
+newer version being available, but never actually downloaded or installed
+it.
+
+- **`UpdateManager::DownloadUpdate()`/`InstallUpdate()` were placeholder
+  stubs** (`src/custom/chrome/browser/autoupdate/update_manager.cc`) —
+  `DownloadUpdate()` faked a progress loop with no real network activity,
+  and `InstallUpdate()` just flipped a status flag with a comment saying
+  "In production, this would launch installer and restart browser."
+  `DownloadUpdate()` now locates `custom-omaha-client`'s persistent
+  `<AppName>Update.exe` (wherever its own self-install put it — Program
+  Files or LocalAppData) and launches `"<updater> --update"` as a real
+  subprocess, streaming its `#progress:NN%` stdout into the existing
+  in-page progress UI via a pipe read on a background thread-pool task.
+  `InstallUpdate()` now calls `chrome::AttemptRestart()` — the new
+  version's files are already on disk once the subprocess succeeds, so the
+  only remaining step is relaunching to pick them up. Reports a clear
+  `OnUpdateError` instead of silently no-op'ing if no updater binary is
+  found (e.g. an install predating `custom-omaha-client`'s self-install
+  feature). See [Omaha Update Client](omaha-update-client) for the
+  updater-side half of this (self-install, orphan detection) — released
+  the same day as this tool's own 1.2.0.0.
 
 ### 1.8.4 — 2026-08-11
 

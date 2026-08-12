@@ -34,6 +34,7 @@
 6. [New Tab Page](#new-tab-page)
 7. [Settings & Configuration](#settings--configuration)
 8. [Custom WebUI](#custom-webui)
+9. [Installer & Auto-Update](#installer--auto-update)
 
 ---
 
@@ -1432,3 +1433,157 @@
 - [ ] `chrome://chrome-urls` — **Expected:** lists all internal `chrome://` URLs, including the custom ones above.
 
 📷 *Screenshot suggestion: a grid/collage of the omnibox autocomplete dropdown showing all `chrome://` custom hosts, useful as a quick post-rebase completeness check.*
+
+---
+
+## Installer & Auto-Update
+
+Covers `custom-omaha-client` (a separate sibling repo, vendored at
+`src/custom/third_party/omaha_client`) and `custom-browser`'s own
+`UpdateManager` (`src/custom/chrome/browser/autoupdate/`). Windows-only —
+the background-updater self-install/uninstall mechanisms have no POSIX
+implementation yet. See [Omaha Update Client](../version-updates/omaha-update-client)
+for the full architecture. **These steps register real Windows services/
+Scheduled Tasks and copy files outside the repo — clean up after testing**
+(`omaha_client --uninstall-service` elevated, `schtasks /Delete /TN
+WanderlustUpdateTask /F`, and remove the `Update\` folder under Program
+Files/LocalAppData) rather than leaving test artifacts on the machine.
+
+### Install Wizard UI
+
+**What it is:** The three-screen (Welcome → Eula → Progress) graphical
+first-run installer, with a custom-drawn title bar and modern flat
+buttons/checkbox instead of stock Win32 chrome.
+**Where to find it:** Run `omaha_client.exe --install-ui --version 1.0.0.0
+--browser-exe "<path to any exe>"` directly (doesn't require a real
+browser install to look at the UI — just don't click through to a real
+Install unless you mean to).
+**Default state:** Enabled — this is the only install path; no buildflag
+gate.
+
+- [ ] Launch `--install-ui` — **Expected:** borderless window (no system
+  title bar) with its own painted title bar: app icon, app name, and a
+  close (X) button in the top-right, separated from the body by a thin
+  divider line.
+- [ ] Drag the window by clicking and holding anywhere in the title bar
+  band (not the close button) — **Expected:** window moves normally, same
+  as dragging a native caption.
+- [ ] Hover, then click, the custom close button — **Expected:** hover
+  shows a red highlight; click closes the installer (same as Cancel).
+- [ ] Double-click the title bar — **Expected:** nothing happens (no
+  maximize) — this is a fixed-size window.
+- [ ] On Windows 11, compare the window's corners to a normal application
+  window — **Expected:** visibly rounded, not square.
+- [ ] On the Welcome screen, check the Cancel/Next buttons and the Browse
+  button — **Expected:** flat, rounded-corner buttons; Next is solid
+  accent-blue (primary), Cancel/Browse are white with a thin border
+  (secondary); hovering darkens the fill/border slightly.
+- [ ] Advance to the Eula screen — **Expected:** the "I have read and
+  agree..." checkbox is an unfilled rounded square with a border, and the
+  Install button is visibly grayed out/disabled until it's checked.
+- [ ] Check the EULA checkbox — **Expected:** the box fills solid
+  accent-blue with a white checkmark, and the Install button switches to
+  solid accent-blue (enabled).
+- [ ] Compare all text (title bar, labels, buttons) against a very old
+  build/screenshot if available — **Expected:** Segoe UI throughout, not
+  the old default system font.
+
+📷 *Screenshot suggestion: Welcome screen and the EULA screen (checkbox
+checked, Install enabled) side by side.*
+
+### Background Updater Self-Install
+
+**What it is:** After a successful browser install, `omaha_client` copies
+itself to a permanent location and registers for background update checks
+— a Windows Service (machine-wide, needs Administrator) or a Scheduled
+Task fallback (per-user, no admin needed) — mirroring how Google Update
+persists itself after installing Chrome.
+**Where to find it:** Happens automatically at the end of a real
+`--install-ui` run, or standalone via `omaha_client.exe --register-updater`.
+**Default state:** Enabled — always attempted; the two paths below are
+automatic fallback, not a setting.
+
+- [ ] Run `--register-updater` from a **non-elevated** prompt — **Expected:**
+  JSON output `{"status":"ok","path":"...\\AppData\\Local\\<AppName>\\
+  Update\\<AppName>Update.exe"}`; the exe exists at that path.
+- [ ] Run `schtasks /Query /TN WanderlustUpdateTask /V /FO LIST` —
+  **Expected:** task exists, `Task To Run` points at the copied exe with
+  `--update`, `Logon Mode: Interactive only`, repeats every 4 hours.
+- [ ] Run `--register-updater` again from an **elevated** (Run as
+  Administrator) prompt — **Expected:** JSON output points at
+  `...\Program Files\<AppName>\Update\<AppName>Update.exe` instead; `Get-
+  Service OmahaClientSvc` shows it registered, `AUTO_START`, running as
+  `LocalSystem`.
+- [ ] With the elevated (Service) copy registered, run
+  `omaha_client.exe --uninstall` (from either copy) — **Expected:** JSON
+  `{"status":"ok"}`; `Get-Service OmahaClientSvc` no longer finds it, and
+  the copied exe/Update folder are gone a few seconds later (self-delete
+  is delayed until this process exits).
+- [ ] Repeat `--uninstall` for the per-user (Scheduled Task) copy —
+  **Expected:** same result, task removed via `schtasks /Query` no longer
+  finding `WanderlustUpdateTask`.
+
+📷 *Screenshot suggestion: `Get-Service OmahaClientSvc` and `schtasks
+/Query /TN WanderlustUpdateTask` output side by side, showing both paths
+registered.*
+
+### Orphan Detection (Self-Uninstall)
+
+**What it is:** The background updater notices when the browser itself has
+been uninstalled (it lives in a sibling folder outside the browser's own
+install tree, so a normal uninstall doesn't touch it) and removes itself
+instead of running forever.
+**Where to find it:** Not directly user-facing — verified by simulating an
+uninstalled browser and watching the next background check.
+**Default state:** Enabled — best-effort and delayed (next scheduled
+check, up to ~4 hours), not instant. Never fires if `--install-ui` never
+recorded a browser exe path (e.g. very old installs).
+
+- [ ] After a real `--install-ui` install, find the state file at
+  `%LOCALAPPDATA%\<AppName>\update_client_state.json` — **Expected:** it
+  contains a `"browser_exe"` field pointing at the real, existing browser
+  exe path.
+- [ ] Hand-edit that field to a path that doesn't exist (e.g.
+  `C:\nonexistent\browser.exe`), then run `<the registered updater copy>
+  --update` directly — **Expected:** JSON output
+  `{"status":"self_uninstalled"}`; the Service or Scheduled Task
+  (whichever was registered) is removed, and the copied exe/folder
+  disappear shortly after.
+- [ ] Repeat with the field pointing at a real, existing file — **Expected:**
+  a normal update check runs instead (no self-uninstall).
+
+📷 *Not applicable — this is a state-file/CLI verification, not a visual
+feature.*
+
+### About Page — Check for Updates
+
+**What it is:** `chrome://settings`'s "Check for updates" button — checks
+wanderlust-api directly, then (if an update is available) downloads and
+installs it via the background updater from above, with live progress.
+**Where to find it:** `chrome://settings` → About/Help section.
+**Default state:** Enabled — requires the background updater to already be
+registered (see above) to actually apply an update; the check itself
+always works regardless.
+
+- [ ] With no update available (already on the latest version), click
+  "Check for updates" — **Expected:** reports up to date; no download
+  attempted.
+- [ ] With a newer version published on the update server, click "Check
+  for updates" — **Expected:** reports an update is available.
+- [ ] Let it proceed to download — **Expected:** a real, live progress
+  indicator advances (not an instant jump to 100%) as `omaha_client.exe
+  --update` runs in the background — check Task Manager for a transient
+  `omaha_client.exe`/`<AppName>Update.exe` process while this is happening.
+- [ ] Let the download/install finish — **Expected:** the browser restarts
+  itself automatically (relaunches onto the new version) rather than
+  requiring the user to close/reopen it manually.
+- [ ] After restart, check the About page's version string — **Expected:**
+  matches the version that was published, confirming the update actually
+  applied (not just downloaded).
+- [ ] Test on an install with no registered background updater (e.g. one
+  predating this feature, or after running `--uninstall` against it) —
+  **Expected:** a clear error is shown/logged rather than the button
+  silently doing nothing.
+
+📷 *Screenshot suggestion: the About page mid-download, showing a real
+progress percentage.*

@@ -19,6 +19,57 @@ to hang entries off of.
 
 ## Versioned releases
 
+### 1.2.1.0 — 2026-08-11
+
+Three independent pieces of work: a visual overhaul of the install wizard,
+making this tool a persistent background updater rather than a one-shot
+installer, and a real end-user behavior fix in how it's launched.
+
+- **No command flag defaults to `--install-ui`**: a real end user
+  downloading and double-clicking a stub installer never passes
+  command-line arguments — that previously dumped a usage message and
+  exited 1 (a console-subsystem exe would just flash a window shut with
+  nothing visibly having happened). Now defaults to `--install-ui` (falls
+  back to a silent `--update` on POSIX). Also adds `--help`/`-h`, since the
+  old "no args = usage" behavior was the only way to see the command list.
+- **Custom-drawn install wizard**: replaced the stock `WS_CAPTION` window
+  chrome with a borderless `WS_POPUP` + hand-painted title bar (icon, app
+  name, close button — `ui/close_button.h/.cc`, `WM_NCHITTEST` fakes
+  drag-by-caption, `DwmSetWindowAttribute` for Windows 11 rounded corners),
+  and replaced stock `BUTTON`/`BS_AUTOCHECKBOX` controls with flat, rounded,
+  accent-colored ones (`ui/modern_button.h/.cc`, `ui/modern_checkbox.h/.cc`)
+  sharing one palette + cached Segoe UI font (`ui/ui_theme.h/.cc`) — a
+  WPF/Fluent-like look. Still pure Win32/GDI, no new dependency. See
+  [Omaha Update Client](omaha-update-client) for details.
+- **Background updater self-install**: `--install-ui` (and standalone
+  `--register-updater`) now copies this tool to a permanent location and
+  registers it so update checks keep happening even when the browser isn't
+  running — mirroring how Google Update persists itself after installing
+  Chrome. Tries a machine-wide install (Program Files + a Windows Service,
+  needs Administrator) first, falling back to a per-user one (LocalAppData
+  + a Scheduled Task via `schtasks.exe`, no admin needed) on any failure.
+  New files: `updater_self_install.h/.cc`, `updater_self_install_win.cc`,
+  `updater_self_install_posix.cc` (stub), `scheduled_task_win.h/.cc`.
+- **Orphan detection / self-uninstall**: since that persistent copy lives
+  in a sibling `Update\` folder outside the browser's own versioned install
+  tree, a normal browser uninstall doesn't touch it. Rather than patch
+  `custom-browser`'s Chromium-owned uninstaller, `--install-ui` now records
+  the real browser exe path (`client_identity.h`'s new
+  `SetBrowserExePath`/`GetBrowserExePath`), and every background check
+  (`WinService::DoUpdateLoop`, or each Scheduled Task `--update` run) calls
+  the new `IsBrowserUninstalled()` first — if that recorded path is gone,
+  it removes the Service/Task and self-deletes instead of running forever
+  as an orphan. Best-effort and delayed (next scheduled check, up to ~4
+  hours), not instant. New standalone `--uninstall` command exposes this
+  directly.
+- **`custom-browser`'s `UpdateManager` now actually calls this tool**:
+  superseding the 1.1.0.0 entry below ("it does not call this CLI tool") —
+  `DownloadUpdate()`/`InstallUpdate()` were stubs that never fetched or
+  installed anything; they now launch `"<updater> --update"` as a
+  subprocess and stream its `#progress:NN%` output into the About page's
+  progress UI, then call `chrome::AttemptRestart()`. `custom-browser`
+  bumped to 1.8.5 alongside this.
+
 ### 1.1.0.0 — 2026-08-07
 
 Adds staged-rollout / A-B testing support, and a stable per-install
