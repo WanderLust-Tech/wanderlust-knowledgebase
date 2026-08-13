@@ -1283,6 +1283,23 @@
 
 ---
 
+### Offline Speech-to-Text (On-Device Language Packs)
+
+**What it is:** A language-pack manager for Chromium's on-device speech engine (SODA), giving users a dedicated way to make the Web Speech API run fully offline and free instead of falling back to Google's paid cloud speech service. `SpeechRecognitionManagerImpl` already always prefers on-device recognition once a matching language pack is installed — this section just adds a way to install one on purpose.
+**Where to find it:** `chrome://settings` → **Accessibility** → "Offline speech-to-text" section, just below Live Captions.
+**Default state:** No language installed by default. Requires network access for the one-time model download; recognition itself runs fully offline afterward.
+
+- [ ] Open Settings → Accessibility — **Expected:** the language dropdown lists available on-device languages (English, Spanish, French, etc.), none marked installed initially.
+- [ ] Select a language and click **Download** — **Expected:** status switches to "Downloading — NN%" and progresses to completion without a page reload.
+- [ ] After install completes — **Expected:** section shows "Installed — ready to use offline" with a **Remove** button; re-opening Settings later still shows it installed (persisted, not just in-memory).
+- [ ] With the language installed, disable network access (or block it) and use a page with `webkitSpeechRecognition`/`SpeechRecognition` (mic permission required) — **Expected:** speech recognition still returns results — this is the proof on-device is actually serving the request instead of the paid cloud fallback. *(Requires a working microphone — human verification, not automatable.)*
+- [ ] Click **Remove** on an installed language — **Expected:** reverts to the download state; a subsequent Web Speech request without network falls back to erroring/unavailable rather than silently using the removed model.
+- [ ] Enable the separate "Live captions" toggle above and pick the same language it installs — **Expected:** no conflict between the two features; both read from the same underlying installed-language state.
+
+📷 *Screenshot suggestion: the Accessibility page with a language mid-download, and again showing "Installed — ready to use offline."*
+
+---
+
 ## Custom WebUI
 
 ### RSS Reader (chrome://reader)

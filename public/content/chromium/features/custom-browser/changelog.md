@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.7)
+## Versioned releases (1.7.25 → 1.8.8)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,36 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.8 — 2026-08-13
+
+Adds a "Manage offline speech-to-text" section to Settings > Accessibility,
+so websites' speech recognition (dictation, voice search, etc.) can run
+fully offline and free instead of falling back to Google's paid cloud
+speech API.
+
+- **Why not a Windows-native speech API**: investigated using
+  `Windows.Media.SpeechRecognition` (WinRT) directly, since this fork only
+  ships Windows builds. Ruled out for two independent reasons: it requires
+  MSIX package identity (this browser ships as a traditional unpackaged
+  Win32 EXE — Microsoft's own docs say the API simply refuses to run
+  without one), and it's capture-only (no way to feed it audio Chromium's
+  own pipeline already captured; it always opens the mic itself).
+- **What shipped instead**: Chromium already has its own on-device speech
+  engine — SODA (Speech On-Device API) — as a free, fully local alternative
+  to the cloud engine, and `SpeechRecognitionManagerImpl` already always
+  prefers it over the paid cloud path whenever a matching language pack is
+  installed (`media::kOnDeviceWebSpeech` is on by default on Windows). The
+  only real gap: nothing proactively installs a language pack for this
+  purpose — only the unrelated "Live captions" toggle does, as a side
+  effect. Extended `CustomSettingsHandler` (`custom_settings_handler.cc`)
+  to list/install/remove SODA language packs directly via the existing
+  `speech::SodaInstaller` singleton, with live download-progress reporting
+  mirroring the update-progress pattern already used for the About page.
+  New section lives in `AccessibilityPage.tsx`, right below Live Captions
+  since both share the same underlying installer.
+- No changes to Chromium's speech engine-selection logic or any vanilla
+  file at all — entirely additive within `src/custom`.
 
 ### 1.8.7 — 2026-08-13
 
