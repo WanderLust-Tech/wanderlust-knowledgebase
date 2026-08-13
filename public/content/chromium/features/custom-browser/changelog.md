@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.5)
+## Versioned releases (1.7.25 → 1.8.6)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,30 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.6 — 2026-08-12
+
+Restores "Bookmark All Tabs" to the tab right-click context menu.
+
+- **Root cause**: upstream Chromium removed `IDC_BOOKMARK_ALL_TABS` from
+  `TabMenuModel`/`TabStripModel::ContextMenuCommand` years ago — it only
+  survived in the app menu's Bookmarks submenu (`bookmark_sub_menu_model.cc`),
+  the Windows title-bar system menu, and the macOS menu bar. Right-clicking
+  a tab (even with 2+ tabs open) never showed it, in any Chromium version
+  this fork is based on, patched or not.
+- **Fix**: added it back as a genuine tab-menu item, following the exact
+  pattern this fork already uses for its other custom tab-menu commands
+  (`chrome/browser/ui/tabs/tab_menu_model.cc`'s `CopyAllURLs`,
+  `CloneTabToNewWindow`, etc.) — a new `CommandBookmarkAllTabs` entry in
+  `TabStripModel::ContextMenuCommand`, delegate methods
+  (`TabStripModelDelegate::BookmarkAllTabs()`/`CanBookmarkAllTabs()`) that
+  forward to the already-existing `chrome::BookmarkAllTabs()`/
+  `CanBookmarkAllTabs()` (no new business logic needed, just wiring), and
+  the menu item itself. Enablement matches real Chromium behavior exactly
+  — grayed out with only one tab open.
+- Six vanilla-Chromium files patched: `tab_strip_model.h`/`.cc`,
+  `tab_strip_model_delegate.h`, `browser_tab_strip_model_delegate.h`/`.cc`,
+  `tab_menu_model.cc`. Verified with a full `chrome` build.
 
 ### 1.8.5 — 2026-08-11
 
