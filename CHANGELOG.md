@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Upcoming Features**: Planning for video integration, community features, and advanced analytics
 
+### Fixed
+- **Premature session logout during active use**: Two independent bugs both caused
+  users to get logged out mid-session even with "Remember Me" checked.
+  - `AuthService.refreshToken()` had no de-duplication — the scheduled pre-expiry
+    timer and the reactive 401 handler (or several requests 401'ing near-simultaneously)
+    could each call it at once. The backend rotates the refresh token on every use
+    with no grace period, so the first call to land would succeed and rotate it while
+    every other concurrent call got rejected and wiped the session that had just been
+    renewed. Fixed by sharing one in-flight refresh promise across concurrent callers.
+  - `EnhancedApiService` read the access token from a `localStorage` key
+    (`authToken`) that `AuthService` never wrote to (it uses
+    `wanderlust_access_token`), so every request made through that service went
+    out with no `Authorization` header and 401'd regardless of token freshness.
+    Fixed by delegating to `authService.getAccessToken()`.
+
 ---
 
 ## [2.1.0] - 2025-08-24
