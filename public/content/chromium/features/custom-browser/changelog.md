@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.6)
+## Versioned releases (1.7.25 → 1.8.7)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,36 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.7 — 2026-08-13
+
+Fixes `chrome://credits` rendering as a blank white page, and dark mode
+not applying to `chrome://feedback`/`chrome://apps`.
+
+- **`chrome://credits` renderer crash**: this page reuses Chromium's real
+  license-manifest generator (`about_ui::GetCredits()`), and in an
+  official/Release build that manifest is the full one — every
+  third-party license in Chromium plus this fork's own `third_party/`
+  additions, around **15 MB** of HTML. The old implementation fetched
+  that whole string through the WebUI `chrome.send`/`cr.sendWithPromise`
+  message channel and assigned it to an `<iframe srcDoc>` attribute,
+  duplicating the string several times over in memory (browser-process
+  `base::Value` → JSON IPC payload → renderer JS string → srcdoc
+  parse) — reliably crashing the renderer before it painted anything.
+  Reproduced against the installed 1.8.6 build via the DevTools
+  protocol: an explicit `Inspector.targetCrashed` for the page's target.
+  Fixed by having `CustomCreditsUI` serve the manifest as a real
+  navigable resource at `chrome://credits/full.html` (`SetRequestFilter`
+  + `AddFrameAncestor`) instead, so the page just does a normal
+  `<iframe src=...>` navigation — the same way Blink loads any other
+  large page, rather than juggling one giant in-memory string. Removed
+  the now-unused `CustomCreditsHandler` and its `cr.ts` shim.
+- **`chrome://feedback`/`chrome://apps` dark mode**: both pages set
+  `dark:text-white` on their root element but never set a background
+  color at all, so switching to dark mode just turned the text white on
+  top of an unchanged white page. Added `bg-white dark:bg-navy-900`
+  wrappers matching `chrome://settings`'s existing pattern, plus dark
+  variants on a few form fields/cards that were missing them.
 
 ### 1.8.6 — 2026-08-12
 
