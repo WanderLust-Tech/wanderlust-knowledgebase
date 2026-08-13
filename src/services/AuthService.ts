@@ -96,6 +96,7 @@ class AuthService {
 
   private currentUser: User | null = null;
   private refreshTokenTimer: number | null = null;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor() {
     this.loadUserFromStorage();
@@ -211,6 +212,29 @@ class AuthService {
   }
 
   async refreshToken(): Promise<boolean> {
+    // De-dupe concurrent refresh attempts. The scheduled pre-expiry timer
+    // (setupTokenRefresh) and the reactive 401 handler (makeAuthenticatedRequest)
+    // -- or several parallel requests that each independently 401 near token
+    // expiry -- can all call refreshToken() at almost the same moment. The
+    // backend rotates the refresh token on every use with no grace period for
+    // the just-superseded one, so without this de-dupe, the first call to
+    // land would succeed and rotate it, and every other concurrent call would
+    // get rejected and immediately clearAuthData() -- wiping the session that
+    // the first call had just successfully renewed. Sharing one in-flight
+    // promise means every concurrent caller awaits the same, single attempt.
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    this.refreshPromise = this.performTokenRefresh();
+    try {
+      return await this.refreshPromise;
+    } finally {
+      this.refreshPromise = null;
+    }
+  }
+
+  private async performTokenRefresh(): Promise<boolean> {
     try {
       const refreshToken = this.getRefreshToken();
       if (!refreshToken) {
@@ -233,16 +257,16 @@ class AuthService {
 
       const apiResponse = await response.json();
       console.log('AuthService: Refresh token API response:', apiResponse);
-      
+
       const authResponse: AuthResponse = apiResponse;
       console.log('AuthService: Refresh token auth response:', authResponse);
-      
+
       if (!authResponse.data || !authResponse.data.accessToken) {
         console.error('AuthService: Missing access token in refresh response');
         this.clearAuthData();
         return false;
       }
-      
+
       this.setAuthData(authResponse);
       this.setupTokenRefresh();
 

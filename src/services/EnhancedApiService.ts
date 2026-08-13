@@ -1,4 +1,5 @@
 import { useError } from '../contexts/ErrorContext';
+import { authService } from './AuthService';
 
 export interface ApiResponse<T> {
   data?: T;
@@ -196,7 +197,11 @@ class EnhancedApiService {
     const timeoutId = setTimeout(() => controller.abort(), this.defaultTimeout);
 
     try {
-      const token = localStorage.getItem('authToken');
+      // Was reading the nonexistent 'authToken' key -- AuthService actually
+      // stores it under 'wanderlust_access_token' -- so every request made
+      // through this service silently went out with no Authorization header
+      // at all and 401'd regardless of how fresh the real token was.
+      const token = authService.getAccessToken();
       const headers = {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` }),
