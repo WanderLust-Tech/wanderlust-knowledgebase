@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.10)
+## Versioned releases (1.7.25 → 1.8.11)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,29 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.11 — 2026-08-14
+
+Adds a rule-editor UI for Site Injection to Settings > Security &
+Privacy.
+
+- Lets users add/edit/delete per-site CSS/JS injection rules (address,
+  type, inject timing, and the actual content in a textarea) instead of
+  hand-editing `rules.ini` and payload files in the profile directory.
+- `SiteInjectionManager` only ever supported a one-shot startup parse
+  with no mutation API, and discarded each rule's address/filename
+  after bucketing it into `GetRulesForUrl()`'s lookup maps. Rather than
+  duplicate `rules.ini`'s format in the WebUI handler, refactored the
+  manager to expose it as two shared static methods —
+  `ParseRuleEntries()`/`SerializeRuleEntries()` — so the runtime loader
+  and the new settings editor can't drift apart on the file format.
+  Rules are identified by position in the file (it has no id field);
+  deletes and type changes check whether another rule still shares a
+  payload file before removing it.
+- Edits take effect on next restart — there's still no file-watcher/
+  hot-reload, a separate and bigger gap than this UI addressed. Same
+  caveat the "Disable WebGL"/"Session-Only Cookies" toggles on the same
+  page already carry.
 
 ### 1.8.10 — 2026-08-13
 

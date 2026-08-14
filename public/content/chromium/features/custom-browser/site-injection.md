@@ -222,8 +222,8 @@ ensures the task is dropped (not run) if shutdown races the init.
 
 | Item | Notes |
 |---|---|
-| Settings UI | No browser UI to view or edit injection rules yet. Rules must be managed manually in the profile directory. A settings page (similar to the `chrome://settings` privacy page) could list active rules and allow toggling/adding/removing entries without touching the filesystem directly. |
-| Hot reload | Rule changes require a browser restart. A `FilePathWatcher` on `rules.ini` could trigger `SiteInjectionManager::ReloadFromDirectory` and notify open tab helpers to re-inject on the current page. |
+| ~~Settings UI~~ | **Done (v1.8.11).** `chrome://settings` → Security & Privacy → "Site injection" (`SiteInjectionSection` in `SecurityPage.tsx`) lists/adds/edits/deletes rules, including the CSS/JS content itself, via `CustomSettingsHandler` reading/writing `rules.ini` and payload files directly (`SiteInjectionManager::ParseRuleEntries()`/`SerializeRuleEntries()`). |
+| Hot reload | Rule changes still require a browser restart — the settings UI writes rules.ini immediately but there's no `FilePathWatcher`/live reload yet. One could trigger `SiteInjectionManager::ReloadFromDirectory` and notify open tab helpers to re-inject on the current page. |
 | Sub-frame injection | `DidFinishNavigation` is only acted upon for the primary main frame. Sub-frames that match a rule are not injected into. This is intentional for now — injecting into cross-origin frames raises security concerns. |
 | Same-document navigations | Hash changes and `pushState` navigations are explicitly skipped. Single-page apps that make significant DOM changes on `pushState` will not get re-injection. A `DOMContentLoaded`-equivalent MutationObserver in injected JS can work around this at the user script level. |
 | `*.` wildcard depth | `*.example.com` matches any subdomain via eTLD+1 comparison. A rule for `*.co.uk` would match everything on `co.uk` — be careful with short eTLDs. The manager uses `INCLUDE_PRIVATE_REGISTRIES` which handles most PSL edge cases. |

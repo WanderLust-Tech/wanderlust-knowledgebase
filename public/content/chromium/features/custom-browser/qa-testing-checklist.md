@@ -571,15 +571,16 @@
 ### Site Injection
 
 **What it is:** Per-site CSS/JS injection driven by a user-editable rules file in the profile directory — lets a user apply persistent stylesheet overrides or scripts to specific sites without an extension.
-**Where to find it:** No in-browser settings UI. Create `<profile>/site_injection/rules.ini` plus payload `.css`/`.js` files manually, then restart the browser.
-**Default state:** Enabled by default as a mechanism (`enable_site_injection = true`, `BUILDFLAG(ENABLE_SITE_INJECTION)`), but a no-op until the user creates the rules directory/file.
+**Where to find it:** `chrome://settings` → Privacy and security → Security & Privacy → "Site injection" section (`SiteInjectionSection` in `SecurityPage.tsx`) — add/edit/delete rules with an address, type (CSS/JS), inject timing, and the actual CSS/JS content in a textarea. Saved to `<profile>/site_injection/rules.ini` and a generated payload file immediately, but **requires a browser restart** to apply to already-open tabs and new navigations — there's no file-watcher/hot-reload yet.
+**Default state:** Enabled by default as a mechanism (`enable_site_injection = true`, `BUILDFLAG(ENABLE_SITE_INJECTION)`), but a no-op until a rule is added.
 
-- [ ] Close the browser, create `<profile>/site_injection/rules.ini` with a global rule: `*  hide-banner.css  css  commit`, and a `hide-banner.css` payload hiding some common element (e.g. `body::before{display:none}`), relaunch.
-- [ ] Visit any page — **Expected:** the injected stylesheet is present (inspect `<head>` for a `<style data-...>` tag matching the file content) and takes visible effect immediately on commit (before first paint).
-- [ ] Add a domain-wildcard rule (`*.github.com  github-fonts.css  css  commit`) and visit github.com and a subdomain — **Expected:** both match and get the injected CSS; a non-matching domain does not.
-- [ ] Add a `domready`-timed JS rule and visit its target site — **Expected:** the script runs only after the page's `load` event (verify via a `console.log` in the injected script and checking timing in DevTools Performance/Network).
+- [ ] Open Settings → Security & Privacy → Site injection, add a global rule (address `*`, type CSS, inject "On navigation") with content `body::before{display:none}`, restart the browser.
+- [ ] Visit any page — **Expected:** the injected stylesheet is present (inspect `<head>` for a `<style>` tag matching the content) and takes visible effect immediately on commit (before first paint).
+- [ ] Add a domain-wildcard rule (`*.github.com`, CSS, "On navigation") and, after restarting, visit github.com and a subdomain — **Expected:** both match and get the injected CSS; a non-matching domain does not.
+- [ ] Add a JS rule with inject timing "After page load" and visit its target site — **Expected:** the script runs only after the page's `load` event (verify via a `console.log` in the injected script and checking timing in DevTools Performance/Network).
+- [ ] Edit an existing rule's content and re-save — **Expected:** the settings page reflects the change immediately (no restart needed to see it in the list), but the target page still needs a restart to pick it up.
+- [ ] Delete a rule that shares its payload file with another rule (e.g. two rules both pointing at the same generated file) — **Expected:** the shared file is preserved for the remaining rule, not deleted.
 - [ ] Perform a same-document navigation on an injected page (e.g. a hash change or SPA route change) — **Expected:** no re-injection occurs (CSS already applied persists; JS is not re-run).
-- [ ] Try a payload file >1MB or a filename containing `../` — **Expected:** file is silently skipped (oversized) or the rule is skipped with a warning (path traversal), not applied.
 
 📷 *Screenshot suggestion: the target page before/after the injected CSS takes effect (e.g., a hidden banner).*
 
