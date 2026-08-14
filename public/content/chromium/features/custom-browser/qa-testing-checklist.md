@@ -556,14 +556,14 @@
 ### Origin Permission Grants
 
 **What it is:** Lets an admin/power user silently pre-grant or pre-deny browser permissions (camera, microphone, notifications, geolocation, JavaScript, popups, clipboard) for specific origins, skipping the normal prompt.
-**Where to find it:** No settings UI yet — configure via the profile's `Preferences` file: `custom.origin_permission.grants` (JSON array of `{origin, permission, state}`). Applied grants become visible as per-site exceptions at `chrome://settings/content` (via the shared `HostContentSettingsMap`).
-**Default state:** Disabled/inert by default — `custom.origin_permission.grants` defaults to `"[]"` (mechanism is always compiled in when `BUILDFLAG(ENABLE_ORIGIN_PERMISSION_GRANTS)` is set, but does nothing until a grant is added).
+**Where to find it:** `chrome://settings` → Privacy and security → Security & Privacy → "Origin permission grants" section (`OriginPermissionGrantsSection` in `SecurityPage.tsx`) — add/remove grants by origin, permission, and Allow/Deny state, no restart needed. Applied grants also become visible as per-site exceptions at `chrome://settings/content` (via the shared `HostContentSettingsMap`).
+**Default state:** Disabled/inert by default — no grants exist until one is added (mechanism is always compiled in when `BUILDFLAG(ENABLE_ORIGIN_PERMISSION_GRANTS)` is set, but does nothing until a grant is added).
 
-- [ ] Close the browser, add a grant `{"origin": "https://example.com", "permission": "camera", "state": "allow"}`, relaunch.
+- [ ] Open Settings → Security & Privacy → Origin permission grants, add a grant for `https://example.com`, permission Camera, state Allow — **Expected:** applies immediately, no restart required.
 - [ ] Visit `https://example.com` and trigger a camera-requiring script (or check via `navigator.mediaDevices.getUserMedia({video:true})` in DevTools console) — **Expected:** camera access is silently granted with no permission prompt.
 - [ ] Check `chrome://settings/content/camera` — **Expected:** `example.com` appears in the "Allowed" list, same as if the user had approved a real prompt.
-- [ ] Change the grant's `state` to `"deny"`, relaunch, retry the camera request — **Expected:** access is silently rejected, still no prompt.
-- [ ] Remove the grant entirely, relaunch, retry — **Expected:** normal prompt-before-access behavior returns.
+- [ ] Change the grant's state to Deny in the Settings table, retry the camera request — **Expected:** access is silently rejected, still no prompt, no restart needed.
+- [ ] Remove the grant entirely, retry — **Expected:** normal prompt-before-access behavior returns immediately.
 - [ ] Open an incognito window and visit the same origin — **Expected:** the grant does NOT carry over; incognito uses default (prompt) behavior.
 
 📷 *Screenshot suggestion: `chrome://settings/content/camera` showing the pre-granted origin in the Allowed list with no prompt ever having appeared.*

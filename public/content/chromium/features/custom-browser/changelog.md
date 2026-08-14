@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.9)
+## Versioned releases (1.7.25 → 1.8.10)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,26 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.10 — 2026-08-13
+
+Adds a settings UI for Origin Permission Grants to Settings > Security &
+Privacy.
+
+- Lets users pre-grant or pre-deny a permission (camera, microphone,
+  notifications, location, JavaScript, pop-ups, clipboard) for a
+  specific origin, skipping the normal prompt — previously only
+  configurable by hand-editing the Preferences file while the browser
+  was closed.
+- Architecturally different from the other three sections on this page:
+  `OriginPermissionService` applies grants straight to
+  `HostContentSettingsMap` via `SetGrant()`/`RemoveGrant()` rather than
+  watching a blob pref, so this uses real WebUI messages
+  (`customGetOriginPermissionGrants`/`customSetOriginPermissionGrant`/
+  `customRemoveOriginPermissionGrant`) calling the service's actual API,
+  broadcasting a change event the same way Site Settings' per-host
+  exceptions already do — writing the raw pref directly would have
+  silently not taken effect until a restart.
 
 ### 1.8.9 — 2026-08-13
 
