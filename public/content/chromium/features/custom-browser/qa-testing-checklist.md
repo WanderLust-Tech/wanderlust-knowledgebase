@@ -232,15 +232,18 @@
 
 ### Enhanced Omnibox
 
-**What it is:** A planned set of address-bar enhancements — custom search providers, improved URL formatting/security display, and quick actions. Per the feature's own status table, most of this is still marked "In Progress" with only partial testing/integration — treat this section as a smoke test of what's currently reachable, not a full feature checklist.
-**Where to find it:** The main address bar (omnibox) — no dedicated settings page documented.
-**Default state:** Build integration is complete; the actual search/formatting enhancements are only partially wired up per current status.
+**What it is:** Address-bar enhancements. Two pieces are real and working as of v1.8.16: a `settings:` quick-action provider that jumps straight to a `chrome://settings` sub-page, and a fixed RSS-in-omnibox provider that suggests subscribed feed items matching typed text. URL Formatting and Security Indicators (also originally planned under this feature) are still not implemented.
+**Where to find it:** The main address bar (omnibox) — no dedicated settings page; `settings:` and RSS suggestions require no toggle beyond having subscribed an RSS feed via `chrome://reader` (for RSS suggestions specifically, also check the RSS feature's own omnibox-integration toggle under `chrome://settings/rss`).
+**Default state:** `settings:` quick actions work out of the box. RSS suggestions require an active feed subscription with omnibox search enabled.
 
+- [ ] Type `settings:` followed by a partial section name (e.g. `settings: passwords`, `settings: privacy`) — **Expected:** a suggestion appears with the matching section's label, navigating directly to the right `chrome://settings/<section>` sub-page on selection (not the settings hub page).
+- [ ] Type `settings: appearance` — **Expected:** a suggestion appears (note: both `appearance` and `appearance-and-layout` routes share the "Appearance" label, so either may surface as the top match).
+- [ ] Subscribe to an RSS feed via `chrome://reader`, then type a few characters from one of its item titles into the omnibox — **Expected:** a suggestion labeled "RSS" appears; selecting it navigates to that item's link.
+- [ ] With no RSS feeds subscribed (or omnibox search disabled under `chrome://settings/rss`), type text that would otherwise match an RSS item — **Expected:** no RSS suggestion appears, no crash.
 - [ ] Type a plain search query into the omnibox — **Expected:** normal suggestions appear (bookmarks/history/search engine) with no crash or visual corruption.
-- [ ] Type a full URL into the omnibox — **Expected:** the URL displays normally with the usual security indicator (lock icon / "Not secure", etc.).
-- [ ] Try any quick-action-style prefix mentioned in Settings or docs (if discoverable in the running build) — **Expected:** either works as described, or omnibox falls back gracefully to normal behavior — note whichever happens, since the underlying feature is only partially implemented.
+- [ ] Type a full URL into the omnibox — **Expected:** the URL displays normally with the usual security indicator (lock icon / "Not secure", etc.) — unchanged, since URL Formatting/Security Indicators were not part of this pass.
 
-📷 *Screenshot suggestion: skip unless a specific enhanced-omnibox behavior is confirmed working — otherwise a generic omnibox screenshot adds little value here.*
+📷 *Screenshot suggestion: the omnibox dropdown showing a `settings:` quick-action suggestion alongside a normal search suggestion.*
 
 ### Split View
 

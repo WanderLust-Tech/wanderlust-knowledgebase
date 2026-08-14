@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.15)
+## Versioned releases (1.7.25 → 1.8.16)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,43 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.16 — 2026-08-14
+
+Ships the "Quick Actions" piece of Enhanced Omnibox, plus a real bug fix
+that was blocking it — the last "known bug" left on the documentation-audit
+backlog.
+
+- New `settings:` quick-action provider
+  (`custom/components/omnibox/browser/settings_quick_action_provider.{h,cc}`,
+  `AutocompleteProvider::TYPE_SETTINGS_QUICK_ACTION`, gated behind
+  `enable_settings_quick_action`). Typing `settings:` or `settings ` followed
+  by any part of a settings section's name (e.g. `settings: passwords`)
+  fuzzy-matches against a table mirrored from `App.tsx`'s `ROUTES` and
+  navigates straight to that `chrome://settings/<section>` sub-page.
+- Deliberately did *not* build `tab:`/`bookmark:` prefixes — stock
+  Chromium's `OpenTabProvider` and `BookmarkProvider` already match any
+  typed text against open tabs/bookmarks with no prefix, and
+  `AutocompleteResult::ConvertOpenTabMatches()` already attaches a
+  "Switch to tab" action to any match. Building custom versions would
+  have duplicated existing behavior.
+- Fixed the RSS-in-omnibox provider (`CustomSearchProvider`), which turned
+  out to be dead code: it was added to the default provider bitmask
+  (`TYPE_CUSTOM_SEARCH`) via an old patch but never actually instantiated in
+  `AutocompleteController`, and its matching logic was commented-out
+  pseudocode referencing undefined symbols (`ce_rss`, `ce::` namespace)
+  left over from an unrelated ancestor codebase. Rewrote it against the
+  fork's real, current RSS backend (`RSSService`/`RSSFeed`/`RSSCache`) using
+  the modern `FindTermMatches`/`ClassifyTermMatches` highlighting API, and
+  wired its registration into `AutocompleteController::InitializeSyncProviders()`
+  alongside the new settings provider.
+- Also fixed a latent bug found in the course of this: `autocomplete_provider.h`
+  used `BUILDFLAG(ENABLE_RSS_READER)` without ever including
+  `custom/buildflags/custom_features_buildflags.h` — harmless as long as
+  nothing forced that header to compile standalone, but it broke as soon as
+  the new `ENABLE_SETTINGS_QUICK_ACTION` check was added next to it.
+- URL Formatting and Security Indicators — the other two sub-features
+  originally documented under Enhanced Omnibox — remain unimplemented.
 
 ### 1.8.15 — 2026-08-14
 

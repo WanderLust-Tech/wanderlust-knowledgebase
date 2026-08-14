@@ -97,7 +97,7 @@ Features are organized following Chromium's architecture patterns:
 | [Custom Settings UI](custom-settings-ui.md) | ✅ Complete | 🔄 Partial | Settings API | ✅ Tested |
 | [Custom Download Shelf](custom-download-shelf.md) | ✅ Complete | ✅ Full | Browser Layout | ✅ Tested |
 | [Tab Shapes Feature](tab-shapes-feature.md) | ✅ Complete | ✅ Full | UI Preferences + Tab Rendering | ✅ Tested |
-| [Enhanced Omnibox](enhanced-omnibox.md) | 🔄 In Progress | 🔄 Partial | Search API | 🔄 Partial |
+| [Enhanced Omnibox](enhanced-omnibox.md) | 🔄 Partial (Quick Actions + RSS done; URL Formatting/Security Indicators not started) | ✅ Full | Search API | 🔄 Manual |
 | [Build System Integration](build-system-integration.md) | ✅ Complete | ✅ Full | GN/Ninja | ✅ Tested |
 | **[Feature Flag Management](feature-flag-management.md)** | **✅ Complete** | **✅ Full** | **Build System + Runtime** | **🆕 New** |
 | **[Enhanced Scroll Animations](enhanced-scroll-animations.md)** | **✅ Complete** | **✅ Full** | **Animation Framework** | **🆕 New** |

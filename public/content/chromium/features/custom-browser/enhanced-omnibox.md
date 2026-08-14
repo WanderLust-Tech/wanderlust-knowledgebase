@@ -226,10 +226,19 @@ Advanced autocomplete functionality:
 
 #### Quick Actions
 Direct actions from the omnibox:
-- **Tab Switching**: Quick tab navigation with `tab: <query>`
-- **Bookmark Access**: Direct bookmark access with `bookmark: <query>`  
-- **Settings Access**: Quick settings access with `settings: <option>`
-- **Extension Control**: Extension management through omnibox
+- **Settings Access**: Quick settings access with `settings: <option>` (implemented — see below)
+- **Tab Switching**: Not built as a custom prefix — stock Chromium's `OpenTabProvider` already matches any typed text against open tabs (no prefix needed), and `AutocompleteResult::ConvertOpenTabMatches()` attaches a "Switch to tab" action to any matching suggestion. A `tab:`/`bookmark:`-prefixed provider would duplicate this.
+- **Bookmark Access**: Not built for the same reason — stock Chromium's `BookmarkProvider` already matches typed text against bookmarks unprefixed, and there's a built-in `@bookmarks` starter-pack keyword scope.
+- **Extension Control**: Not implemented.
+
+## ✅ Actual Implementation (as of v1.8.16)
+
+Two real providers exist under `src/custom/components/omnibox/browser/`:
+
+- **`SettingsQuickActionProvider`** (`settings_quick_action_provider.{h,cc}`) — triggers on `settings:` or `settings ` typed in the omnibox, fuzzy-matches the remainder (exact > prefix > substring) against a hand-maintained table mirroring `custom/components/custom_settings/App.tsx`'s `ROUTES`, and suggests a direct `chrome://settings/<key>` navigation. Registered as `AutocompleteProvider::TYPE_SETTINGS_QUICK_ACTION`, gated behind the `enable_settings_quick_action` buildflag.
+- **`CustomSearchProvider`** (`custom_search_provider.{h,cc}`) — the RSS-in-omnibox provider. This existed as dead code for a long time: it was added to the default provider bitmask (`TYPE_CUSTOM_SEARCH`) but never actually instantiated in `AutocompleteController`, and its matching logic was commented-out pseudocode referencing undefined symbols from an unrelated ancestor codebase. Both bugs are now fixed — it's registered in `AutocompleteController::InitializeSyncProviders()` and matches typed text against subscribed RSS feed items' titles (via `RSSService`/`RSSCache`, gated behind `RSSService::IsEnabled() && IsOmniboxSearchEnabled()`), using the modern `FindTermMatches`/`ClassifyTermMatches` highlighting API.
+
+**Still not implemented**: URL Formatting and Security Indicators (the other two sub-features originally documented above) — no code exists for either yet.
 
 #### Custom Search Commands
 Specialized search functionality:
@@ -258,10 +267,11 @@ Enhanced accessibility and usability:
 
 | Component | Status | Testing | Documentation | Integration |
 |-----------|--------|---------|---------------|-------------|
-| Search Providers | 🔄 In Progress | 🔄 Partial | 🔄 Partial | 🔄 Partial |
-| URL Formatting | 🔄 In Progress | 🔄 Partial | 🔄 Partial | ✅ Complete |
-| Quick Actions | 🔄 In Progress | 🔄 Basic | 🔄 Partial | 🔄 Partial |
-| Security Indicators | 🔄 In Progress | 🔄 Basic | 🔄 Partial | 🔄 Partial |
+| Search Providers (RSS-in-omnibox) | ✅ Complete | 🔄 Manual | ✅ Full | ✅ Complete |
+| Quick Actions (`settings:`) | ✅ Complete | 🔄 Manual | ✅ Full | ✅ Complete |
+| Quick Actions (`tab:`/`bookmark:`) | ❌ Not planned — redundant with stock Chromium | — | ✅ Full | — |
+| URL Formatting | ❌ Not started | — | 🔄 Partial | — |
+| Security Indicators | ❌ Not started | — | 🔄 Partial | — |
 | Build Integration | ✅ Complete | ✅ Tested | ✅ Full | ✅ Complete |
 
 ## 🚀 Future Enhancements
