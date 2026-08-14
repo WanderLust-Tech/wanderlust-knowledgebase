@@ -485,16 +485,16 @@
 ### Local Font Fingerprint Protection
 
 **What it is:** Restricts font enumeration exposed to JavaScript (`document.fonts`) to a standard web-safe set, hiding OS-specific installed fonts that would otherwise be usable for device fingerprinting.
-**Where to find it:** No settings-page toggle exists yet — pref-only: `privacy_guard.font_fingerprint_protection`. To test, edit the profile's `Preferences` file (browser closed) or use an internal pref-setting mechanism if available, then relaunch.
+**Where to find it:** `chrome://settings` → Privacy and security → "Fingerprint resistance" section — **Restrict local font access** toggle, alongside the canvas noise/screen metrics/letterboxing toggles below (same `WebPreferences`-backed mechanism).
 **Default state:** Disabled by default (`privacy_guard.font_fingerprint_protection` = `false`). Feature ships under `BUILDFLAG(ENABLE_PRIVACY_GUARD)`.
 
-- [ ] Set the pref to `true`, restart the browser, open DevTools console on any page and run:
+- [ ] Enable "Restrict local font access", open DevTools console on any page and run:
   ```js
   const fonts = await document.fonts.query({});
   [...fonts].map(f => f.family)
   ```
-  — **Expected:** only standard web-safe font families appear; OS-specific fonts (e.g. "Segoe UI" on Windows) are absent.
-- [ ] Set the pref back to `false`, restart, repeat the same query — **Expected:** the full OS-installed font list reappears.
+  — **Expected:** only standard web-safe font families appear; OS-specific fonts (e.g. "Segoe UI" on Windows) are absent. No restart required.
+- [ ] Disable the toggle, repeat the same query — **Expected:** the full OS-installed font list reappears.
 
 📷 *Screenshot suggestion: DevTools console output of the font query, before/after, side by side.*
 

@@ -480,9 +480,17 @@ The three Blink files are vanilla Chromium and have corresponding patch files in
 | [`browser/prefs/custom_prefs.cc`](../src/custom/browser/prefs/custom_prefs.cc) | Registers `kFontFingerprintProtection` under `ENABLE_PRIVACY_GUARD` |
 | `third_party/blink/renderer/core/exported/web_view_impl.cc` (patch) | Calls `settings->SetLocalFontsFingerprintProtection()` in `ApplyWebPreferences()` |
 
+### Settings UI
+
+**(v1.8.14)** `chrome://settings` → Privacy and security → "Fingerprint
+resistance" section has a "Restrict local font access" toggle
+(`PrivacyPage.tsx`), alongside the canvas-noise/screen-metrics/letterboxing
+toggles it shares a `WebPreferences` mechanism with. Applies immediately,
+no restart needed — direct pref edits below still work identically.
+
 ### Testing
 
-1. Enable: `privacy_guard.font_fingerprint_protection = true`.
+1. Enable via Settings (or set `privacy_guard.font_fingerprint_protection = true` directly).
 2. Navigate to any page and open the DevTools console.
 3. Run:
    ```js

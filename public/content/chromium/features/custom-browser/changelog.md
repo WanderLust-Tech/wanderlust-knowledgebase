@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.13)
+## Versioned releases (1.7.25 → 1.8.14)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,20 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.14 — 2026-08-14
+
+Adds a settings toggle for Local Font Fingerprint Protection.
+
+- New "Restrict local font access" toggle in Settings > Privacy and
+  security's existing Fingerprint resistance section, alongside canvas
+  noise/screen metrics/letterboxing. The backend
+  (`privacy_guard.font_fingerprint_protection`, threaded through
+  `OverrideWebPreferences()` into
+  `WebPreferences::local_fonts_fingerprint_protection`) was already
+  fully built — pref-only, no UI. Zero new C++; a single `usePref()` +
+  `Toggle`, matching its three neighboring toggles exactly. Applies
+  immediately, no restart needed.
 
 ### 1.8.13 — 2026-08-14
 
