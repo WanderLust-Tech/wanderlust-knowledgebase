@@ -587,14 +587,15 @@
 ### User-Agent Overrides
 
 **What it is:** Two UA controls — a global compatibility mode substituting a pinned Firefox or Chrome-stable UA string for all requests, and per-site glob-matched UA override rules.
-**Where to find it:** No settings UI yet. Global mode: `custom.user_agent.global_mode` (local-state pref: `"default"` / `"firefox"` / `"chrome_stable"`). Per-site rules: `custom.ua_overrides` (profile pref, JSON array of `{domain, ua}`). Both require editing the relevant preferences file (Local State for global mode, profile `Preferences` for per-site) while the browser is closed.
+**Where to find it:** `chrome://settings` → Privacy and security → Security & Privacy — two sections: "User-Agent compatibility mode" (a Default/Firefox/Chrome-stable select, `UAGlobalModeSection`) and "Per-site User-Agent overrides" (a rule table, `UAOverridesSection`), both in `SecurityPage.tsx`. Both apply immediately, no restart needed.
 **Default state:** Disabled by default — global mode defaults to `"default"` (pass-through), per-site rules default to `"[]"`. Gated by `BUILDFLAG(CUSTOM_BROWSER)` with no separate feature flag.
 
-- [ ] Close the browser, set the global-mode local-state pref to `"firefox"`, relaunch.
-- [ ] Navigate to any page, open DevTools → Network → select the document request → Request Headers → `User-Agent` — **Expected:** shows the pinned Firefox UA string (`...rv:136.0) Gecko/20100101 Firefox/136.0`).
-- [ ] Reset global mode to `"default"` — **Expected:** the normal Chromium UA string returns.
-- [ ] Set `custom.ua_overrides` to `[{"domain":"*.example.com","ua":"TestAgent/1.0"}]`, relaunch, and visit `https://example.com/` — **Expected:** the document request's `User-Agent` header reads `TestAgent/1.0`, overriding whatever global mode is set.
-- [ ] Visit a non-matching host — **Expected:** UA reverts to the global-mode value (or default Chromium UA if global mode is `"default"`).
+- [ ] Open Settings → Security & Privacy, set "User-Agent compatibility mode" to Firefox.
+- [ ] Navigate to any page, open DevTools → Network → select the document request → Request Headers → `User-Agent` — **Expected:** shows the pinned Firefox UA string (`...rv:136.0) Gecko/20100101 Firefox/136.0`), no restart required.
+- [ ] Reset the compatibility mode to Default — **Expected:** the normal Chromium UA string returns immediately.
+- [ ] Add a per-site override for `*.example.com` with UA `TestAgent/1.0`, visit `https://example.com/` — **Expected:** the document request's `User-Agent` header reads `TestAgent/1.0`, overriding whatever compatibility mode is set, no restart required.
+- [ ] Visit a non-matching host — **Expected:** UA reverts to the compatibility-mode value (or default Chromium UA if set to Default).
+- [ ] Note the compatibility mode is local-state (applies to every profile on the machine) while per-site overrides are per-profile — verify a second profile shares the compatibility mode setting but not the per-site rule list.
 
 📷 *Screenshot suggestion: DevTools Request Headers panel highlighting the overridden `User-Agent` value.*
 

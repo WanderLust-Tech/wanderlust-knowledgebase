@@ -129,19 +129,41 @@ overrides whatever `GetUserAgent()` returned.
 
 ---
 
+## Settings UI
+
+**(v1.8.12)** Both controls now have a `chrome://settings` → Privacy and
+security → Security & Privacy surface instead of requiring direct pref edits:
+
+- **"User-Agent compatibility mode"** (`UAGlobalModeSection` in
+  `SecurityPage.tsx`) — a Default/Firefox/Chrome-stable select, backed by two
+  dedicated WebUI messages (`customGetUAGlobalMode`/`customSetUAGlobalMode`)
+  rather than the generic pref protocol, since `custom.user_agent.global_mode`
+  is local-state and the generic protocol only reads `Profile::GetPrefs()`.
+- **"Per-site User-Agent overrides"** (`UAOverridesSection`) — a rule table
+  (domain glob + UA string), using the ordinary `usePref()` blob pattern
+  since `custom.ua_overrides` is a normal `PrefChangeRegistrar`-backed
+  profile pref.
+
+Both apply immediately; no restart needed for either. Direct pref edits
+(below) still work identically and are useful for scripting/automation.
+
 ## Testing
 
 ### Global mode
 
-1. Set `custom.user_agent.global_mode = "firefox"` (local-state pref).
+1. Settings → Security & Privacy → "User-Agent compatibility mode" → Firefox
+   (or set `custom.user_agent.global_mode = "firefox"`, local-state pref,
+   directly).
 2. Navigate to any page. Open DevTools → Network → select the document request
    → Request Headers → `User-Agent`.
 3. Should show the pinned Firefox UA string.
-4. Reset to `"default"` → Chromium UA returns.
+4. Reset to Default/`"default"` → Chromium UA returns.
 
 ### Per-site rules
 
-1. Set `custom.ua_overrides = [{"domain": "*.example.com", "ua": "TestAgent/1.0"}]`.
+1. Settings → Security & Privacy → "Per-site User-Agent overrides" → add a
+   rule (or set `custom.ua_overrides = [{"domain": "*.example.com", "ua": "TestAgent/1.0"}]`
+   directly).
 2. Navigate to `https://example.com/`.
 3. DevTools → Network → document request → `User-Agent` should be `TestAgent/1.0`.
 4. Navigate to a non-matching host → original UA (or global mode UA if set).

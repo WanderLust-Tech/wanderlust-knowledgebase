@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.11)
+## Versioned releases (1.7.25 → 1.8.12)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,25 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.12 — 2026-08-14
+
+Adds a settings UI for User-Agent Overrides to Settings > Security &
+Privacy.
+
+- **"User-Agent compatibility mode"**: a Default/Firefox/Chrome-stable
+  select for `custom.user_agent.global_mode`. This is a local-state pref
+  (applies to every profile on the machine), which the generic settings
+  pref protocol can't reach since it only reads `Profile::GetPrefs()` —
+  added two small dedicated messages instead of generalizing the shared
+  protocol and risking every other pref-bound toggle in Settings.
+- **"Per-site User-Agent overrides"**: a rule table (domain glob + UA
+  string) using the same pref-blob pattern as Connection Control/Content
+  Policy Chain, since `custom.ua_overrides` is an ordinary
+  `PrefChangeRegistrar`-backed profile pref.
+- Both were previously only configurable by hand-editing the relevant
+  preferences file while the browser was closed; both now apply
+  immediately with no restart.
 
 ### 1.8.11 — 2026-08-14
 
