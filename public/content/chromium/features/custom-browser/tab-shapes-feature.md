@@ -104,7 +104,7 @@ sequenceDiagram
     BW->>TR: Request tab redraw with new shape
     TR->>U: Visual tab shape change
     
-    Note over TS,BW: Current Implementation Gap<br/>May be missing proper integration
+    Note over BW,TR: TabStyleViews::GetPath() reads TabService::GetTabShape()<br/>directly (tab_style_views.cc patch) and builds a custom<br/>SkPath for kFill/kBorder/kHitTest — wired and live.
 ```
 
 ### Core Components
@@ -349,10 +349,10 @@ enum Shape {
 | **Build System** | ✅ Complete | GN build flags | Conditional compilation working |
 | **Preference System** | ✅ Complete | Profile-scoped prefs | Registration and persistence working |
 | **WebUI Settings** | ✅ Complete | React/Polymer UI | Visual previews functional |
-| **Tab Rendering** | ⚠️ Partial | Browser window updates | *May need integration fixes* |
+| **Tab Rendering** | ✅ Complete | Browser window updates | `GetTabShape()`/`SetPath()` wired into `TabStyleViews::GetPath()`; `enable_tab_shapes = true` |
 | **Resource Assets** | ✅ Complete | Preview images | Light/dark theme support |
 | **Documentation** | ✅ Complete | This guide | User and developer docs |
 
-**Last Updated**: January 15, 2025  
+**Last Updated**: 2026-08-13 — corrected the Tab Rendering status above; it had been marked "Partial" since this doc's original 2025-01-15 write-up but the actual rendering patch (`chrome-browser-ui-views-tabs-tab_style_views.cc.patch`) has been fully wired for some time.  
 **Feature Version**: 1.1.0  
 **Compatibility**: Chrome 131+ based custom browser builds

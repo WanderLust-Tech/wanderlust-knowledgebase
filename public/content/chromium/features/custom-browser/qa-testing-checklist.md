@@ -421,12 +421,12 @@
 ### Connection Control
 
 **What it is:** A per-profile network firewall — an ordered allow/deny rule list (by protocol, host glob, port, and public/private IP scope) evaluated before any request leaves the browser.
-**Where to find it:** Master on/off via Privacy Shield bubble ("Connection Control") or `custom.connection_control.enabled` pref. Rules themselves have no rule-editor UI yet — set `custom.connection_control.rules` (JSON array) by editing the profile's `Preferences` file while the browser is closed, then relaunch.
+**Where to find it:** `chrome://settings` → Privacy and security → Security & Privacy → "Connection Control" section (`ConnectionControlSection` in `SecurityPage.tsx`) has a full rule-editor table — add/edit/delete/toggle rules by Action, Protocol, Scope, Port, and Host pattern, no restart needed. The master on/off is also mirrored in the Privacy Shield bubble.
 **Default state:** Disabled by default. `custom.connection_control.enabled` defaults to `false`; `custom.connection_control.rules` defaults to `"[]"`.
 
-- [ ] Close the browser, add a rule to `Preferences` (`action: "deny", scope: "private", protocol: "any", port: 0`), enable the feature, relaunch.
+- [ ] Open Settings → Security & Privacy → Connection Control, add a deny rule (scope: private, protocol: any, port: 0), enable the feature — **Expected:** applies immediately, no restart required.
 - [ ] Navigate to `http://192.168.1.1` (or any private-IP address) — **Expected:** page fails with `ERR_BLOCKED_BY_CLIENT`.
-- [ ] Add an `allow` rule above the deny rule for that specific IP, relaunch — **Expected:** the page now loads.
+- [ ] Add an `allow` rule above the deny rule for that specific IP — **Expected:** the page now loads without a restart.
 - [ ] Set `enabled = false` — **Expected:** all traffic flows normally regardless of rules.
 - [ ] Visit any `chrome://` or `wanderlust://` page while a broad deny-all rule is active — **Expected:** internal pages are never blocked (always exempt).
 
@@ -435,7 +435,7 @@
 ### Referrer Control
 
 **What it is:** Strips the `Referer` header from outgoing requests unless the destination host matches a user-configured exception list.
-**Where to find it:** Master toggle "Strip Referrer" in the Privacy Shield bubble, or pref `custom.strip_referrer`. Exceptions list (`custom.referrer_exceptions`, JSON glob array) has no GUI — edit the profile `Preferences` file.
+**Where to find it:** `chrome://settings` → Privacy and security → Security & Privacy → "Referrer stripping" section (`ReferrerControlSection` in `SecurityPage.tsx`) — toggle plus a live exceptions list (add/remove glob patterns like `*.example.com`, no restart needed). Master toggle is also mirrored in the Privacy Shield bubble as "Strip Referrer".
 **Default state:** Disabled by default. `custom.strip_referrer` defaults to `false`.
 
 - [ ] Enable "Strip Referrer" with an empty exceptions list, then click a link from one page to `https://developer.mozilla.org/` — **Expected:** DevTools → Network → Request Headers shows no `Referer` header on the navigation request.

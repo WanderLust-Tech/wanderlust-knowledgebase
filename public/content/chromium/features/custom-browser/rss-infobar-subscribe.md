@@ -24,7 +24,7 @@ The delegate now overrides four members:
 | `GetButtons()` | `BUTTON_OK \| BUTTON_CANCEL` (explicit — was relying on inherited default) |
 | `GetButtonLabel(BUTTON_OK)` | `IDS_RSS_INFOBAR_BUTTON_TEXT` → "Subscribe" |
 | `GetButtonLabel(BUTTON_CANCEL)` | Falls through to `ConfirmInfoBarDelegate::GetButtonLabel(button)` (default "Cancel" via `IDS_CANCEL`) — avoids pulling in `components/strings/grit/components_strings.h` |
-| `Accept()` | Resolves `Profile` via `infobars::ContentInfoBarManager::WebContentsFromInfoBar(infobar())` (NOT `browser_->profile()` — that path crashes when the originating Browser has been swapped or closed while the infobar was still alive, since the stored `raw_ptr<Browser>` goes dangling), looks up `RSSService`, logs each feed via `LOG(WARNING)`, returns `true` to close. The actual subscription is currently a logging stub — see [Subscribe behaviour](#subscribe-behaviour). |
+| `Accept()` | Resolves `Profile` via `infobars::ContentInfoBarManager::WebContentsFromInfoBar(infobar())` (NOT `browser_->profile()` — that path crashes when the originating Browser has been swapped or closed while the infobar was still alive, since the stored `raw_ptr<Browser>` goes dangling), looks up `RSSService`/`RSSFeed`, and calls `AddRSSChannel()` for each new feed — a real subscription, not a stub. Returns `true` to close. See [Subscribe behaviour](#subscribe-behaviour) for the full flow. |
 | `Cancel()` | `LOG(WARNING)` for the dismissal, returns `true` to close |
 
 The string `IDS_RSS_INFOBAR_BUTTON_TEXT` already existed in

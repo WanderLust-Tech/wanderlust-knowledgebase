@@ -1495,8 +1495,16 @@ pass noted above.
 - **Vertical → horizontal mode switch leaves the horizontal strip broken**
   (no `+` button, tabs blank, flicker on new-tab) — see
   [troubleshooting/vertical-to-horizontal-switch.md](troubleshooting/vertical-to-horizontal-switch.md)
-  for symptoms, repro, and the six attempted fixes that didn't resolve it.
-  Workaround: restart after switching back.
+  for symptoms, repro, and the six attempted fixes that didn't resolve it as
+  of that doc's last update (2026-05-22). **Needs re-verification**: the live
+  code now also has a `tab_strip_region_view_->parent() != this` guard in
+  `EnsureTabStripVisible` (`vertical_tab_bar.cc:702`) that isn't described in
+  any of the six documented attempts — either an undocumented seventh fix
+  landed since, or it's addressing a related-but-different re-entrancy issue.
+  Don't assume this is resolved without an actual repro test; if it does turn
+  out fixed, update the troubleshooting doc's "Status" line accordingly
+  instead of leaving it at "Unresolved." Workaround until confirmed: restart
+  after switching back.
 - **`Init()` runs before children attach** — already worked around via the
   `view_cache_built_` latch, but it's still a smell. Tightening would
   require either reordering the BrowserView patch or moving `Init()`'s
