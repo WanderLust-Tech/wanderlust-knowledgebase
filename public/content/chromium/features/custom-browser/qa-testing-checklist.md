@@ -542,13 +542,13 @@
 ### Content Policy Chain
 
 **What it is:** Per-content-type URL filtering — ordered rules that block or allow specific resource types (scripts, images, fonts, XHR, frames, etc.) from specific hostname patterns.
-**Where to find it:** No settings UI exists yet. Configure via the profile's `Preferences` file (browser closed): `custom.content_policy.enabled` (bool) and `custom.content_policy.rules` (JSON array of `{id, pattern, content_types, action, enabled}`).
+**Where to find it:** `chrome://settings` → Privacy and security → Security & Privacy → "Content Policy Chain" section (`ContentPolicySection` in `SecurityPage.tsx`) — a rule-editor table with per-rule Action, Host pattern, and Content types (checkboxes), no restart needed.
 **Default state:** Disabled by default. `custom.content_policy.enabled` = `false`; `custom.content_policy.rules` = `"[]"`. Gated by `BUILDFLAG(ENABLE_CONTENT_POLICY_CHAIN)` (`enable_content_policy_chain = true`).
 
-- [ ] Close the browser, set `custom.content_policy.enabled = true` and add a rule blocking `kScript` (bit `1`) for pattern `*.doubleclick.net`, action `block`, relaunch.
+- [ ] Open Settings → Security & Privacy → Content Policy Chain, enable it, add a rule blocking Scripts only for pattern `*.doubleclick.net` — **Expected:** applies immediately, no restart required.
 - [ ] Visit a page that loads a script from `doubleclick.net` — **Expected:** DevTools Network tab shows that script request as blocked (`ERR_BLOCKED_BY_CLIENT`, initiator "ContentPolicy"), while unrelated resource types from the same host still load.
-- [ ] Change the rule's `content_types` to `0` (all types) — **Expected:** every resource type from that host is now blocked, not just scripts.
-- [ ] Set `enabled = false` — **Expected:** all requests load normally regardless of rules present.
+- [ ] Edit the rule and check every content-type box (or leave it at the default "all types") — **Expected:** every resource type from that host is now blocked, not just scripts.
+- [ ] Disable the master toggle — **Expected:** all requests load normally regardless of rules present.
 - [ ] Add a rule with an invalid/unmatched pattern — **Expected:** default-allow applies (no rule matched → request proceeds).
 
 📷 *Screenshot suggestion: DevTools Network panel showing a script blocked with "ContentPolicy" as the block reason.*

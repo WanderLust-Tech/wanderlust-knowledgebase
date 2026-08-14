@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.8)
+## Versioned releases (1.7.25 → 1.8.9)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,27 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.9 — 2026-08-13
+
+Adds a rule-editor UI for Content Policy Chain to Settings > Security &
+Privacy.
+
+- The backend (`content_policy_manager.cc`, `content_policy_throttle.cc`)
+  already worked — a per-profile engine blocking/allowing specific
+  resource types (scripts, images, fonts, etc.) by hostname pattern —
+  but rules could only be edited by hand-editing the profile's
+  `Preferences` file while the browser was closed.
+- New `ContentPolicySection` in `SecurityPage.tsx` mirrors the existing
+  Connection Control / Referrer Control sections in the same file: a
+  rule table with per-rule Action (block/allow), Host pattern, and
+  Content types (checkboxes over the `content_types` bitmask), live
+  toggle, no restart needed. Purely additive React — the manager already
+  re-parses rules from the pref automatically on change, so no new C++
+  was needed.
+- Found and identified while auditing the docs for outstanding work —
+  see the 1.8.8 doc-correction commit for the same Connection Control /
+  Referrer Control confusion this pattern originally came from.
 
 ### 1.8.8 — 2026-08-13
 
