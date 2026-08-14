@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.12)
+## Versioned releases (1.7.25 → 1.8.13)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,25 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.13 — 2026-08-14
+
+Adds a Timezone Override settings UI to Settings > Privacy and security.
+
+- The backend was already fully built and working —
+  `HandleGetTimezone`/`HandleSetTimezone` in `CustomSettingsHandler`,
+  backed by `TimeZoneMonitor` — it just had no React page calling it;
+  the only prior way to exercise it was `cr.sendWithPromise`/
+  `chrome.send` calls typed directly into the `chrome://settings`
+  DevTools console. Zero new C++ for this one.
+- New `TimezoneOverrideSection` in `PrivacyPage.tsx`, placed right below
+  Fingerprint resistance since it serves the same purpose (reducing
+  `Date`/`Intl` fingerprinting surface). A select lists "System default"
+  plus ~50 IANA zones; changes apply immediately, no restart needed.
+- Uses the dedicated `customGetTimezone`/`customSetTimezone` messages
+  rather than the generic settings pref protocol, since the get call
+  also returns the available-zones list and the set call has a side
+  effect beyond the pref write (rebinding `TimeZoneMonitor`).
 
 ### 1.8.12 — 2026-08-14
 

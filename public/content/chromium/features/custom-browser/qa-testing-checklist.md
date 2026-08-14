@@ -668,23 +668,15 @@
 ### Timezone Override (Anti-Fingerprinting)
 
 **What it is:** A per-profile runtime override of the reported system timezone. When set, it rebinds the OS `TimeZoneMonitor` service to report a chosen IANA timezone ID (e.g. `"America/New_York"`) instead of the host machine's real one, updating ICU and notifying all renderers — affecting `Intl.DateTimeFormat().resolvedOptions().timeZone`, `Date().toString()`, and `getTimezoneOffset()` site-wide. An empty override reverts to the host system timezone.
-**Where to find it:** No settings-page UI is wired up yet, but the backend WebUI message handler is live on `chrome://settings` (the custom React settings page). Since there's no visible toggle, verify/exercise it via DevTools console on the `chrome://settings` tab itself:
-  ```js
-  // Read current override + available zone list:
-  cr.sendWithPromise('customGetTimezone').then(r => console.log(r));
-  // Set an override (persists to the profile pref and applies immediately):
-  chrome.send('customSetTimezone', ['America/New_York']);
-  // Revert to system timezone:
-  chrome.send('customSetTimezone', ['']);
-  ```
+**Where to find it:** `chrome://settings` → Privacy and security → "Timezone override" section (`TimezoneOverrideSection` in `PrivacyPage.tsx`), right below Fingerprint resistance — a select listing "System default" plus ~50 IANA zones.
 **Default state:** Disabled/no override by default — pref `custom.timezone` defaults to an empty string (host system timezone used as-is). Gated by `BUILDFLAG(CUSTOM_BROWSER)`, no separate feature flag; the `TimezoneService` KeyedService is always created per-profile.
 
-- [ ] Open `chrome://settings`, open DevTools console on that tab, run `cr.sendWithPromise('customGetTimezone').then(r => console.log(r))` — **Expected:** resolves with `{tzId: "", available: [...~50 IANA zone strings...]}` on a fresh profile.
+- [ ] Open Settings → Privacy and security → Timezone override — **Expected:** select shows "System default" selected on a fresh profile.
 - [ ] In any regular page's console, note the current values of `Intl.DateTimeFormat().resolvedOptions().timeZone` and `new Date().getTimezoneOffset()`.
-- [ ] Back on the `chrome://settings` tab, run `chrome.send('customSetTimezone', ['Asia/Tokyo'])` (or another zone far from your real one) — **Expected:** no error; the call resolves silently.
+- [ ] Back on the Settings page, select a zone far from your real one (e.g. "Asia/Tokyo") — **Expected:** applies immediately, no restart.
 - [ ] Re-check `Intl.DateTimeFormat().resolvedOptions().timeZone` and `new Date().getTimezoneOffset()` in an existing or new tab — **Expected:** both now reflect Tokyo time (`"Asia/Tokyo"`, and an offset of `-540` minutes), differing from the machine's real timezone.
-- [ ] Restart the browser (without reverting the override) — **Expected:** the override persists across restart (re-applied from the saved pref on profile load) — `Intl.DateTimeFormat()` still reports the overridden zone.
-- [ ] Revert with `chrome.send('customSetTimezone', [''])` — **Expected:** the browser's reported timezone reverts to the real host system timezone (verify via `Intl.DateTimeFormat().resolvedOptions().timeZone`).
+- [ ] Restart the browser (without reverting the override) — **Expected:** the override persists across restart (re-applied from the saved pref on profile load) — the Settings page still shows the overridden zone selected, and `Intl.DateTimeFormat()` still reports it.
+- [ ] Revert to "System default" — **Expected:** the browser's reported timezone reverts to the real host system timezone (verify via `Intl.DateTimeFormat().resolvedOptions().timeZone`).
 
 📷 *Screenshot suggestion: DevTools console showing `Intl.DateTimeFormat().resolvedOptions().timeZone` reporting a spoofed zone (e.g. "Asia/Tokyo") that doesn't match the host machine's actual timezone.*
 
