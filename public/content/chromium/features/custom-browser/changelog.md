@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.14)
+## Versioned releases (1.7.25 → 1.8.15)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,28 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.15 — 2026-08-14
+
+Adds settings toggles for the Instagram Downloader — the last item on
+the current documentation-audit backlog.
+
+- New "Instagram" section in Settings > Other settings with two
+  checkboxes: the Save-button feature
+  (`custom.instagram_downloader.enabled`) and "you liked this" thumbnail
+  badges (`custom.instagram_downloader.show_like_status`). Neither had
+  any settings-page presence before — both are plain boolean prefs read
+  directly in `InstagramDownloaderTabHelper`, so zero new C++.
+- Exposed both toggles together rather than just the requested
+  like-status one — they're documented as independent siblings sharing
+  one passive-capture content script, and leaving the download-button
+  master toggle invisible while only exposing the secondary one would
+  have been an incomplete settings surface for a single feature.
+
+This closes out the "quick wins" batch from the 2026-08-13 documentation
+audit — see that day's entries for Content Policy Chain, Origin
+Permission Grants, Site Injection, User-Agent Overrides, Timezone
+Override, and Local Font Fingerprint Protection.
 
 ### 1.8.14 — 2026-08-14
 

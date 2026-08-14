@@ -418,12 +418,11 @@ download already uses, landing in the regular configured Downloads path.
 
 ## Known limitations
 
-- **No settings-page toggle yet.** The pref exists and is checked, but
-  there's no UI switch for it — same v1 gap as other recently-added
-  features before their settings field lands. Set via the generic pref
-  bridge (see [`ai-page-assistant.md`](ai-page-assistant)'s settings
-  section for the pattern — `customGetPrefs`/`customSetPref` work for
-  any registered pref by key) or direct pref-file edit in the interim.
+- ~~No settings-page toggle yet.~~ **Done (v1.8.15).** `chrome://settings`
+  → Other settings → "Instagram" section has both the Save-button master
+  toggle (`custom.instagram_downloader.enabled`) and the "you liked this"
+  badge toggle (`custom.instagram_downloader.show_like_status`), exposed
+  as sibling checkboxes since they're independently switchable.
 - **Carousel posts download every item at once**, one `<a>` click per
   item in a tight loop — Chromium's `DownloadRequestLimiter` (per-tab,
   unpatched/vanilla in this fork) may still surface its own "this site is

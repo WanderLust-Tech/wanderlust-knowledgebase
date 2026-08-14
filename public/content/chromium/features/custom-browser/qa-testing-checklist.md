@@ -769,7 +769,7 @@
 ### Instagram Downloader
 
 **What it is:** A floating Save button on Instagram post/reel/IGTV pages that downloads the media directly, plus small heart badges on post thumbnails anywhere on Instagram marking posts you've previously liked/opened.
-**Where to find it:** Any `instagram.com/p/`, `/reel/`, or `/tv/` page — floating Save button, fixed bottom-right. Heart badges appear on post thumbnails across profile grids, home feed, and explore. No settings-page toggle exists yet — prefs `custom.instagram_downloader.enabled` and `custom.instagram_downloader.show_like_status` must be set via the generic pref bridge (`customGetPrefs`/`customSetPref`) or direct pref-file edit.
+**Where to find it:** Any `instagram.com/p/`, `/reel/`, or `/tv/` page — floating Save button, fixed bottom-right. Heart badges appear on post thumbnails across profile grids, home feed, and explore. Both toggled independently at `chrome://settings` → Other settings → "Instagram" section.
 **Default state:** Enabled by default (`enable_instagram_downloader = true`; `BUILDFLAG(ENABLE_INSTAGRAM_DOWNLOADER)`; both prefs default `true`).
 
 - [ ] Navigate to an Instagram post or reel URL — **Expected:** A floating Save button appears bottom-right.
@@ -779,7 +779,7 @@
 - [ ] After opening a post/reel directly, browse to a grid/feed/profile page containing that same post — **Expected:** A small heart badge appears on its thumbnail if you'd previously liked it.
 - [ ] While viewing a single post, like or unlike it using Instagram's own like button — **Expected:** The badge/liked state updates to match without needing to reload.
 - [ ] Go to Instagram Settings → Your Activity → Interactions → Likes ("Liked posts"), then find the injected "Sync all my likes" button — **Expected:** Clicking it auto-scrolls the full liked-posts list and bulk-populates heart badges for everything in it, without opening each post individually.
-- [ ] Edge case: set `custom.instagram_downloader.show_like_status` to `false` mid-session via the pref bridge — **Expected:** Badges stop appearing and no further grid-mutation work happens (not just hidden — the observer actually stops).
+- [ ] Edge case: uncheck the like-status badge toggle in Settings mid-session — **Expected:** Badges stop appearing and no further grid-mutation work happens (not just hidden — the observer actually stops).
 - [ ] Edge case: view an Instagram Story — **Expected:** No Save button appears; Stories use a different URL/API not covered by this feature.
 
 📷 *Screenshot suggestion: An Instagram post with the floating Save button visible, and a profile grid showing at least one thumbnail with the heart "liked" badge.*
