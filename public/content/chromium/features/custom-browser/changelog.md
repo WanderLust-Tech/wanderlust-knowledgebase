@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.17)
+## Versioned releases (1.7.25 → 1.8.18)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,38 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.18 — 2026-08-15
+
+Fixes the ad blocker's two documented "silently inert" gaps — `/regex/`
+EasyList rules and unrecognized `$important`/`$redirect=` modifiers — the
+last "known bug" on the documentation-audit backlog.
+
+- **`/regex/` rules now actually match.** They previously parsed fine but
+  only ever evaluated behind `#ifdef ENABLE_REGEX`, a macro that was never
+  defined anywhere in the build, so matching always returned `false`. Now
+  compiled with `std::regex` (ECMAScript grammar), lazily and cached per
+  `Filter` object rather than recompiled on every request.
+- Since this code compiles with C++ exceptions disabled (Chromium's
+  default) and `std::regex`'s constructor throws on a malformed pattern, a
+  new `IsLikelyValidRegexPattern()` precheck (unbalanced groups/character
+  classes, dangling trailing escape, repetition operator with nothing to
+  repeat) runs first — a pattern that fails it is treated as permanently
+  non-matching instead of risking an uncaught `std::regex_error` aborting
+  the whole browser process. Deliberately best-effort, not exhaustive; a
+  pattern that's still malformed despite passing the precheck could in
+  principle still abort — accepted rather than restructuring the build to
+  re-enable exceptions for one file.
+- **`$important`/`$redirect=` rules are now marked unsupported and
+  skipped**, extending the existing `FOUnsupported` bitmask (`$ping` was
+  already handled this way) instead of silently applying the rule's other
+  semantics as if the modifier weren't there. Actually implementing
+  `$important`'s override-priority behavior or `$redirect=`'s resource
+  substitution remains unimplemented — this only stops pretending those
+  rules work normally.
+- Other still-unrecognized modifiers (`$badfilter`, `$csp=`, `$websocket`,
+  `$genericblock`, `$popup`, `$1p`/`$strict1p`) are unchanged — only
+  `$important`/`$redirect=` were named in the original bug report.
 
 ### 1.8.17 — 2026-08-14
 

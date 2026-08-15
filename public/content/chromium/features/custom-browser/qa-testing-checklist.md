@@ -393,6 +393,7 @@
 - [ ] Toggle "Block ads and trackers" off in Settings, reload the page — **Expected:** badge disappears, blocked count is zero.
 - [ ] Navigate to a fresh tab — **Expected:** badge is hidden and any open bubble reflects an empty state.
 - [ ] Visit a page with cosmetic (element-hiding) rules (e.g. a site with a known ad-container div) — **Expected:** the hidden element does not render (inspect via View Source vs rendered DOM — the element exists in DOM but has injected `display:none` style).
+- [ ] As of v1.8.18: visit a page matching a `/regex/`-style EasyList rule (or add one locally to `bundled_filter_rules.cc` for testing) — **Expected:** the matching request is now blocked, where before it silently passed through.
 
 📷 *Screenshot suggestion: the omnibox ad-block badge plus its opened bubble showing a list of blocked hosts.*
 
