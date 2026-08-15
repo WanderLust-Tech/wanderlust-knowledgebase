@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.16)
+## Versioned releases (1.7.25 → 1.8.17)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,37 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.17 — 2026-08-14
+
+Closes the three documented v1 gaps in Container Tabs: isolation no longer
+gets silently dropped on session restore, SavedTabGroups reopen, or tab
+discard/reactivate — the last "known bug" on the documentation-audit
+backlog.
+
+- **Session restore / "reopen closed tab"**: a closing tab's container ID is
+  now captured into `sessions::tab_restore::Tab::extra_data`
+  (`BrowserLiveTabContext::GetExtraDataForTab`) and read back out in
+  `CreateRestoredTab()` to rebuild the same fixed `StoragePartition`.
+- **SavedTabGroups reopen**: `ContainerService` gained a local-only (not
+  synced) `{saved_tab_guid: container_id}` map, populated when a container
+  tab is saved into a group and read back on reopen. Deliberately kept
+  local rather than added as a synced field on `SavedTabGroupTab` — avoids
+  a sync schema/protobuf change; the trade-off is a saved group reopened on
+  a different device won't carry its container assignment there.
+- **Discard → reactivate**: `TabLifecycleUnit::FinishDiscard()` now reads
+  the discarded tab's container before destroying it and rebuilds the
+  replacement `WebContents` in the same partition, instead of always
+  falling back to the default one.
+- Along the way, found (but deliberately deferred) a real layering bug from
+  the previous release: `CustomSearchProvider` (RSS-in-omnibox, shipped in
+  1.8.16) calls `ChromeAutocompleteProviderClient::GetProfile()` and
+  `RSSService`/`RSSServiceFactory` methods, all of which live in
+  `chrome/browser`, from `components/omnibox/browser` — a layer `chrome/browser`
+  depends on, not the reverse. This only surfaces at full-browser link time
+  (a scoped `components/omnibox/browser` build doesn't need the symbols to
+  resolve), which is why it wasn't caught in 1.8.16. Tracked as a follow-up;
+  not fixed in this release.
 
 ### 1.8.16 — 2026-08-14
 

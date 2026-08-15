@@ -210,7 +210,9 @@
 - [ ] Repeat with container B, same site — **Expected:** you can log in as a different account without being logged out of the first.
 - [ ] Ctrl-click a link inside a container tab — **Expected:** the newly opened child tab inherits the same container (same logged-in session, no fresh login).
 - [ ] Trigger a `window.open()` popup from a container tab (e.g. an OAuth "login with provider" popup) — **Expected:** popup also lands in the same container.
-- [ ] Restart the browser with container tabs open — **Expected:** tabs restore via normal session restore but no longer retain container isolation (documented v1 limitation, not a bug — confirm this is what happens rather than a crash or wrong-account mixup).
+- [ ] Restart the browser with a container tab open (or use "reopen closed tab") — **Expected:** as of v1.8.17, the restored tab keeps its container's isolated storage (still logged in as the container's account) rather than falling back to the default partition.
+- [ ] Save a tab group containing a container tab, close it, then reopen the saved group — **Expected:** the reopened tab keeps its container's isolated storage. Note: this mapping is local to this device (not synced), so reopening the same saved group on a different device will not carry the container assignment there.
+- [ ] Open a container tab, force-discard it (`chrome://discards` or via the memory saver settings), then reactivate it by switching to its tab — **Expected:** container isolation survives the discard/reactivate cycle.
 
 📷 *Screenshot suggestion: `chrome://settings/containers` page with two containers configured, plus the "New tab in container ▸" submenu.*
 
