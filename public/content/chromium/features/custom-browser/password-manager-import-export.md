@@ -7,10 +7,15 @@ add/edit, and a password checkup were built as a follow-up the same day —
 see [`password-manager-view-edit-checkup.md`](./password-manager-view-edit-checkup.md).
 
 See [`custom-webui/pages-inventory.md`](./custom-webui/pages-inventory.md)
-for how this fits into the wider WebUI picture — notably, the separate
-`chrome://password-manager` page (`custom_password_manager`) is still a
-placeholder stub; this feature was deliberately added to the existing
-Settings sub-page instead of resurrecting that page.
+for how this fits into the wider WebUI picture. At the time this feature was
+built (2026-07-27), the separate `chrome://password-manager` page
+(`custom_password_manager`) was still a placeholder stub, so this was
+deliberately added to the existing Settings sub-page instead of resurrecting
+that page. **That stub was completed three days later, 2026-07-30** — see
+`pages-inventory.md`'s `custom_password_manager — completed 2026-07-30`
+entry — extracting this same password-handling logic into a standalone
+`CustomPasswordManagerHandler` shared by both the Settings page and the now-real
+`chrome://password-manager` page.
 
 ## Why the Settings page, not a new dialog or the stub page
 
@@ -123,9 +128,10 @@ this; a first cut just adds rows outright.
 - `custom_settings/components/PasswordsPage.tsx` — an "Import and export"
   section with two buttons and an inline status line, replacing the old
   "Import passwords" button that used to link out to the (non-functional)
-  `chrome://password-manager` stub page. The "Password checkup" and "Open
-  password manager" links remain pointed at that stub — they're still
-  dead ends until that page (or an equivalent) is built.
+  `chrome://password-manager` stub page. At the time, the "Password checkup"
+  and "Open password manager" links still pointed at that same stub — since
+  fixed (2026-07-30, see above): both now land on a real, working
+  `chrome://password-manager` page.
 
 No upstream files were touched, so no `npm run update_patches` was needed.
 Both the C++ target (`custom/browser/ui/webui:ui`) and the React bundle
