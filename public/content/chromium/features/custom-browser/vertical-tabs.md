@@ -206,9 +206,28 @@ intercept keys *ahead of* this plain single-step nav rather than
 replacing it, so this table is still accurate for the plain,
 no-count-pending case.
 
-Arrow nav moves *focus only* — does not auto-activate the tab. If you'd
-rather have "arrow to switch tabs" behavior (Edge-style), add a
-`PressedCallback` invocation in the arrow branch after `RequestFocus()`.
+**Decided 2026-08-16 (v1.8.25): arrow nav auto-activates (Edge-style).**
+Previously moved focus only, like a plain listbox — this was called out
+as an open product question (auto-switch vs. focus-only) until this
+release. `VerticalTabButton::OnKeyPressed`'s arrow branch now calls
+`NotifyClick(event)` right after `RequestFocus()`, firing the same
+`PressedCallback` a real click/Enter/Space would. The vim-motion path
+(`VerticalTabBar::FocusAndMaybeExtendSelection`) got the matching fix —
+counted jumps like `5j` now activate the tab they land on — *except*
+while `vim_visual_mode_` is active, where j/k instead extend a multi-select
+range and must not also switch the active tab on every intermediate step.
+Also set `VerticalTabButton`'s accessible role to `ax::mojom::Role::kTab`
+(matching vanilla `Tab`'s own role) to match the auto-activation semantics
+assistive tech expects from a tablist widget — it previously had no
+explicit role, defaulting to `views::Button`'s plain-button role.
+
+Known trade-off, not addressed here: holding an arrow key down triggers
+OS key-repeat, which will now fire rapid-fire tab activations (and
+therefore rapid WebContents show/hide) for every repeated key event
+rather than just moving focus silently. No debouncing was added — this
+matches how "Edge-style" tab switching behaves in practice, but flag it
+as a possible follow-up if it turns out to cause visible jank when
+skipping through many tabs quickly.
 
 Sibling enumeration uses `views::AsViewClass<VerticalTabButton>(child)`
 rather than `static_cast` — any non-VerticalTabButton sneakily added to
@@ -1510,8 +1529,7 @@ listed here) was removed 2026-08-16 — see the table above.
   `view_cache_built_` latch, but it's still a smell. Tightening would
   require either reordering the BrowserView patch or moving `Init()`'s
   observer registration into `EnsureTabStripVisible`. Low priority.
-- **Activation semantics on arrow nav** — see Keyboard above. Decide
-  product-wise whether arrows should auto-switch tabs or just move focus.
+- ~~**Activation semantics on arrow nav**~~ **Decided and shipped, v1.8.25** — see Keyboard above. Arrows now auto-switch tabs (Edge-style). Key-repeat while holding an arrow down isn't debounced — flagged there as a possible follow-up, not a known bug.
 - **Hover-expand animation cost** — bar outer width animates per frame.
   After the cache + integer-equality fixes, the per-frame cost is
   bounded (cached pointer SetBounds + a BoxLayout pass over N buttons),

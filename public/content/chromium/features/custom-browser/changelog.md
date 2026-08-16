@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.24)
+## Versioned releases (1.7.25 → 1.8.25)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,31 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.25 — 2026-08-16
+
+Decides and ships Vertical Tabs' arrow-key activation semantics
+(Edge-style: arrows auto-switch tabs) — the last "Needs a decision" item
+on the documentation-audit backlog.
+
+- `VerticalTabButton::OnKeyPressed`'s arrow-nav branch (Up/Down/K/J/Home/End)
+  now calls `NotifyClick(event)` right after `RequestFocus()`, firing the
+  same `PressedCallback` a real click/Enter/Space already did — arrow keys
+  now switch the active tab, not just move keyboard focus.
+- `VerticalTabBar::FocusAndMaybeExtendSelection` (the vim-motion path,
+  used by counted jumps like `5j`) got the matching fix: activates the
+  landed-on tab when not in vim visual-select mode, and is explicitly
+  skipped while `vim_visual_mode_` is active, since j/k there instead
+  extends a multi-select range and must not switch the active tab on
+  every intermediate step.
+- Set `VerticalTabButton`'s accessible role to `ax::mojom::Role::kTab`
+  (matching vanilla `Tab`'s own role) to match the auto-activation
+  semantics assistive tech expects from a tablist widget — it previously
+  had no explicit role, defaulting to plain-button semantics.
+- Known, accepted trade-off: holding an arrow key down triggers OS
+  key-repeat, firing rapid tab activations rather than a silent focus
+  move. No debouncing added — matches how "Edge-style" switching behaves
+  in practice; flagged as a possible follow-up if it causes visible jank.
 
 ### 1.8.24 — 2026-08-16
 

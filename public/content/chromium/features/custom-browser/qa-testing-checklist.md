@@ -197,7 +197,8 @@
 - [ ] Ctrl-click (Cmd-click on Mac) two different tab buttons — **Expected:** both are added to a multi-selection (visually highlighted); right-click → Close should close both.
 - [ ] Press "/" while a tab button has focus — **Expected:** a search/filter row appears; typing narrows the visible tabs to title/URL matches; Escape clears it.
 - [ ] Hover a tab button for about half a second without clicking — **Expected:** a small floating thumbnail preview of that tab's page appears beside it.
-- [ ] With focus on a tab button, press `j`/`k` (or arrow keys) — **Expected:** focus moves down/up between tab buttons; `Home`/`End` jump to first/last.
+- [ ] With focus on a tab button, press `j`/`k` (or arrow keys) — **Expected:** as of v1.8.25, focus moves down/up between tab buttons *and* the newly-focused tab becomes active (its page shows in the content area) — not just a focus-ring move. `Home`/`End` jump to first/last with the same activation.
+- [ ] With vim visual-select mode active (`v` while a tab has focus), press `j`/`k` to extend the selection across several tabs — **Expected:** no crash or double-activation glitching; each step extends the highlighted multi-selection normally (the new activate-on-arrow code path is explicitly skipped while in visual mode, so it doesn't add any new activation calls on top of whatever selection-extension already does).
 - [ ] Toggle vertical tabs back off in Settings — **Expected:** horizontal tab strip returns (known issue: may render broken — missing "+" button or blank tabs — until a restart; restart if so).
 
 📷 *Screenshot suggestion: the vertical tab bar in both collapsed (hover-out) and expanded (hover-in) states, plus one shot of Tree mode showing indented child tabs.*
