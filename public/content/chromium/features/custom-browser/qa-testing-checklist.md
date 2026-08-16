@@ -344,6 +344,8 @@
 - [ ] In the Super Drag settings page, add the current site to `super_drag.exceptions`, then repeat a cardinal drag on that site — **Expected:** super drag is fully suppressed on that page.
 - [ ] Drag an image downward — **Expected:** default `BACKGROUND_TAB` opens the image URL in a new background tab (verify vs. explicit `OPEN_IMAGE_IN_NEW_TAB` mapping if reconfigured).
 - [ ] Toggle off `super_drag.tip_enabled` in settings, repeat a drag — **Expected:** no visual bubble/overlay appears during the drag, but the action still fires on drop.
+- [ ] As of v1.8.19: in the Super Drag settings page, assign a search engine to one gesture direction (e.g. up), then drag a hyperlink (not plain text) in that direction and release — **Expected:** the drop searches the search engine using the link's visible text as the query, opening a search-results page — not a direct navigation to the link's href. The mid-drag bubble should also show the "search with X" hint while dragging, not just the disposition label.
+- [ ] Repeat the same drag in a direction with **no** search engine assigned — **Expected:** unchanged existing behavior — the link opens directly (navigates to its href).
 
 📷 *Screenshot suggestion: mid-drag screenshot showing the Super Drag bubble overlay with its resolved action label (e.g., "Open in new tab").*
 

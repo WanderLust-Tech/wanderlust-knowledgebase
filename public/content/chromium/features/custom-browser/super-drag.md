@@ -227,8 +227,17 @@ fires.
   simple gestures work, but multi-segment gestures (e.g. `"ud"` — up then down)
   will only fire if the accumulated string exactly matches a pref key.
 
-- **No search-engine drag on non-text selections.** Dragging a link over a
-  search-engine gesture slot opens the link URL rather than searching for the
-  link text. `GetTemplateURLFromString` is wired in the service but the delegate
-  does not yet distinguish "is this a search gesture?" from "is this a link
-  navigation gesture?".
+- ~~**No search-engine drag on non-text selections.**~~ **Fixed 2026-08-15
+  (v1.8.19).** Dragging a link over a search-engine gesture slot used to
+  always open the link URL rather than searching, because
+  `SuperDragDelegate::OnDragDrop` only ever consulted
+  `GetTemplateURLFromString(motion_list_)` in the text-fallback branch,
+  reached only when there was no URL at all — content type (link vs. text)
+  was the sole discriminant, with no check of the slot's own configured
+  intent. `OnDragDrop` now checks whether the target gesture slot has a
+  search engine assigned *before* the URL-navigate branch: if it does, the
+  drop searches using the dragged text (a link's visible label, falling
+  back to the URL string itself if there's no text) with that engine,
+  regardless of whether a link was dragged. The drag-in-progress bubble
+  preview (`OnDragUpdated`) had the identical bug — it silently skipped the
+  "search with X" hint for a dragged link — and got the same fix.

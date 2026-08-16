@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.18)
+## Versioned releases (1.7.25 → 1.8.19)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,30 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.19 — 2026-08-15
+
+Fixes Super Drag's link-vs-search gesture ambiguity — dragging a link onto
+a gesture slot with a search engine assigned used to always navigate to
+the link's href instead of searching, the last "known bug" on the
+documentation-audit backlog.
+
+- `SuperDragDelegate::OnDragDrop` (`custom/browser/super_drag/
+  super_drag_delegate.cc`) only ever checked
+  `GetTemplateURLFromString(motion_list_)` (does this gesture slot have a
+  search engine assigned?) inside the text-fallback branch, reached only
+  when the dragged content had no URL at all. Content type (link vs. text)
+  was the sole discriminant; the slot's own configured intent was never
+  consulted before the navigate branch fired.
+- `OnDragDrop` now checks the slot's search-engine assignment *before*
+  navigating: if the target slot has one, the drop searches using the
+  dragged text (a link's visible label, falling back to the link's URL
+  string if there's no text) with that engine — regardless of whether the
+  dragged content was a link or plain text.
+- The mid-drag bubble preview (`OnDragUpdated`) had the identical bug —
+  silently skipping the "search with X" hint whenever a link was being
+  dragged — and got the same fix, so the preview now matches what
+  actually happens on drop.
 
 ### 1.8.18 — 2026-08-15
 
