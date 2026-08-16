@@ -1451,7 +1451,7 @@ active code path today:
 |---|---|
 | `src/chrome/browser/ui/tabs/vertical_tab_strip_state_controller.{h,cc}` | **Not WanderLust dead code — upstream Chromium's own, unrelated, unshipped vertical-tabs prototype.** See correction below. |
 | `src/custom/browser/resources/vertical_tab/` | Legacy MV2 extension (`manifest.json` + a pre-Polymer `cr.ui.Tree`-based tree view: `tree/tab_tree.js`, `simple/tab_tree.js`, `extended_tree.js`) — not referenced by any `BUILD.gn`. Predates the native Views implementation, and its tree-view functionality is now superseded by "Tree mode" above. Safe to delete. |
-| `src/custom/components/vertical_tabs_ui/page/vertical_tabs_page.tsx` | React stub — literally `<h1>Vertical Tabs UI</h1>`. No `WebUIController` registers it; unreachable from any URL. |
+| ~~`src/custom/components/vertical_tabs_ui/page/vertical_tabs_page.tsx`~~ | **Removed 2026-08-16.** Was a React stub — literally `<h1>Vertical Tabs UI</h1>`, no `WebUIController` ever registered it, unreachable from any URL. Deleted rather than finished: Vertical Tabs configuration already has a real, working home in `chrome://settings` (`TabsPage.tsx`'s "Vertical tab bar" section), so this would only ever have been a second, empty surface for something that already ships. |
 
 **Correction (2026-07-15):** the original version of this note suggested
 `VerticalTabStripStateController` "may already have the shape needed" for
@@ -1485,10 +1485,11 @@ worse than just extending `TabService`, which is what pin/resize
 actually did. Left alone here (not deleted — that's upstream Chromium's
 call, not WanderLust's, and it may still land its own feature someday);
 just don't mistake it for reusable WanderLust scaffolding again.
-`resources/vertical_tab/` and `vertical_tabs_page.tsx` remain genuine
-WanderLust dead code and candidates for deletion, same rationale as the
-`VerticalTab`/`VerticalTabStripRegionView` clones removed in the cleanup
-pass noted above.
+`resources/vertical_tab/` remains genuine WanderLust dead code and a
+candidate for deletion, same rationale as the `VerticalTab`/
+`VerticalTabStripRegionView` clones removed in the cleanup pass noted
+above. `vertical_tabs_page.tsx` (the other dead-code candidate previously
+listed here) was removed 2026-08-16 — see the table above.
 
 ## Known issues / future work
 

@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.22)
+## Versioned releases (1.7.25 → 1.8.23)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,34 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.23 — 2026-08-16
+
+Deletes the orphaned `vertical_tabs_page.tsx` React page — the last "Needs
+a decision" item resolved this pass on the documentation-audit backlog.
+
+- Investigation found the component itself was closer to a stub than
+  `pages-inventory.md` claimed ("not a stub") — it was
+  `<div><h1>Vertical Tabs UI</h1></div>`, ~40 of its 77 lines commented-out
+  boilerplate copied from an unrelated page template. No `.cc` file
+  anywhere registered a `WebUIConfig`/`WebUIController`/`chrome://` host
+  for it, confirming it was genuinely unreachable.
+- Decided to delete rather than finish: Vertical Tabs configuration
+  already has a complete, working home in `chrome://settings`
+  (`TabsPage.tsx`'s "Vertical tab bar" section, bound to real prefs) —
+  finishing this page would have meant building real content from scratch
+  to duplicate a surface that already ships, not closing a genuine gap.
+- Removed `custom/components/vertical_tabs_ui/` entirely (5 files) and
+  every dangling reference: dep + pak-source lines in
+  `custom/components/resources/BUILD.gn`, the `<include>` in
+  `custom_components_resources.grd`, the dep in `browser/ui/sources.gni`,
+  a stale reserved-ID entry in `resources/resource_ids.spec`, and a dead
+  `VerticalTabsUIConfig::IsWebUIEnabled` comment fragment left in the
+  unrelated `remote_ntp_internals_ui_config.cc` — the one clue to what was
+  once intended (a `WebUIConfig` gating on `TabService`, never finished).
+- GN gen and the `custom/components/resources:resources` target both
+  build clean; no functional change, since nothing could reach this page
+  before or after.
 
 ### 1.8.22 — 2026-08-16
 

@@ -717,10 +717,10 @@ own, not the agent's, for this pass.
 
 ## Needs attention
 
-One real gap remains — the orphaned `vertical_tabs_page` frontend (see
-below). `custom_settings_ui_old` was resolved by deletion, and
-`custom_password_manager`/`custom_sync_confirmation`/`custom_management`
-were all completed 2026-07-30 (see below).
+No open gaps remain. `custom_settings_ui_old` and `vertical_tabs_page`
+were both resolved by deletion; `custom_password_manager`/
+`custom_sync_confirmation`/`custom_management` were all completed
+2026-07-30 (see below).
 
 ### `custom_sync_confirmation` — completed 2026-07-30
 
@@ -873,42 +873,41 @@ and
 for the underlying feature details (both docs describe functionality
 that now lives on two pages instead of one).
 
-### `vertical_tabs_ui/page/vertical_tabs_page.tsx` — orphaned frontend
+### `vertical_tabs_ui/page/vertical_tabs_page.tsx` — removed (2026-08-16)
 
-The React component is real (not a stub) and its build target
-(`vertical_tabs_page_generated`) is wired into
-`custom/browser/ui/sources.gni` and `custom/components/resources/BUILD.gn`,
-so it **compiles and gets packed into resources**. But **no `.cc` file
-anywhere registers a `WebUIConfig`/`WebUIController`/`chrome://` host for
-it** — grepping the whole `custom/browser/ui/webui/` tree for anything
-that would serve this page turns up nothing live.
+Previously documented here as "orphaned" and "not a stub" — direct
+inspection when this decision finally got made showed neither framing was
+quite right: the component was actually near-empty (`<div><h1>Vertical
+Tabs UI</h1></div>`, ~40 of its 77 lines were commented-out boilerplate
+copied from an unrelated page template), and no `.cc` file anywhere
+registered a `WebUIConfig`/`WebUIController`/`chrome://` host for it —
+confirmed unreachable from any URL, exactly as this doc said.
 
-The one clue to what was intended: `custom/browser/ui/webui/remote_ntp_internals_ui_config.cc`
-(an otherwise-unrelated file for the `chrome://remote-ntp-internals` page)
-contains a dead, commented-out fragment:
+The deciding factor: Vertical Tabs configuration already has a full,
+working home in `chrome://settings` — `custom_settings/components/
+TabsPage.tsx`'s "Vertical tab bar" section (mode, zoom, exclusive-tree-open,
+density, all bound to real prefs). This standalone page would have been a
+second, empty surface for something that already ships and works, not a
+genuinely missing feature. Resolved by **deletion** rather than finishing
+it, mirroring `custom_settings_ui_old` below:
 
-```cpp
-// bool VerticalTabsUIConfig::IsWebUIEnabled(
-//     content::BrowserContext* browser_context) {
-//       Profile* profile = Profile::FromBrowserContext(browser_context);
-//       auto* service = TabServiceFactory::GetForProfile(profile);
-//       return service != nullptr;
-// }
-```
+- Removed `custom/components/vertical_tabs_ui/` entirely (5 files:
+  `BUILD.gn` ×2, `vertical_tabs_page.tsx`, `vertical_tabs_page.html`,
+  `tsconfig.json`).
+- Removed the dangling references: the dep + pak-source lines in
+  `custom/components/resources/BUILD.gn`, the `<include>` line in
+  `custom/components/resources/custom_components_resources.grd`, the dep
+  in `custom/browser/ui/sources.gni`'s `custom_browser_ui_web_deps`, the
+  stale reserved-ID entry in `custom/resources/resource_ids.spec`, and the
+  dead `VerticalTabsUIConfig::IsWebUIEnabled` comment fragment in the
+  unrelated `custom/browser/ui/webui/remote_ntp_internals_ui_config.cc`
+  (that fragment was the one clue to what was once intended — a
+  `WebUIConfig` gating availability on `TabService` existing, never
+  finished).
 
-Someone started scaffolding a `VerticalTabsUIConfig` (presumably gating
-the page's availability on `TabService` existing, mirroring how the
-native vertical tab bar checks the same service), left it commented out
-in a file it doesn't belong in, and never finished the `WebUIController`
-side. The page is currently unreachable from any URL.
-
-**This needs a decision**, not just a docs fix: either finish wiring it
-(a real `VerticalTabsUIConfig`/`VerticalTabsUI` pair following the
-`getting-started.md` pattern, presumably for some settings/companion
-surface distinct from the native `VerticalTabBar` Views implementation
-that's the actual feature — see `vertical-tabs.md`), or remove the
-orphaned React page and build wiring if it's superseded by the native
-implementation and no longer needed.
+GN gen and the `custom/components/resources:resources` target both built
+clean before and after; no functional change, since nothing could reach
+this page.
 
 ### `custom_settings_ui_old/page/` — removed (2026-07-19)
 
@@ -950,9 +949,10 @@ React hub-and-spoke rewrite and were never updated:
   than treated as current.
 - `custom-features-implementation.md`'s "Vertical Tabs UI" section (§3)
   and "Custom Settings UI" section (§4) both cite the wrong directory
-  (`components/vertical_tabs_ui/` and `components/custom_settings_ui/`
-  without the `page/`/hub-and-spoke detail) and, for vertical tabs,
-  wrongly describe it as "Chrome Extension Architecture" — it's a native
-  WebUI page candidate (currently orphaned, see above), not an
-  extension. Treat this doc's WebUI sections as unreliable until
-  corrected.
+  (`components/vertical_tabs_ui/` — removed 2026-08-16, see above — and
+  `components/custom_settings_ui/` without the `page/`/hub-and-spoke
+  detail) and, for vertical tabs, wrongly describe it as "Chrome Extension
+  Architecture" — the actual, working Vertical Tabs UI is a Views-native
+  feature plus a `chrome://settings` section, not an extension and not a
+  standalone WebUI page. Treat this doc's WebUI sections as unreliable
+  until corrected.
