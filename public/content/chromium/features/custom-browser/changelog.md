@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.20)
+## Versioned releases (1.7.25 → 1.8.21)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,27 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.21 — 2026-08-16
+
+Removes `PrivateDnsManager::ResolveDoH()`, a dead `TODO` stub — the last
+"known bug" on the documentation-audit backlog, resolved by deletion
+rather than implementation.
+
+- `ResolveDoH()` (`custom/chrome/browser/network/private_dns_manager.cc`)
+  always returned failure and had zero callers anywhere in the tree — it
+  was `private`, and even `PrivateDnsManager`'s own resolution path
+  (`ResolvePlatformDns()`) never called it internally. Real
+  DNS-over-HTTPS in this fork is handled entirely by vanilla Chromium's
+  own `SecureDnsConfig`/`StubResolverConfigReader` machinery via the
+  `kDnsOverHttpsMode` pref, confirmed by the same 2026-07-31 audit that
+  first flagged this stub.
+- Deleted outright rather than implemented: a working custom DoH
+  resolution path would have been pure redundant complexity duplicating
+  an already-functional stock feature, not a gap worth closing.
+- `PrivateDnsManager`'s lifecycle (`Initialize()`/`Shutdown()`, wired to
+  real feature flags in `CustomFeatureManager`) is untouched — only the
+  dead resolution stub was removed, not the class.
 
 ### 1.8.20 — 2026-08-15
 

@@ -64,10 +64,17 @@ Require new UI surface or non-trivial backend changes.
   (confirmed 2026-07-31 as the sole, uncontested source of this default — see
   security-privacy-features.md). Toggle exposed in `PrivacyPage.tsx`.
   Correction: the custom `PrivateDnsManager` class does **not** handle DoH
-  routing — its `ResolveDoH()` method is an unimplemented `TODO` stub that
-  always fails, and nothing in the real navigation/DNS-resolution path ever
-  calls it. Real DoH is handled entirely by vanilla Chromium's own
+  routing. Real DoH is handled entirely by vanilla Chromium's own
   `SecureDnsConfig`/`StubResolverConfigReader` machinery via the pref above.
+  Its `ResolveDoH()` method — an unimplemented `TODO` stub that always
+  failed, with zero callers anywhere (it was `private`, and nothing in the
+  real navigation/DNS-resolution path ever called it even internally) —
+  was deleted outright (2026-08-16, v1.8.21) rather than implemented,
+  since a working custom DoH path would have been pure redundant
+  complexity duplicating an already-functional stock feature.
+  `PrivateDnsManager`'s lifecycle (`Initialize()`/`Shutdown()`, wired to
+  real feature flags in `CustomFeatureManager`) is untouched and still
+  live; only the dead resolution stub was removed.
 
 - [x] **Client Hints Override** *(Bromite)*
   Two-layer block in `third_party/blink/common/client_hints/`:
