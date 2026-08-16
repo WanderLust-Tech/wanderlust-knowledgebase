@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.19)
+## Versioned releases (1.7.25 → 1.8.20)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,45 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.20 — 2026-08-15
+
+Wires up Panels session restore for real and preserves docked/stacked
+layout across it — the last "known bug" on the documentation-audit
+backlog, though it turned out to be a bigger gap than described:
+`PanelManager::SaveSessionToPrefs`/`RestoreSessionFromPrefs`/`RegisterPrefs`
+were entirely dead code (pref never registered, functions never called
+from anywhere), so panels didn't persist across a restart at all — not
+"restores as detached" as the doc said, just didn't restore.
+
+- `PanelManager::RegisterPrefs` is now called from `custom_prefs.cc`'s
+  `RegisterLocalState`.
+- `SaveSessionToPrefs` now fires incrementally from `CreatePanel`/
+  `OnPanelClosed`, matching the function's own original design-intent
+  comment, rather than needing a new shutdown hook — simpler and
+  crash-safe (no state lost if the process is killed instead of exited
+  cleanly).
+- `RestoreSessionFromPrefs` now runs once at startup, from
+  `CustomBrowserMainExtraPartsProfiles::PostProfileInit` (guarded to the
+  initial profile only, since this is a local-state pref, not per-profile).
+- The saved JSON format gained two optional fields — `collection_type`
+  (`detached`/`docked`/`stacked`) and, for stacked panels, a save-local
+  `stack_id` grouping key. Both are optional, so pre-fix saved sessions
+  (missing these keys) still parse and restore detached exactly as they
+  did before — no migration needed.
+- Docked panels now restore docked. Stacked panels restore into the same
+  stack, in the same top-to-bottom order, via `PanelManager::CreateStack`/
+  `MovePanelToCollection` — the same primitives live drag-to-stack already
+  used. This is a genuinely new capability, not just a bugfix: there was
+  previously no programmatic way to recreate a stack at all.
+- Corrected two other stale claims in `panels.md` found along the way:
+  `kDetachedPanel` was described as "removed from upstream `windows.json`"
+  — it's actually already back in the schema (this fork's own patch
+  re-added it); what's missing is a consuming switch `case` in
+  `tabs_api_non_android.cc`, a separate, still-open, extension-API-only
+  gap left out of scope for this fix (unrelated to session restore,
+  despite both being tracked under the same stale `TODO(panels-revival)`
+  comment).
 
 ### 1.8.19 — 2026-08-15
 
