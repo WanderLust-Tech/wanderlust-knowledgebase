@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.23)
+## Versioned releases (1.7.25 → 1.8.24)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,32 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.24 — 2026-08-16
+
+Deletes the dead `adblock_settings` native handler and its legacy
+frontend — another "Needs a decision" backlog item resolved by deletion.
+
+- Investigation found this was neither "native-only" nor "incomplete" as
+  the backlog framed it, but genuinely dead vendored code:
+  `AdblockSettingsUI` referenced a `chrome://` host registered nowhere in
+  the tree, wasn't listed in any `BUILD.gn`, and its header had a
+  class-name typo (`AdBlockSettingsUI` vs. the real `AdblockSettingsUI`)
+  that would have failed to compile had it ever been wired in.
+- Its two messages didn't touch the real ad-block engine at all:
+  `settingAdblock` just flipped the same `kEnableAdBlock` pref the
+  already-working "Block ads and trackers" toggle (`PrivacyPage.tsx`)
+  already controls, and `settingPopupBlocker` wrote a raw byte to a file
+  in the user-data dir — a hack its own code comment admitted was "a bad
+  design," not real popup-blocker integration.
+- Decided to delete rather than finish: the only non-duplicated
+  capability ("smart adblock" tri-state, real popup blocking) had zero
+  working backend to build on, making "finish" a rewrite from scratch.
+- Removed `custom/browser/ui/webui/adblock_settings/` and
+  `custom/browser/resources/settings/adblock_settings/` entirely (4
+  files). Confirmed zero references anywhere else in the tree — no
+  `BUILD.gn`/`sources.gni` ever included these files, so there was no
+  build wiring to clean up and no build verification needed.
 
 ### 1.8.23 — 2026-08-16
 

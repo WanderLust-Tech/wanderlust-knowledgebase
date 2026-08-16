@@ -182,12 +182,27 @@ same day once real handlers were built — see
 
 ### Native-only (no React frontend)
 
-- **`adblock_settings`** — has a native handler directory
-  (`custom/browser/ui/webui/adblock_settings/`) but no matching
-  `custom/components/custom_adblock_settings/` React app anywhere in the
-  tree. Either genuinely native-only (served some other way) or an
-  incomplete page — worth a follow-up look if adblock settings are
-  supposed to have a dedicated UI.
+- ~~**`adblock_settings`**~~ **Removed (2026-08-16)** — turned out to be neither
+  "native-only" nor "incomplete," but dead vendored code that never
+  actually worked: `AdblockSettingsUI` (`custom/browser/ui/webui/adblock_settings/`)
+  referenced a `chrome://` host constant registered nowhere in the tree
+  (no `WebUIConfig`/`WebUIControllerFactory` entry, not in any `BUILD.gn`
+  — genuinely unbuilt, not just unreachable), and its header even had a
+  class-name typo (`AdBlockSettingsUI` vs. the actual `AdblockSettingsUI`)
+  that would have failed to compile had it ever been wired in. Its two
+  messages didn't touch the real ad-block engine
+  (`custom/browser/net/blockers/`) at all: `settingAdblock` just flipped
+  the same `prefs::kEnableAdBlock` boolean the already-working "Block ads
+  and trackers" toggle (`PrivacyPage.tsx`, backed by `PrivacyShieldHandler`)
+  already controls, and `settingPopupBlocker` wrote a raw byte to a file
+  in the user-data dir — a hack its own code comment admitted was "a bad
+  design," not real popup-blocker integration. The paired frontend
+  (`browser/resources/settings/adblock_settings/`) was legacy
+  pre-Polymer HTML from a decade-old Chromium API surface. Deleted
+  entirely rather than finished — the only non-duplicated capability
+  ("smart adblock" tri-state, real popup blocking) had zero working
+  backend logic to build on, making "finish" a rewrite from scratch, not
+  a wiring fix.
 - **`about`** — same shape: a native `custom_about_ui.cc` exists, but the
   only `AboutPage.tsx` in the tree lives *nested inside*
   `custom_settings/components/`, not as its own `custom_about` package.
