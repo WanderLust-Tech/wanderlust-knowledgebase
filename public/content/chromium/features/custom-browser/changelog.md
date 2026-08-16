@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.21)
+## Versioned releases (1.7.25 → 1.8.22)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,28 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.22 — 2026-08-16
+
+Fixes `chrome.windows.create({type:'detached_panel'})`, which previously
+always errored — a gap uncovered while fixing Panels session restore in
+v1.8.20, and now itself resolved.
+
+- `kDetachedPanel` was never actually missing from `windows.json` — this
+  fork's own patch already re-adds it (contrary to what `panels.md` used
+  to say). The real gap was `tabs_api_non_android.cc`'s `CreateType`
+  switch never having a consuming `case` for it, so it fell to `default:`
+  and returned `kInvalidWindowTypeError`.
+- Added the case alongside the existing `kPanel` one, introducing a
+  `panel_create_mode` local (previously the `CreatePanel()` call site
+  hardcoded `PanelManager::CREATE_AS_DOCKED`) so `kPanel` still requests
+  `CREATE_AS_DOCKED` while the new `kDetachedPanel` case requests
+  `CREATE_AS_DETACHED`.
+- Separate, unrelated fix from the v1.8.20 session-restore work, despite
+  both having been tracked under the same stale `TODO(panels-revival)`
+  comment — that comment's file reference (`tabs_api.cc`) was also
+  outdated, since the file was renamed to `tabs_api_non_android.cc`
+  upstream.
 
 ### 1.8.21 — 2026-08-16
 

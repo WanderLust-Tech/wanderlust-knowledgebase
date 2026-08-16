@@ -87,6 +87,7 @@
 - [ ] Check `chrome://extensions` → Details → "Inspect views" or the task manager (`Shift+Esc`) while a panel is open — **Expected:** the panel's WebContents shows up as its own row.
 - [ ] As of v1.8.20: open one docked panel, one detached panel (drag it away from the edge), and stack two more panels together, then fully restart the browser — **Expected:** the docked panel comes back docked, the two stacked panels come back stacked together in the same order, and the detached one comes back detached — not everything collapsed to detached (the old behavior; before this fix, panels didn't reopen at all after a restart).
 - [ ] Close one panel out of a 3-panel stack (via its own close button), leaving 2 — **Expected:** the remaining 2-panel stack still restores correctly after a restart (not the closed one, which shouldn't reappear).
+- [ ] As of v1.8.22: from the extension's background page/console, call `chrome.windows.create({type:'detached_panel', url:'...'})` — **Expected:** a free-floating detached panel opens (not docked to the screen edge, and not an error) — previously this call errored with "invalid window type."
 
 📷 *Screenshot suggestion: two or three docked panels packed along the bottom-right of the screen.*
 
