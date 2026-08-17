@@ -138,6 +138,8 @@ to empty state).
 | [`tools/download_easylist.py`](../src/custom/tools/download_easylist.py) | Build-time script, run via `npm run update_easylist`. Downloads `easylist.txt` + `easyprivacy.txt` from easylist.to (or accepts `--easylist-input`/`--easyprivacy-input` for local files), concatenates them, and writes `bundled_filter_rules.cc` as a series of raw-string-literal C++ chunks (≤16 384 bytes each to stay under MSVC limits). Sends a browser-like User-Agent — easylist.to 403s urllib's default UA |
 | [`net/blockers/ad_block_client.{cc,h}`](../src/custom/browser/net/blockers/ad_block_client.cc) | Vendored ABP filter engine (Brian Bondy / Brave origin). Parses ABP text, matches URLs. ~1200 lines. Modified in Phase 5 to restore the half-finished refactor of HashSet (see comments in `add()` and `deserialize()`) |
 | [`net/blockers/{filter,bloom_filter,cosmetic_filter,hash_set,hash_item,hash_fn,bad_fingerprint{s}}.{cc,h}`](../src/custom/browser/net/blockers/) | Engine internals — hash sets, bloom filters, fingerprint tables. ~9000 lines including the 7000-line fingerprint data table |
+| [`net/blockers/ad_block_list_updater.{cc,h}`](../src/custom/browser/net/blockers/ad_block_list_updater.cc) | Background auto-refresh (v1.8.26, see below): fetches EasyList + EasyPrivacy, sanity-checks, hot-swaps via `BlockersWorker::ReloadFromText()`, caches to disk |
+| [`net/filter_list_update_service.{cc,h}`](../src/custom/browser/net/filter_list_update_service.cc) | Orchestrates scheduling for both `AdBlockListUpdater` and URL Purify's `UrlPurifyRuleUpdater` (see security-privacy-features.md) — two independent `base::OneShotTimer`s |
 
 ### UI layer (omnibox icon + bubble)
 
@@ -150,7 +152,7 @@ to empty state).
 
 | File | Purpose |
 |---|---|
-| [`components/custom_settings/components/PrivacyPage.tsx`](../src/custom/components/custom_settings/components/PrivacyPage.tsx) | Hosts the user-facing toggle in the chrome://settings → Privacy and security page. Binds to `custom.enable_ad_block` via `usePref` |
+| [`components/custom_settings/components/PrivacyPage.tsx`](../src/custom/components/custom_settings/components/PrivacyPage.tsx) | Hosts the user-facing toggle in the chrome://settings → Privacy and security page. Binds to `custom.enable_ad_block` via `usePref`. Also hosts the "Automatically update filter lists" toggle (v1.8.26) via dedicated `customGetFilterListAutoRefreshEnabled`/`customSetFilterListAutoRefreshEnabled` messages, since that pref is local state, not per-profile |
 
 ### Patches into vanilla Chromium
 
@@ -190,7 +192,14 @@ Pass `--easylist-input <file>` and/or `--easyprivacy-input <file>` to use
 locally-downloaded copies for either list instead of fetching from
 easylist.to (e.g. for offline regeneration, or a vendored snapshot).
 
-After regenerating, delete the stale `easylist.dat` from the build's resources directory so `InitAdBlock()` re-serializes the fresh rules on the next launch.
+After regenerating, rebuild — this changes the *bundled* fallback snapshot
+`InitAdBlock()` falls back to when there's no on-disk cache yet (see
+"Background auto-refresh" below). If a runtime-fetched cache file already
+exists on the machine you're testing on, it takes priority over whatever
+you just rebuilt into `bundled_filter_rules.cc` until the next background
+refresh or a manual cache-file deletion — delete
+`WanderLustAdBlockCache.txt` from the profile's user-data directory to
+force a fallback to the freshly-rebuilt bundled snapshot.
 
 To add a single custom rule without regenerating, edit [`bundled_filter_rules.cc`](../src/custom/browser/net/blockers/bundled_filter_rules.cc) directly — the file is a series of raw-string-literal chunks concatenated into `kBundledFilterRules`. Append to the last chunk.
 
@@ -205,6 +214,55 @@ ABP syntax cheat-sheet (subset the engine supports):
 | `! comment` | Ignored by the parser |
 
 Restart the browser to pick up changes — the parse happens during the first request after startup.
+
+## Background auto-refresh (v1.8.26)
+
+`FilterListUpdateService` (`custom/browser/net/filter_list_update_service.{h,cc}`)
+periodically re-fetches EasyList + EasyPrivacy so the running browser's
+coverage doesn't depend on `bundled_filter_rules.cc`'s snapshot staying
+fresh between releases. Gated by `BUILDFLAG(ENABLE_FILTER_LIST_AUTO_REFRESH)`
+(build-time; on by default) and `custom.filter_list_refresh.enabled`
+(runtime pref, on by default, toggle at Settings → Privacy → "Automatically
+update filter lists"). Also drives URL Purify's rule refresh — see
+security-privacy-features.md.
+
+- **Fetch**: `AdBlockListUpdater` (`custom/browser/net/blockers/ad_block_list_updater.{h,cc}`)
+  downloads `easylist.txt` and `easyprivacy.txt` independently (same UA
+  workaround `download_easylist.py` needs — easylist.to 403s the default
+  request UA), concatenates them the same way the Python script does, and
+  applies the result once both requests complete (or fail).
+- **Sanity gate, not a signature check**: nothing in this fork verifies
+  fetched content cryptographically (matches the RSS fetcher and the
+  binary auto-updater, neither of which does either). Instead,
+  `BlockersWorker::ReloadFromText()` (a new method) refuses to swap in a
+  freshly parsed list that has fewer than half as many filters as the
+  currently-loaded one — a cheap defense against a truncated or corrupted
+  fetch, not a substitute for real integrity verification.
+- **Hot-swap**: `ReloadFromText()` parses the fetched text into a new
+  `AdBlockClient` and swaps it in under `BlockersWorker`'s existing
+  `init_lock_` — the same lock that already guarded first-time
+  initialization, now reused for safe in-place reloads too.
+- **Disk cache**: on a successful swap, the combined text is written
+  atomically (`base::ImportantFileWriter::WriteFileAtomically`) to
+  `WanderLustAdBlockCache.txt` in the user-data directory (process-wide,
+  not per-profile — matches `BlockersWorker`'s own scope). At startup,
+  `AdBlockListUpdater::LoadCachedListAsync()` reads this file off a
+  `MayBlock` sequence and reloads it in — closing the exact gap
+  `InitAdBlock()`'s own long-standing `TODO` comment described, without
+  making `InitAdBlock()` itself do any blocking I/O (it still can't --
+  it may run on the network-loader sequence).
+- **Schedule**: a `base::OneShotTimer`, re-armed after every fetch
+  attempt, computing the next fire time from the last successful fetch's
+  timestamp plus the configured interval (default 96 hours = 4 days,
+  matching the bundled snapshot's own `! Expires:` header) — fires
+  immediately if overdue (first run, or the browser having been closed
+  longer than the interval).
+
+Not built: signature/content verification beyond the sanity gate, and a
+binary (`serialize()`/`deserialize()`) cache format — v1 caches raw text;
+`AdBlockClient` already has unused `serialize()`/`deserialize()` primitives
+that would avoid re-parsing ~3.7+ MB of text on every startup, left as a
+future perf follow-up rather than required for this feature.
 
 ## Threading
 
@@ -225,7 +283,7 @@ The engine itself is process-wide. `BlockersWorker::Get()` returns a `base::NoDe
 
 - **Cosmetic filtering injects on every navigation, not incrementally.** `CosmeticFilterTabHelper` re-injects the entire `<style>` block on every committed primary-frame navigation. For EasyList's element-hiding CSS (~several hundred KB) this may cause a brief style-recalc on slow pages. A future improvement: diff the CSS against the previous injection and only update if changed, or inject per-domain rules only.
 
-- **No runtime auto-refresh.** `download_easylist.py` is a manual/developer-run step (`npm run update_easylist`) — there is no in-binary network fetcher, component updater, or scheduled refresh. Filter data goes stale between manual regenerations. A future iteration could wire this into the existing update-notification/autoupdate infrastructure, but that's a separate, larger effort from just closing the "no real EasyList data" gap.
+- ~~**No runtime auto-refresh.**~~ **Fixed 2026-08-16 (v1.8.26).** `download_easylist.py` remains the manual/developer-run regeneration path (`npm run update_easylist`, still the way `bundled_filter_rules.cc`'s build-time snapshot itself gets updated), but the running browser no longer depends solely on that snapshot staying fresh: `FilterListUpdateService` (`custom/browser/net/filter_list_update_service.{h,cc}`) now periodically re-fetches EasyList + EasyPrivacy from easylist.to (default every 4 days, matching the snapshot's own `! Expires:` header) via a new `AdBlockListUpdater`, hot-swaps the result into `BlockersWorker` (`ReloadFromText()`, a new method — see below), and caches the raw text to disk so the *next* launch starts from the cached copy instead of the bundled snapshot. Toggle: Settings → Privacy → "Automatically update filter lists" (on by default). See "Background auto-refresh" below for the full mechanism, including the sanity-gate that guards against a truncated/corrupted fetch (no signature verification — HTTPS transport trust only, matching this fork's other fetchers).
 
 - **`$important`/`$redirect=` are now marked unsupported and skip the rule, rather than silently dropping just the modifier (fixed 2026-08-15, v1.8.18).** `Filter::parseOption` (`custom/browser/net/blockers/filter.cc`) now recognizes `important` and `redirect`/`redirect=...` and sets a new `FOUnsupportedModifier` bit (extending the existing `FOUnsupported` bitmask that `$ping` already used) — the whole rule is excluded from matching, the same safe fallback `$ping` already got, rather than being applied as if the modifier weren't there. Actually implementing `$important`'s override-priority semantics or `$redirect=`'s resource-substitution would be a real feature, not a parser fix — not done here. Other still-unrecognized modifiers (`$badfilter`, `$csp=`, `$websocket`, `$genericblock`, `$popup`, `$1p`/`$strict1p`) remain silently ignored (rule stays active, modifier's effect just missing) — only `$important`/`$redirect=` were called out in the original bug report.
 

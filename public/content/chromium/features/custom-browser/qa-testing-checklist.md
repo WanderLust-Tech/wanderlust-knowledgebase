@@ -400,6 +400,9 @@
 - [ ] Navigate to a fresh tab — **Expected:** badge is hidden and any open bubble reflects an empty state.
 - [ ] Visit a page with cosmetic (element-hiding) rules (e.g. a site with a known ad-container div) — **Expected:** the hidden element does not render (inspect via View Source vs rendered DOM — the element exists in DOM but has injected `display:none` style).
 - [ ] As of v1.8.18: visit a page matching a `/regex/`-style EasyList rule (or add one locally to `bundled_filter_rules.cc` for testing) — **Expected:** the matching request is now blocked, where before it silently passed through.
+- [ ] As of v1.8.26: force a background refresh (temporarily shrink `custom.filter_list_refresh.interval_hours`, or delete `WanderLustAdBlockCache.txt` and restart) — **Expected:** a fetch to `easylist.to` occurs, `WanderLustAdBlockCache.txt` appears under the user-data dir, and `BlockersWorker` picks up the new rules without a restart (verify by blocking a host only present in the freshly fetched list, not the bundled snapshot).
+- [ ] As of v1.8.26: restart the browser after a successful refresh — **Expected:** the ad blocker loads from `WanderLustAdBlockCache.txt` on startup rather than the bundled `bundled_filter_rules.cc` snapshot (check via `VLOG(1)` output or a deliberately stale bundled marker rule).
+- [ ] As of v1.8.26: feed the updater a truncated/near-empty response (e.g. a local test server, or briefly lower the sanity threshold) — **Expected:** the fetch is rejected, a `LOG(WARNING)` fires, and the existing engine/cache is left untouched.
 
 📷 *Screenshot suggestion: the omnibox ad-block badge plus its opened bubble showing a list of blocked hosts.*
 
@@ -411,10 +414,22 @@
 
 - [ ] Enable the toggle, then navigate to `https://example.com/page?utm_source=newsletter&utm_medium=email&id=123` — **Expected:** DevTools → Network → the request URL shows only `?id=123`.
 - [ ] Click through from a Google search result — **Expected:** outbound request lacks `ved`, `ei`, `usg`, etc.
+- [ ] As of v1.8.26: after a background refresh has run (see "Filter list auto-refresh" below), visit a URL matching a ClearURLs-only provider not in the original hardcoded per-site list — **Expected:** its tracking parameters are stripped, confirming the fetched rules are live.
 - [ ] Disable the toggle and reload the same tracked URL — **Expected:** all original query params are preserved in the outbound request.
 - [ ] Open a new tab (custom NTP) with the toggle enabled — **Expected:** NTP's own backend API calls are unaffected (check DevTools on the `chrome-search://` frame).
 
 📷 *Screenshot suggestion: DevTools Network panel side-by-side showing the same link with the toggle on vs off.*
+
+### Filter list auto-refresh (Ad Blocker + URL Purify)
+
+**What it is:** A shared background scheduler (`FilterListUpdateService`) that periodically re-fetches EasyList/EasyPrivacy (feeding the Ad Blocker) and ClearURLs-derived per-site rules (feeding URL Purify), hot-swapping each engine in place once a fetch passes a sanity-check gate. See the ad-blocker/security-privacy-features test entries above for the per-engine fetch/hot-swap/sanity-gate checks — this section covers only the shared toggle and orchestration.
+**Where to find it:** `chrome://settings` → Privacy and security → "Filter list updates" → **Automatically update filter lists** toggle.
+**Default state:** Enabled by default. Gated by `BUILDFLAG(ENABLE_FILTER_LIST_AUTO_REFRESH)` (`enable_filter_list_auto_refresh = true`, auto-narrowed off if either `enable_ad_blocker` or `enable_privacy_guard` is off); local-state pref `custom.filter_list_refresh.enabled` defaults to `true`. Default interval is 96 hours.
+
+- [ ] Open Settings → Privacy and security — **Expected:** "Filter list updates" section shows the "Automatically update filter lists" toggle, on by default.
+- [ ] Toggle it off, restart the browser — **Expected:** neither the EasyList/EasyPrivacy fetch nor the ClearURLs fetch fires on startup (no new request to `easylist.to` / the ClearURLs data source; no cache file timestamp update).
+- [ ] Toggle it back on, restart — **Expected:** both fetches resume on their normal schedule (immediately if overdue, per `last_fetch_time + interval`).
+- [ ] Quit and relaunch the browser shortly after a successful fetch (well inside the 96-hour interval) — **Expected:** no new fetch fires — `custom.filter_list_refresh.last_adblock_fetch_time` / `.last_url_purify_fetch_time` correctly suppress a redundant re-fetch.
 
 ### Privacy Shield (unified toolbar panel)
 

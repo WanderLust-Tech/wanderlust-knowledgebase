@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.25)
+## Versioned releases (1.7.25 → 1.8.26)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,60 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.26 — 2026-08-16
+
+Adds background auto-refresh for the Ad Blocker's EasyList/EasyPrivacy
+filter lists and URL Purify's per-site tracking-parameter rules — both
+were static snapshots baked in at build time, refreshed only via the
+manual `npm run update_easylist` dev script. Two decisions shaped scope:
+this covers **both** subsystems (not Ad Blocker alone), and integrity
+checking is a **sanity-check gate** (reject an implausibly small fetch),
+not full signature verification — matching the fork's existing precedent
+of trusting HTTPS transport for `RSSFetcher`/`UpdateManager` fetches.
+
+- `BlockersWorker` gains `ReloadFromText()`, hot-swapping its
+  `AdBlockClient` engine under the existing `init_lock_` once a freshly
+  parsed list clears a 50%-of-current-filter-count sanity floor. New
+  `AdBlockListUpdater` fetches EasyList + EasyPrivacy independently via
+  `SimpleURLLoader` (same spoofed UA as `tools/download_easylist.py`,
+  which easylist.to 403s otherwise), concatenates them, and on success
+  writes an atomic disk cache (`WanderLustAdBlockCache.txt` under
+  `chrome::DIR_USER_DATA`) that `BlockersWorker::InitAdBlock()` now
+  prefers over the bundled snapshot at startup — closing the gap its own
+  long-standing `TODO` comment described.
+- `URLPurifier` (`url_purify_work.cc`) gains a `base::Lock`-guarded
+  `ReloadPerSiteRules()`; only the fetched **per-site** provider list is
+  ever replaced, the hand-maintained generic `global_` rules (`utm_*`,
+  `fbclid`, `gclid`, etc.) are untouched by design. New
+  `url_purify_rule_loader.{h,cc}` parses ClearURLs' `data.min.json`
+  format into the existing `URLPurifyRule` shape; new
+  `UrlPurifyRuleUpdater` fetches it, applies the same sanity gate (rule
+  count vs. current count), and caches the raw JSON to disk the same way.
+- New `FilterListUpdateService` orchestrates both updaters behind one
+  `custom.filter_list_refresh.enabled` local-state pref (default `true`,
+  process-wide since neither engine is per-profile) and a 96-hour default
+  interval (`custom.filter_list_refresh.interval_hours`, matching
+  EasyList's own `! Expires:` header). Persisted last-fetch timestamps
+  mean a restart doesn't redundantly re-fetch if the interval hasn't
+  elapsed; each resource gets its own `base::OneShotTimer`, re-armed after
+  every fetch so an overdue check fires immediately rather than waiting
+  out a fixed period.
+- New build flag `enable_filter_list_auto_refresh`, auto-narrowed to
+  compile in only when both `enable_ad_blocker` and `enable_privacy_guard`
+  are also on (`FilterListUpdateService` owns one updater per feature).
+  Wired into `CustomFeatureManager` via the established
+  `InitializeXSystem()`/`ShutdownXSystem()` convention.
+- New Settings → Privacy and security → "Filter list updates" section
+  with an **Automatically update filter lists** toggle, bound through a
+  dedicated `customGetFilterListAutoRefreshEnabled`/
+  `customSetFilterListAutoRefreshEnabled` message pair rather than the
+  generic per-profile `usePref()` protocol, since the backing pref is
+  local state (same rationale as `UAGlobalModeSection`).
+- Deliberately out of scope for v1: signature/content-integrity
+  verification beyond the sanity gate, and the `AdBlockClient`
+  `serialize()`/`deserialize()` binary cache format — v1 caches raw
+  text/JSON, re-parsed once at next startup.
 
 ### 1.8.25 — 2026-08-16
 
