@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.29)
+## Versioned releases (1.7.25 → 1.8.30)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,41 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.30 — 2026-08-17
+
+Closes `shareable-theme-json.md`'s named follow-up: `cornerRadius`/
+`focusShadow` were stored and round-tripped losslessly through the theme
+JSON schema since v1.8.4, but only ever rendered inside
+`chrome://profile-customization`'s own preview card — not in
+`custom_settings`, the fork's other React WebUI surface.
+
+- No C++ changes needed — both fields already live inside the same JSON
+  string stored at pref `wanderlust.theme.custom_json`, which
+  `custom_settings` can already read via its own generic `usePref()` bridge
+  (`customGetPrefs`/`customObservePrefs`), a different path than
+  profile-customization's dedicated `getCustomTheme` message but the same
+  underlying data. Read-only — never calls the setter, so
+  `CustomSettingsHandler`'s generic (unvalidated) `customSetPref` write path
+  is never exercised for this pref.
+- `App.tsx`'s root component now sets two CSS custom properties,
+  `--wanderlust-corner-radius`/`--wanderlust-focus-shadow`, on
+  `document.documentElement` whenever the pref changes. Defaults (`20px`,
+  `none`) exactly match the pre-existing hardcoded look, so an unthemed
+  profile is pixel-identical to before.
+- `custom_settings/styles/tailwind.css` consumes them two ways: overriding
+  `.rounded-\[20px\]` — pathfinder-ui's vendored `Card` component's own
+  hardcoded className, matched via plain CSS cascade rather than editing
+  third-party source — so every `Card`/`Section`/`HubCard` across all ~40
+  settings pages picks up the theme's corner radius from one rule; and a
+  `:focus-visible` selector across every native focusable element
+  (buttons, links, inputs, selects, switches, checkboxes) site-wide for the
+  focus shadow, regardless of whether the element is pathfinder-vendored or
+  hand-rolled.
+- Native Chrome window chrome (title bar, tab strip, frame) still can't
+  pick up this geometry — `ui::ColorId`/`ColorProvider` has no equivalent to
+  `AddColorMixers` for border-radius/box-shadow, and that remains
+  explicitly out of scope, unchanged from the original v1.8.4 pass.
 
 ### 1.8.29 — 2026-08-17
 

@@ -159,27 +159,42 @@ row. It has:
 - **Reset** — calls `resetCustomTheme`, reverting to Chrome's default theme
   and resetting the editor back to its built-in placeholder values.
 
-## Known limitation: `cornerRadius`/`focusShadow` are WebUI-preview-only
+## Known limitation: `cornerRadius`/`focusShadow` can't reach native chrome
 
 `ui::ColorId`/`ColorProvider` has no concept of geometry — only color — so
 there is no override point analogous to `AddColorMixers` for border-radius
 or box-shadow in native Views UI. Applying these to the actual native window
 chrome (title bar, tab strip, frame) would need separate, materially larger
 Views-layer work (per-View style knobs, not a color-mixer override), which
-was explicitly out of scope for this pass.
+remains explicitly out of scope.
 
 Both values are still stored and round-tripped losslessly through
 export/import — so a theme file remains completely portable and
-future-proof — but today they're rendered only in the profile-customization
-page's own preview card, not applied anywhere else (not even
-`custom_settings`, the fork's other React WebUI surface).
+future-proof.
 
-**Follow-up idea, not yet implemented**: thread `cornerRadius`/`focusShadow`
-into `custom_settings`' own Tailwind stylesheet
-(`custom/components/custom_settings/styles/tailwind.css`) as CSS custom
-properties, so at least the fork's own React WebUI surfaces pick up the
-theme's geometry — even though native Chrome chrome (title bar, tab strip)
-still can't.
+**`custom_settings` follow-up: done (v1.8.30).** `cornerRadius`/`focusShadow`
+are no longer profile-customization-preview-only — `App.tsx`'s root effect
+(`custom/components/custom_settings/App.tsx`) reads the same
+`wanderlust.theme.custom_json` pref via `custom_settings`' existing generic
+`usePref()` bridge (read-only; never writes it, so
+`CustomSettingsHandler::HandleSetPref`'s unvalidated generic write path is
+never exercised for this pref) and sets two CSS custom properties,
+`--wanderlust-corner-radius`/`--wanderlust-focus-shadow`, on
+`document.documentElement`. `custom_settings/styles/tailwind.css` consumes
+them two ways:
+- `.rounded-\[20px\]` (pathfinder-ui's `Card` component's own hardcoded
+  className — vendored third-party code, not edited directly) is overridden
+  via plain CSS cascade, so every `Card`/`Section`/`HubCard` across all ~40
+  settings pages picks up the theme's corner radius from one rule.
+- Every native focusable element (`button`, `a`, `input`, `select`,
+  `[role="switch"]`, `[role="checkbox"]`) gets the theme's focus shadow via
+  a `:focus-visible` selector, site-wide, regardless of whether the element
+  is pathfinder-vendored or hand-rolled in `widgets.tsx`.
+
+Defaults (`20px`, `none`) match the pre-existing hardcoded look exactly, so
+a profile with no custom theme set renders identically to before this
+existed. No C++ changes were needed — `cornerRadius`/`focusShadow` already
+lived in the same JSON string this pref always stored.
 
 ## Validation
 

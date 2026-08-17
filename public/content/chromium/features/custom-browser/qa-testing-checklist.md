@@ -1477,6 +1477,8 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Edit a color directly in the exported file, then use **Import JSON** to re-select it — **Expected:** the editor's swatches update to match, "Applied" confirms, and the browser chrome reflects the edited color.
 - [ ] Import a JSON file missing `"light"` or `"dark"` — **Expected:** an "Invalid theme" error shows; the previously-applied theme is left untouched (not reset, not partially applied).
 - [ ] Click **Reset** — **Expected:** browser chrome reverts to the default theme; editor swatches reset to the built-in placeholder values.
+- [ ] As of v1.8.30: with no custom theme applied (or after **Reset**), open `chrome://settings` — **Expected:** cards/panels render with their normal ~20px corners and no visible focus-shadow change from any prior version.
+- [ ] As of v1.8.30: apply a custom theme with a distinctly different `cornerRadius` (e.g. edit the exported JSON to `4` and re-import) and a visible `focusShadow`, then open `chrome://settings` — **Expected:** every page's cards/panels now render with the new corner radius, and Tab-focusing a button/checkbox/input anywhere shows the themed focus shadow — confirm on at least two different settings pages to verify it's fork-wide, not page-specific.
 - [ ] Restart the browser after applying a custom theme (without resetting first) — **Expected:** the custom colors are still applied post-restart (persisted via prefs, not just in-memory for that session).
 - [ ] `chrome://chrome-urls` — **Expected:** lists all internal `chrome://` URLs, including the custom ones above.
 
