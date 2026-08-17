@@ -4,7 +4,7 @@ description: "Complete guide to the 14 major manager systems powering WanderLust
 category: "Features"
 tags: ["manager systems", "integration", "architecture", "features", "chromium"]
 difficulty: "intermediate"
-date: "2026-05-05"
+date: "2026-08-17"
 author: "Wanderlust Team"
 estimated_reading_time: "12 minutes"
 ---
@@ -12,6 +12,21 @@ estimated_reading_time: "12 minutes"
 # WanderLust Manager Systems Integration
 
 The WanderLust Custom Browser features a sophisticated **14-manager system architecture** that provides comprehensive browser functionality through modular, interconnected systems. This document provides a complete overview of how these systems work together to deliver advanced browsing capabilities.
+
+> **Accuracy note (2026-08-17):** the manager classes and file locations below
+> are real, but the per-manager code snippets are illustrative pseudocode
+> showing the general shape of each system's configuration — they haven't
+> been verified against the current exact API and are known in at least one
+> case (`CustomFeatureManager`) to be out of date: the real API is
+> `IsFeatureEnabled(name)`, not the `EnableFeature`/`DisableFeature`/
+> `EnableFeatureGroup` methods shown here. For exact, current method
+> signatures, check the manager's own header, or its dedicated feature doc
+> where one exists (e.g. [`feature-flag-management.md`](feature-flag-management.md),
+> [`enhanced-scroll-animations.md`](enhanced-scroll-animations.md),
+> [`javascript-content-controls.md`](javascript-content-controls.md),
+> [`advanced-download-management.md`](advanced-download-management.md),
+> [`reader-mode-integration.md`](reader-mode-integration.md)) — this page is
+> an index/overview, not the source of truth for exact APIs.
 
 ## 🏗️ **Architecture Overview**
 
@@ -458,6 +473,11 @@ All systems support enterprise policies for centralized management:
 ---
 
 ## 🚀 **Future Enhancements**
+
+> These are illustrative placeholder ideas, not a real backlog — none are
+> scoped, tracked, or committed to. Don't treat this section as a roadmap;
+> check the versioned changelog and each manager's own dedicated doc for
+> what's actually planned or in progress.
 
 - **AI Integration**: Machine learning for user behavior optimization
 - **Cloud Synchronization**: Cross-device feature synchronization
