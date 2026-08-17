@@ -79,7 +79,7 @@ The custom browser supports multiple brand configurations:
 - ✅ Information bar notifications for discovered feeds
 - ✅ JavaScript-based validation of RSS content
 - ✅ Complete RSS subscription and management system
-- ✅ Built-in RSS reader at `wanderlust://reader/`
+- ✅ Built-in RSS reader at `chrome://reader/`
 - ✅ OPML import/export functionality
 - ✅ User preference integration and configuration
 
@@ -116,32 +116,37 @@ The custom browser supports multiple brand configurations:
 - `url_purify_default_rules.h/.cc`: Default privacy protection rules
 
 ### 3. Vertical Tabs UI
-**Location**: `components/vertical_tabs_ui/`
 
-#### Implementation
-- **React/TypeScript Interface**: Modern UI built with React and TypeScript
-- **Vite Integration**: Fast development and build system
-- **Chrome Extension Architecture**: Utilizes Chrome's extension system
-
-#### Features
-- Vertical tab layout option for users
-- Modern React-based interface
-- TypeScript for type safety
-- Hot reload development environment
-
-#### Files
-- `page/vertical_tabs_page.tsx`: Main React interface component
-- `page/vertical_tabs_page.html`: HTML container for React app
-- `tsconfig.json`: TypeScript configuration
-- `BUILD.gn`: Build system integration
+> **Corrected 2026-08-17**: this section previously described a
+> `components/vertical_tabs_ui/` React/TypeScript directory built on
+> "Chrome Extension Architecture" — that never matched the real
+> implementation and has been removed. Vertical Tabs is a **Views-native
+> C++ feature**, not an extension: `browser/ui/views/frame/
+> vertical_tab_button.h` and `browser/tab/tab_service.h/.cc` implement the
+> tab bar itself, with an extension-API surface at
+> `browser/extensions/api/vertical_tabs/vertical_tabs_api.h/.cc` (an API
+> *for* the feature, not the feature's own architecture). Its settings live
+> in `components/custom_settings/components/TabsPage.tsx` ("Vertical tab
+> bar" section), bound to real prefs (`tab.vertical_tab_bar_mode`,
+> `tab.vertical_tab_bar_zoom_percent`, and others). See
+> [`vertical-tabs.md`](vertical-tabs.md) for the full, current, accurate
+> architecture — including its own "Dead / unwired code" section
+> documenting the exact `vertical_tabs_ui/` stub this section used to
+> (wrongly) describe as real.
 
 ### 4. Custom Settings UI
-**Location**: `components/custom_settings_ui/`
 
-#### Implementation
-- Enhanced settings interface for custom browser features
-- Integration with Chrome's settings architecture
-- Custom preference management
+> **Corrected 2026-08-17**: this section previously named a
+> `components/custom_settings_ui/` directory, which doesn't exist. The real
+> directory is `components/custom_settings/` (no `_ui` suffix) — a
+> React/TypeScript hub-and-spoke SPA (~30 sub-pages under
+> `components/*Page.tsx`, routed by `App.tsx`), backed by
+> `browser/ui/webui/settings/custom_settings_ui.cc` (`WebUIController`) and
+> `custom_settings_handler.cc` (a large `settings::SettingsPageUIHandler`).
+> See [`custom-webui/pages-inventory.md`](custom-webui/pages-inventory.md)'s
+> "Multi-page hubs" section and
+> [`custom-webui/getting-started.md`](custom-webui/getting-started.md) for
+> the real architecture and build pipeline.
 
 ### 5. Enhanced Omnibox
 **Location**: `components/omnibox/`
@@ -301,7 +306,7 @@ Eliminates confusing "Google API keys missing" warning banners that are inapprop
 ## 🛠️ Build System Integration
 
 ### Configuration Management
-- **`custom_browser_config.gni`**: Central configuration file (427+ lines)
+- **`custom_browser_config.gni`**: Central configuration file (967+ lines as of 2026-08-17, up from 427 — grown steadily as features were added)
 - **`sources.gni`**: Source file management for custom components
 - **`custom_grit_args.gni`**: Resource compilation arguments
 - **`custom_paks.gni`**: Resource packaging configuration
@@ -351,8 +356,8 @@ The implementation follows a "Rebel-style" minimal branding approach:
 |-----------|--------|-------------|---------------|----------------|
 | RSS Support | ✅ Complete | Tab Helper + WebUI | Full | **March 2026** - Restored processing logic, fixed build integration |
 | Privacy Guard | ✅ Complete | URL Processing | Full | - |
-| Vertical Tabs | ✅ Complete | React/TS UI | Full | - |
-| Custom Settings | ✅ Complete | Settings API | Partial | - |
+| Vertical Tabs | ✅ Complete | Views C++ + settings section | Full (see [vertical-tabs.md](vertical-tabs.md)) | - |
+| Custom Settings | ✅ Complete | React SPA + Settings API | Full (see [custom-webui/pages-inventory.md](custom-webui/pages-inventory.md)) | - |
 | Multi-Branding | ✅ Complete | Build System | Full | - |
 | Google API Suppression | ✅ Complete | InfoBar System | Full | - |
 | Enhanced Omnibox | 🔄 In Progress | Search API | Partial | - |
@@ -412,5 +417,5 @@ Components integrate with Chromium through established patterns:
 
 ---
 
-*Last Updated: March 2026*
+*Last Updated: August 2026 (§3/§4 corrected, see pages-inventory.md)*
 *Maintainer: WanderLust Browser Development Team*

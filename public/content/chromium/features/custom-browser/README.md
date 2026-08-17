@@ -20,8 +20,8 @@ This directory contains detailed documentation for all custom features implement
 - **[Remote New Tab Page (NTP) System](remote-ntp-documentation.md)**: Advanced cloud-hosted New Tab Page with offline support and rich customization
 - **[RSS Feed Support](rss-feed-support.md)**: Complete RSS system with feed detection, management, and Extension API (**✅ Fully Modernized - [Details](rss-feature-restoration-summary.md)**)
 - **[Privacy Guard](privacy-guard.md)**: URL purification and tracking protection system
-- **[Vertical Tabs UI](vertical-tabs-ui.md)**: Modern React-based tab interface component
-- **[Custom Settings UI](custom-settings-ui.md)**: Enhanced browser configuration interface
+- **[Vertical Tabs](vertical-tabs.md)**: Views-native vertical tab bar with tree mode, containers, and saved sessions
+- **[Custom Settings UI](custom-settings-ui.md)**: Retired 2026-08-17 (described a fictional architecture) — see [custom-webui/pages-inventory.md](custom-webui/pages-inventory.md) for the real `custom_settings` React SPA
 - **[Custom Download Shelf](custom-download-shelf.md)**: Enhanced download management with visibility control
 - **[Tab Shapes Feature](tab-shapes-feature.md)**: Customizable tab appearance with Round, Rectangle, and Trapezoid options
 
@@ -91,10 +91,10 @@ Features are organized following Chromium's architecture patterns:
 |---------|--------|---------------|-------------|---------|
 | [RSS Feed Support](rss-feed-support.md) | ✅ Complete | ✅ Full | Tab Helper + Extension API | ✅ Tested |
 | [Privacy Guard](privacy-guard.md) | ✅ Complete | ✅ Full | URL Processing | ✅ Tested |
-| [Vertical Tabs UI](vertical-tabs-ui.md) | ✅ Complete | ✅ Full | React/TypeScript | ✅ Tested |
+| [Vertical Tabs](vertical-tabs.md) | ✅ Complete | ✅ Full | Views C++ + settings section | ✅ Tested |
 | [Multi-Brand System](multi-brand-system.md) | ✅ Complete | ✅ Full | Build System | ✅ Tested |
 | [Google API Suppression](google-api-suppression.md) | ✅ Complete | ✅ Full | InfoBar System | ✅ Tested |
-| [Custom Settings UI](custom-settings-ui.md) | ✅ Complete | 🔄 Partial | Settings API | ✅ Tested |
+| [Custom Settings](custom-webui/pages-inventory.md) | ✅ Complete | ✅ Full | React SPA + Settings API | ✅ Tested |
 | [Custom Download Shelf](custom-download-shelf.md) | ✅ Complete | ✅ Full | Browser Layout | ✅ Tested |
 | [Tab Shapes Feature](tab-shapes-feature.md) | ✅ Complete | ✅ Full | UI Preferences + Tab Rendering | ✅ Tested |
 | [Enhanced Omnibox](enhanced-omnibox.md) | 🔄 Partial (Quick Actions + RSS done; URL Formatting/Security Indicators not started) | ✅ Full | Search API | 🔄 Manual |
