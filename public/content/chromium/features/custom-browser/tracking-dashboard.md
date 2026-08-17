@@ -129,6 +129,10 @@ resource URL uses `http://` or `https://`. Internal schemes (`chrome://`,
 | `custom/browser/ui/webui/BUILD.gn` | Adds handler + UI `.cc` pairs to the webui target |
 | `custom/browser/sources.gni` | Adds service, factory, throttle to `custom_browser_net` |
 | `custom/components/custom_tracking_dashboard/` | React app bundle |
+| `custom/browser/ui/views/toolbar/tracking_dashboard_button.h/.cc` | Toolbar button (v1.8.27) — numeric tracker-count badge, opens the dashboard tab on click |
+| `custom/browser/ui/views/bottombar/bottombar_view.h/.cc` | Adds/positions `TrackingDashboardButton` next to `PrivacyShieldButton`, pref-driven visibility |
+| `custom/common/custom_pref_names.h` | `kToolbarShowTrackingDashboardButton` |
+| `custom/browser/ui/sources.gni` | Adds the new button files under `if (enable_tracking_dashboard)` |
 | `custom/components/custom_tracking_dashboard/ForceGraph.tsx` | Pure-SVG spring simulation, no D3 required |
 | `custom/patches/chrome-browser-ui-webui-chrome_web_ui_configs.cc.patch` | Registers `TrackingDashboardUIConfig` |
 
@@ -166,8 +170,29 @@ interface GraphData {
 
 ## Opening the dashboard
 
-Navigate to `chrome://tracking-dashboard` directly, or add a toolbar button
-(future work — the dashboard is a full-tab page, not a bubble).
+Navigate to `chrome://tracking-dashboard` directly, or click the tracking
+dashboard toolbar button (v1.8.27) next to the Privacy Shield button — it
+opens the dashboard as a regular tab (via `ShowSingletonTab`), not a bubble,
+since the dashboard is a full-tab page.
+
+The button shows a numeric badge in its top-right corner with the tracker
+count `TrackingRelationshipService::GetTrackerCountForSite()` has recorded
+for the active tab's site (capped at a "9+" placeholder above 9), and
+updates live on tab switches, navigations, and new relationships recorded
+for the current site. Hidden by default when the count is zero. Its own
+visibility is controlled by pref `toolbar.show_tracking_dashboard_button`
+(default `true`) — like `toolbar.show_privacy_shield_button`, it has no
+Settings-UI exposure yet, matching that button's own precedent.
+
+Implementation: `custom::TrackingDashboardButton`
+(`browser/ui/views/toolbar/tracking_dashboard_button.{h,cc}`), gated by
+`BUILDFLAG(ENABLE_TRACKING_DASHBOARD)` (the same flag that gates the WebUI
+page itself — the backend `TrackingRelationshipService` is unconditional).
+The numeric badge (`TrackingCountBadgeView`/`CircleBadgeImageSource`) is
+adapted from vanilla Chromium's download-count badge in
+`chrome/browser/ui/views/download/bubble/download_toolbar_ui_controller.cc`,
+trimmed of the progress-ring/animation machinery this static badge doesn't
+need.
 
 ---
 
@@ -176,7 +201,7 @@ Navigate to `chrome://tracking-dashboard` directly, or add a toolbar button
 | Area | Description | Notes |
 |---|---|---|
 | eTLD+1 comparison | Use `net::registry_controlled_domains::GetDomainAndRegistry()` to compare registrable domains instead of raw hosts. `api.example.com` and `www.example.com` would then not appear as cross-party. | See the third-party detection note above. |
-| Toolbar quick-access button | A toolbar button that shows a badge with the tracker count for the current tab, and opens the dashboard on click. The per-tab count is already available via `TrackingRelationshipService::GetTrackerCountForSite()`. | Pattern: same as `PrivacyShieldButton`. |
+| ~~Toolbar quick-access button~~ | **Done (v1.8.27).** See "Opening the dashboard" above — `TrackingDashboardButton`. | — |
 | Filter by first-party site | Add a search/filter input to the dashboard React app to highlight or isolate a single first-party node and its edges. | Pure frontend change — no new C++ required. |
 
 ---

@@ -543,13 +543,16 @@
 ### Tracking Relationship Dashboard
 
 **What it is:** A passive, non-blocking observer that records first-party → third-party domain relationships seen during browsing and visualizes them as a force-directed graph.
-**Where to find it:** Navigate directly to `chrome://tracking-dashboard` (no toolbar button yet).
+**Where to find it:** Navigate directly to `chrome://tracking-dashboard`, or click the tracking dashboard toolbar button (v1.8.27) next to the Privacy Shield button.
 **Default state:** Enabled by default whenever built. Gated by `BUILDFLAG(ENABLE_TRACKING_DASHBOARD)` (`enable_tracking_dashboard = true`); purely observational, no user-facing on/off pref.
 
 - [ ] Browse a few sites that load third-party resources (news sites, sites with embedded ad/analytics scripts), then open `chrome://tracking-dashboard` — **Expected:** stat cards show non-zero "trackers" and "sites" counts, and a graph renders with blue (first-party) and orange (third-party) nodes connected by edges.
 - [ ] Hover/inspect the graph — **Expected:** the layout animates to a stable position (spring-physics simulation), not a static snapshot.
 - [ ] Click "Clear data" — **Expected:** stat cards reset to zero and the graph empties.
 - [ ] Restart the browser and revisit the dashboard (without clearing first) — **Expected:** previously recorded relationships persist (loaded from the per-profile LevelDB store), confirming it survives restarts.
+- [ ] As of v1.8.27: visit a site with no recorded trackers yet — **Expected:** the toolbar button shows no badge. Then visit a site known to trigger third-party requests — **Expected:** a numeric badge appears on the button showing the tracker count for that site (a "9+" placeholder above 9), and clicking the button opens `chrome://tracking-dashboard` as a normal tab, not a bubble.
+- [ ] As of v1.8.27: with the badge showing a count on one tab, switch to a different tab with a different (or zero) tracker count — **Expected:** the badge updates or hides to match the newly active tab's site, without needing a page reload.
+- [ ] As of v1.8.27: with the dashboard button visible, flip pref `toolbar.show_tracking_dashboard_button` to `false` (e.g. via a temporary pref edit) — **Expected:** the button disappears immediately, matching `PrivacyShieldButton`'s own visibility-pref pattern.
 
 📷 *Screenshot suggestion: the force-directed graph with several first-party (blue) and third-party (orange) nodes connected.*
 

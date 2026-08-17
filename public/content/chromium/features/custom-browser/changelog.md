@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.26)
+## Versioned releases (1.7.25 → 1.8.27)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,48 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.27 — 2026-08-17
+
+Adds a toolbar button for `chrome://tracking-dashboard`, which until now was
+reachable only by typing the URL directly. The doc's own "Future
+enhancements" table already scoped the fix — a badge showing the tracker
+count for the current tab, opening the dashboard on click, "same pattern as
+`PrivacyShieldButton`" — and named the exact backend call to reuse
+(`TrackingRelationshipService::GetTrackerCountForSite()`), already proven in
+production feeding the Privacy Shield bubble's own "Trackers on page" stat.
+
+- New `custom::TrackingDashboardButton`
+  (`browser/ui/views/toolbar/tracking_dashboard_button.{h,cc}`), added to
+  the bottombar next to `PrivacyShieldButton`. Unlike Privacy Shield's
+  button — which opens a bubble embedding a `WebView` — this one opens
+  `chrome://tracking-dashboard` as a plain tab via `ShowSingletonTab`, since
+  the dashboard is explicitly a full-tab page, not a bubble.
+- Per user decision (AskUserQuestion), the badge is a real numeric count
+  overlay rather than a simple presence indicator, matching the doc's
+  literal description. No numeric-badge precedent existed on a bottombar
+  `ToolbarButton` in this fork, so `TrackingCountBadgeView` /
+  `CircleBadgeImageSource` adapt vanilla Chromium's download-count badge
+  (`chrome/browser/ui/views/download/bubble/download_toolbar_ui_controller.cc`),
+  trimmed of the progress-ring/animation machinery a static badge doesn't
+  need.
+- The button observes the `TabStripModel` (rebind on active-tab change),
+  the bound `WebContents` (recompute on navigation), and
+  `TrackingRelationshipService` itself (recompute when new relationships
+  are recorded) to keep the badge's per-tab count live — genuinely new
+  wiring in this fork, since `PrivacyShieldButton` has no per-tab observer
+  of its own (its stats are computed on-demand inside its WebUI handler
+  instead).
+- New pref `toolbar.show_tracking_dashboard_button` (default `true`),
+  registered and wired exactly like `toolbar.show_privacy_shield_button` —
+  including matching that pref's precedent of having no Settings-UI
+  exposure yet. `BottombarView::OnButtonStateChanged()` was extended to
+  apply the new button's visibility on pref changes (Privacy Shield's own
+  button has a pre-existing gap here, left untouched — only the new button
+  gets live-toggle behavior).
+- Gated by the existing `BUILDFLAG(ENABLE_TRACKING_DASHBOARD)` flag (no new
+  build flag needed) — the backend `TrackingRelationshipService` itself
+  remains unconditional, as it already was.
 
 ### 1.8.26 — 2026-08-16
 
