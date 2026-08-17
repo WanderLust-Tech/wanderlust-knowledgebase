@@ -194,6 +194,7 @@
 - [ ] Open a link with ctrl-click / middle-click from an existing tab, then right-click empty space in the bar → note a parent/child relationship — **Expected:** with Tree mode enabled (settings), the new tab appears indented as a child with a disclosure triangle on the parent.
 - [ ] Right-click empty space below the tab buttons → "Sort tabs by" → Title — **Expected:** unpinned, ungrouped tabs reorder alphabetically; pinned/grouped tabs stay put.
 - [ ] Right-click empty space → "Save tabs as new session", then close those tabs, then right-click → "Restore session ▸" and pick it — **Expected:** all previously-open tabs reopen as background tabs.
+- [ ] As of v1.8.29: save a session, restart the browser, and confirm it still appears under "Restore session ▸" and restores correctly — **Expected:** the new `schemaVersion` field on each saved session (added for future forward-compat) doesn't change or break normal save/restore behavior.
 - [ ] Ctrl-click (Cmd-click on Mac) two different tab buttons — **Expected:** both are added to a multi-selection (visually highlighted); right-click → Close should close both.
 - [ ] Press "/" while a tab button has focus — **Expected:** a search/filter row appears; typing narrows the visible tabs to title/URL matches; Escape clears it.
 - [ ] Hover a tab button for about half a second without clicking — **Expected:** a small floating thumbnail preview of that tab's page appears beside it.
@@ -239,6 +240,7 @@
 ### Enhanced Omnibox
 
 **What it is:** Address-bar enhancements. Two pieces are real and working as of v1.8.16: a `settings:` quick-action provider that jumps straight to a `chrome://settings` sub-page, and a fixed RSS-in-omnibox provider that suggests subscribed feed items matching typed text. URL Formatting and Security Indicators (also originally planned under this feature) are still not implemented.
+As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer reaches into `chrome/browser`-layer `RSSService`/`Profile` directly from `components/omnibox/browser` — a real layering violation from the 1.8.16 fix that only surfaced as an undefined-symbol link failure at full-browser link time (deferred at 1.8.17, fixed properly here). Functionally unchanged from the user's perspective; see enhanced-omnibox.md for the architecture.
 **Where to find it:** The main address bar (omnibox) — no dedicated settings page; `settings:` and RSS suggestions require no toggle beyond having subscribed an RSS feed via `chrome://reader` (for RSS suggestions specifically, also check the RSS feature's own omnibox-integration toggle under `chrome://settings/rss`).
 **Default state:** `settings:` quick actions work out of the box. RSS suggestions require an active feed subscription with omnibox search enabled.
 
@@ -350,6 +352,7 @@
 - [ ] Toggle off `super_drag.tip_enabled` in settings, repeat a drag — **Expected:** no visual bubble/overlay appears during the drag, but the action still fires on drop.
 - [ ] As of v1.8.19: in the Super Drag settings page, assign a search engine to one gesture direction (e.g. up), then drag a hyperlink (not plain text) in that direction and release — **Expected:** the drop searches the search engine using the link's visible text as the query, opening a search-results page — not a direct navigation to the link's href. The mid-drag bubble should also show the "search with X" hint while dragging, not just the disposition label.
 - [ ] Repeat the same drag in a direction with **no** search engine assigned — **Expected:** unchanged existing behavior — the link opens directly (navigates to its href).
+- [ ] As of v1.8.29: assign a search engine to a gesture, then click "Reset to default" in the Super Drag settings page — **Expected:** the assignment is actually cleared this time (a pre-existing bug meant Reset silently did nothing to search-engine assignments before this fix), and gesture direction mappings return to their defaults.
 
 📷 *Screenshot suggestion: mid-drag screenshot showing the Super Drag bubble overlay with its resolved action label (e.g., "Open in new tab").*
 

@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.28)
+## Versioned releases (1.7.25 → 1.8.29)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,54 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.29 — 2026-08-17
+
+Closes `legacy-browser-gap-closures.md`'s last open item — `TabService`'s
+saved-tab-sessions pref and Super Drag's three dict prefs had no
+schema-version discriminator, unlike `page_notes`/`workspaces`/the
+sidebar's pinned-panels store. Along the way, at the user's request,
+properly fixed a real, previously-deferred build-breaking layering
+violation that had been blocking a clean `chrome/browser:browser` link
+since 1.8.16.
+
+- `TabService` (`browser/tab/tab_service.cc`): each saved vertical-tab-bar
+  session now carries a `schemaVersion` field, per-item versioned exactly
+  like `Workspace::ToValue`/`FromValue` — an absent field reads as version
+  1, a newer-than-understood version is silently skipped rather than
+  risking misinterpretation.
+- Super Drag (`browser/super_drag/super_drag_service.cc`): `kSuperDragRelations`/
+  `SearchEngines`/`Exceptions` are flat lookup dicts, not lists of records,
+  so they get whole-dict versioning (closer to Page Notes' file-level
+  `"version"`) via a reserved `"schemaVersion"` sibling key. The two call
+  sites that previously enumerated every dict key (`IsURLAllowed`,
+  `ResetToDefault`) now skip that reserved key. Found and fixed a real bug
+  along the way: `ResetToDefault` computed a zeroed-out copy of
+  `kSuperDragSearchEngines` but wrote back the original, unzeroed dict —
+  "Reset to default" silently did nothing to search-engine assignments.
+  (Also fixed a doc inaccuracy: the third schema-version precedent example
+  was mislabeled "the sidebar's recently-closed-panel store" — that list
+  is Chromium's native `TabRestoreService` with no custom persisted shape;
+  the real versioned store is `SidebarPinnedPanelsService`'s pinned panels.)
+- **Bonus fix, at the user's request**: `CustomSearchProvider` (the
+  RSS-in-omnibox provider, `custom/components/omnibox/browser`) reached
+  directly into `chrome/browser`-layer `RSSService`/`RSSServiceFactory`/
+  `ChromeAutocompleteProviderClient::GetProfile()` via an illegal
+  `static_cast<ChromeAutocompleteProviderClient*>` — components/ can never
+  depend on chrome/, so this only surfaced as an undefined-symbol link
+  failure at full-browser link time (deferred since 1.8.17). Fixed by
+  adding two new components/-safe virtuals to the real
+  `AutocompleteProviderClient` base interface —
+  `IsRSSOmniboxSearchEnabled()` and `GetRSSOmniboxCandidates()` — defaulting
+  to `false`/empty like the base class's existing optional-accessor
+  convention (e.g. `GetDocumentSuggestionsService()`), with
+  `ChromeAutocompleteProviderClient` bridging the real RSS lookup from the
+  chrome/ layer. `CustomSearchProvider` now only ever talks to the abstract
+  client interface. Required patching two upstream Chromium files
+  (`components/omnibox/browser/autocomplete_provider_client.{h,cc}`) in
+  addition to this fork's existing patches on
+  `chrome_autocomplete_provider_client.{h,cc}` — `npm run update_patches`
+  run afterward to capture the new/changed patches.
 
 ### 1.8.28 — 2026-08-17
 

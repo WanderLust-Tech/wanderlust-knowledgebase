@@ -24,9 +24,13 @@ Verified against the actual code, not just the roadmap doc's claims:
   with no step indicator and no confirmation before the destructive
   import action.
 - **Schema/version fields on local settings stores** — partially done.
-  `page_notes`, `workspaces`, and the sidebar's recently-closed-panel
-  store already had one; `TabService`'s saved-sessions pref and Super
-  Drag's three dict prefs did not (see "Still open" below).
+  `page_notes`, `workspaces`, and the sidebar's pinned-panels store
+  (`SidebarPinnedPanelsService`/`kSidebarPinnedPanels` — corrected here from
+  an earlier, inaccurate "recently-closed-panel" label; that list is
+  actually backed by Chromium's native `TabRestoreService` with no custom
+  persisted shape at all) already had one; `TabService`'s saved-sessions
+  pref and Super Drag's three dict prefs did not. **Closed 2026-08-17
+  (v1.8.29)** — see "Schema-version fields, closed" below.
 - Already satisfied, no action needed: per-user settings storage location
   (audited — all writes are `HKCU` or profile-relative, none are
   install-directory-relative or `HKLM`), and JS-based page-readiness
@@ -76,15 +80,34 @@ Verified against the actual code, not just the roadmap doc's claims:
   exactly what will be imported and from where, calling out passwords
   specifically) before the import actually runs.
 
-## Still open
+## Schema-version fields, closed (2026-08-17, v1.8.29)
 
-**`TabService`'s saved-tab-sessions pref
-(`kTabVerticalTabBarSavedSessions`) and Super Drag's three structured
-dict prefs (`kSuperDragRelations`, `kSuperDragSearchEngines`,
-`kSuperDragExceptions`) still have no schema-version field.** Each stores
-a `base::Value::List`/`Dict` of structured per-item data with no version
-discriminator, unlike `page_notes`/`workspaces`/sidebar. Not fixed this
-session — low urgency (nothing currently depends on migrating these
-shapes), but worth closing before either shape changes again, using the
-same `kCurrentSchemaVersion` pattern already established in
-`page_notes_service.cc`/`workspace_types.cc`.
+`TabService`'s saved-tab-sessions pref (`kTabVerticalTabBarSavedSessions`)
+and Super Drag's three structured dict prefs (`kSuperDragRelations`,
+`kSuperDragSearchEngines`, `kSuperDragExceptions`) now carry a
+`schemaVersion` field, closing the "Still open" item from the original
+2026-08-02 audit.
+
+- **`TabService`** (`browser/tab/tab_service.cc`) — per-item versioning,
+  identical to `Workspace::ToValue`/`FromValue`: each saved session gets a
+  `kSavedSessionSchemaVersion = 1` stamp, and
+  `GetVerticalTabBarSavedSessions()` (previously a raw, unvalidated
+  `Clone()`) now silently drops any entry whose version is newer than this
+  build understands, treating an absent key as version 1.
+- **Super Drag** (`browser/super_drag/super_drag_service.cc`) — whole-dict
+  versioning instead (closer to Page Notes' file-level `"version"` than
+  Workspace's per-item one), since these three prefs are flat
+  gesture/origin → value lookup maps, not lists of independent records.
+  `kSuperDragSchemaVersion = 1` is stamped as a reserved `"schemaVersion"`
+  sibling key; the two call sites that previously enumerated every key in
+  `kSuperDragExceptions`/`kSuperDragSearchEngines`
+  (`IsURLAllowed`/`ResetToDefault`) were updated to skip that reserved key,
+  so it's never misread as a real origin/gesture entry or zeroed out on
+  reset. Along the way, fixed a real pre-existing bug in `ResetToDefault`:
+  it computed a zeroed-out copy of `kSuperDragSearchEngines` but then wrote
+  back the original, unzeroed dict — "Reset to default" never actually
+  reset any search-engine assignment.
+- Neither store gained migration logic — both are pure forward-compat
+  insurance, matching every existing precedent (`page_notes`/`workspaces`/
+  sidebar have all only ever shipped version 1, so there's nothing to
+  migrate *from* yet).
