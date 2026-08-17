@@ -395,18 +395,67 @@ Two things it asked for turned out to be genuine, currently-missing gaps
 (confirmed by reading `rss_types.h`'s `RSSChannelInfo` struct and the
 `custom_reader` React app directly, not just the docs):
 
-- **No pre-populated/suggested feeds for new users.** No starter feed list
-  or onboarding flow exists anywhere in the codebase. Worth adding as a
-  short, static, category-tagged list of well-known feeds shown when a
-  profile has zero subscriptions — not the proposal's ML-recommendation
-  version.
-- **No feed health tracking at all.** `RSSChannelInfo` has no
-  failure/last-successful-fetch field, so a feed that's been silently
-  failing for weeks looks identical to a healthy one in the sidebar today.
-  Worth adding as a subtle broken/stale indicator per feed — not the
-  proposal's full analytics-dashboard version.
+- ~~**No pre-populated/suggested feeds for new users.**~~ **Fixed
+  2026-08-17 (v1.8.28).** A profile with zero subscriptions now sees a
+  `StarterFeedPicker` in the reader's main pane instead of the generic
+  "Select a feed to read articles" message — a short, static,
+  category-tagged list (Tech/News/Science/Culture), not the proposal's
+  ML-recommendation version. See "Starter feeds" below.
+- ~~**No feed health tracking at all.**~~ **Fixed 2026-08-17 (v1.8.28).**
+  `RSSChannelInfo` now tracks `consecutive_failures`/`last_success` per
+  channel, and a broken-feed indicator appears in the sidebar — a subtle
+  per-feed signal, not the proposal's full analytics-dashboard version. See
+  "Feed health tracking" below.
 
-Neither has been implemented yet as of this writing.
+Both were genuinely missing as of the 2026-07-22 review; both are now built.
+
+## Starter feeds (v1.8.28)
+
+A brand-new profile's reader now shows a `StarterFeedPicker`
+(`components/custom_reader/components/StarterFeedPicker.tsx`) in place of
+the bare empty-state message, whenever `feeds.length === 0` and the user
+isn't in search/group view (`App.tsx`'s `ReaderShell`). It lists ~9 curated
+feeds (`components/custom_reader/starterFeeds.ts`) grouped by category
+(Tech, News, Science, Culture) with checkboxes; "Add N feeds" calls the
+existing `addFeed` WebUI message once per selected feed — the exact same
+path a manually-typed feed uses (`ReaderDOMHandler::AddFeed` →
+`RSSFeed::AddRSSChannel`), so no new C++ was needed for the add path
+itself. The picker needs no refresh logic of its own either — the existing
+`readerFeedsChanged` WebUI listener inside `useFeedList()` already
+re-fetches the feed list after any add, and once `feeds.length` is
+non-zero the picker simply stops being rendered.
+
+This list is deliberately separate from the older `kRSSPrepopulated` array
+(`common/constants.h`/`.cc`) — that one is stale (leftover Japanese
+Infoseek/Kinza portal feeds from this fork's upstream base) and only feeds
+the sidebar's destructive "Reset RSS Reader to defaults" link, which wipes
+all current subscriptions first. `kRSSPrepopulated` is untouched by this
+change.
+
+## Feed health tracking (v1.8.28)
+
+`RSSChannelInfo` (and the `channels` table, schema bumped 3 → 4) gained two
+fields: `consecutive_failures` (resets to 0 on any successful fetch,
+increments on each failed one) and `last_success` (timestamp of the most
+recent successful fetch). Previously `RSSImpl::RequestRSSCallback` ignored
+`RSSFetcher::GetStatus()` entirely — a failed fetch still bumped
+`date_modified` to "now" and wrote `item_num = 0`, identical to "fetched
+fine, zero new items this cycle." It now branches on `GetStatus()` to
+update these fields correctly.
+
+`ReaderDOMHandler::ChannelToDict()` derives a `broken` boolean
+(`consecutive_failures >= kFeedHealthFailureThreshold`, threshold = 3 —
+one transient blip shouldn't flash the indicator) and sends only that
+boolean to the frontend, not the raw counts. `Sidebar.tsx` renders a small
+⚠ next to a broken feed's title, with a tooltip explaining it hasn't
+updated successfully in a while — a subtle indicator, not a dashboard.
+
+**Migration note**: bumping the schema version could have wiped every
+existing user's subscriptions — `RSSDatabase::InitImpl` razes any database
+below `kDeprecatedVersionNumber + 1`. The fix keeps
+`kDeprecatedVersionNumber` at its existing value (2) and instead runs an
+in-place `ALTER TABLE channels ADD COLUMN` migration for existing v3
+databases, so upgrading users keep their subscriptions.
 
 ## 🔧 Troubleshooting
 

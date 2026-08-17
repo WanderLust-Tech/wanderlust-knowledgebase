@@ -852,6 +852,10 @@
 - [ ] Type in **Search articles** — **Expected:** debounced (~250ms) results filter to matching titles; clearing the box restores the previous feed/group view.
 - [ ] Switch item-list layout using the **☰ / ▤ / ▦** buttons — **Expected:** Title/Magazine/Full views render distinctly (thumbnail in Magazine, full image + "Open original article" button in Full); selection persists across a reload.
 - [ ] Toggle RSS off from Settings while `chrome://reader` is open in another tab — **Expected:** the reader tab live-swaps to the disabled-message screen without a manual reload.
+- [ ] As of v1.8.28: open `chrome://reader` on a fresh profile with zero subscriptions — **Expected:** a categorized starter-feed picker (Tech/News/Science/Culture) appears in the main pane instead of "Select a feed to read articles." Check a few feeds and click "Add N feeds" — **Expected:** the picker disappears and the reader switches to the normal feed view with the selected feeds subscribed.
+- [ ] As of v1.8.28: subscribe to a feed, then repoint its URL at something that will fail (a 404 or a dead host) and let it attempt at least 3 fetches (use ↻ Refresh to force attempts rather than waiting out the update interval) — **Expected:** a small ⚠ appears next to the feed's title in the sidebar, with a tooltip explaining it hasn't updated successfully in a while.
+- [ ] As of v1.8.28: repoint that same feed back to a working URL and let one fetch succeed (↻ Refresh) — **Expected:** the ⚠ indicator clears.
+- [ ] As of v1.8.28: with existing subscriptions from a pre-upgrade profile (schema v3), launch the upgraded browser — **Expected:** all existing subscriptions are intact (the v3→v4 migration adds columns in place; it must not wipe the database).
 
 📷 *Screenshot suggestion: the RSS infobar with Subscribe/Cancel buttons on a real news site, and the reader UI showing a subscribed feed's article list in Magazine view.*
 

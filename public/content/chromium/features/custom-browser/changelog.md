@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.27)
+## Versioned releases (1.7.25 → 1.8.28)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,43 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.28 — 2026-08-17
+
+Adds RSS starter feeds and feed health tracking — both confirmed genuinely
+missing gaps in the doc's own 2026-07-22 proposal review: brand-new
+profiles got zero feeds and zero onboarding, and a silently-broken feed was
+indistinguishable from a healthy-but-quiet one, in both the DB and the
+sidebar. Per user decision (AskUserQuestion), starter feeds are an
+interactive picker rather than a silent auto-subscribe, matching the doc's
+own "shown when a profile has zero subscriptions" wording.
+
+- New `StarterFeedPicker` replaces the bare "Select a feed to read
+  articles" message when a profile has zero subscriptions —a ~9-feed
+  curated, category-tagged list (Tech/News/Science/Culture), not the
+  original proposal's ML-recommendation version. No new C++ needed: it
+  reuses the existing `addFeed` WebUI message (the same path a
+  manually-typed feed uses) and the existing `readerFeedsChanged` listener
+  already refreshes the feed list, so the picker just stops rendering once
+  feeds exist. Left deliberately separate from the older, stale
+  `kRSSPrepopulated` array (Japanese Infoseek/Kinza portal feeds), which
+  still only feeds the unrelated destructive "Reset…" flow, untouched.
+- `RSSChannelInfo` gains `consecutive_failures`/`last_success`.
+  `RSSImpl::RequestRSSCallback` previously discarded `RSSFetcher::GetStatus()`
+  entirely — a failed fetch still bumped `date_modified` and wrote
+  `item_num = 0`, identical to "fetched fine, zero new items." It now
+  branches on fetch status to update these fields correctly, and
+  `ReaderDOMHandler::ChannelToDict()` derives a `broken` boolean
+  (3 consecutive failures) that `Sidebar.tsx` renders as a subtle ⚠ next to
+  the feed's title — a single indicator, not the proposal's full
+  analytics-dashboard version.
+- The `channels` table schema bumped 3 → 4. Critical constraint discovered
+  and avoided: `RSSDatabase::InitImpl` razes any database below
+  `kDeprecatedVersionNumber + 1` — naively bumping that value alongside the
+  version would have wiped every existing user's subscriptions on upgrade.
+  The fix keeps `kDeprecatedVersionNumber` at its existing value (2) and
+  runs an in-place `ALTER TABLE channels ADD COLUMN` migration for existing
+  v3 databases instead.
 
 ### 1.8.27 — 2026-08-17
 
