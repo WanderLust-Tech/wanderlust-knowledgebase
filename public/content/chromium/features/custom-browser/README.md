@@ -4,7 +4,7 @@ description: "Complete guide to all custom features and enhancements in the Wand
 category: "Features"
 tags: ["features", "custom browser", "overview", "functionality", "enhancements"]
 difficulty: "beginner"
-date: "2025-01-15"
+date: "2026-08-17"
 author: "Wanderlust Team"
 estimated_reading_time: "5 minutes"
 ---
