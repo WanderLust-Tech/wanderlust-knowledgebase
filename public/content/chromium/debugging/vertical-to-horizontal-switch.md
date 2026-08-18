@@ -1,9 +1,13 @@
 # Vertical → Horizontal Tab Strip Switch — Known Broken State
 
-**Status:** Unresolved as of 2026-05-22. Multiple attempts have failed to
-fully restore the horizontal strip after a runtime switch from vertical
-back to horizontal. This doc captures the investigation so the next
-person picking it up doesn't re-walk the same paths.
+**Status (updated 2026-08-17): needs re-verification, not confirmed
+fixed or broken.** Attempts 1-6 below (as of 2026-05-22) all failed. A
+seventh, undocumented fix landed 2026-06-29 (see "Attempt 7" below) that
+directly targets this bug's root cause and was never recorded here or
+runtime-tested. Given five previous "looks fixed" assessments were all
+wrong, do not trust a code-reading-only verdict either way — see
+`qa-testing-checklist.md`'s "Vertical → horizontal switch-back" entry for
+the exact repro steps to confirm the real current state.
 
 ## Symptoms
 
@@ -123,6 +127,34 @@ vertical mode. Render-before users keep the property at `true`
 (required by the `UpdateTabStripMargin` CHECK). **Result:** No change
 reported by user.
 
+### Attempt 7 — undocumented, landed 2026-06-29, never recorded here
+
+Discovered via `git blame` while investigating this doc's stale status
+(commit `5b5cd597`, "feat: add reader mode button, network isolation, and
+client hints hardening" — a mixed commit, this fix wasn't its primary
+focus, which likely explains why it never got written up here). Two
+changes, both still live:
+
+1. **`VerticalTabBar::EnsureTabStripVisible`** (`vertical_tab_bar.cc:695-704`)
+   now bails immediately if `tab_strip_region_view_->parent() != this` —
+   i.e. if the region view has already been reparented back to
+   `top_container_` for horizontal mode. This directly targets Hypothesis
+   6 from below: a second, later `Layout` pass re-invoking
+   `EnsureTabStripVisible` after the switch-back would previously
+   re-clobber the correct horizontal bounds with vertical-mode
+   dimensions; now it's a no-op once the reparent has happened.
+2. **`TabStrip::SetVisible`** (`chrome-browser-ui-views-tabs-tab_strip.cc.patch`)
+   now only blocks *hide* calls while in vertical mode
+   (`if (vertical_mode_ && !visible) return;`), letting *show* calls
+   through unconditionally — so `RestoreUpstreamViewsForHorizontalMode()`
+   can actually unhide the strip before the next layout pass clears
+   `vertical_mode_`. The prior behavior (per the commit message) blocked
+   both directions, which would have silently swallowed the restore call.
+
+**Result: unknown.** No runtime test on record either confirming or
+refuting that this resolves the symptoms — this is exactly the gap
+`qa-testing-checklist.md`'s switch-back entry now exists to close.
+
 ## Live source changes still in place
 
 - `src/chrome/browser/ui/views/frame/browser_view.cc` —
@@ -136,10 +168,17 @@ reported by user.
   ends with `InvalidateLayout()`.
 - `src/custom/browser/ui/views/frame/vertical_tab_bar.{h,cc}` —
   `RestoreUpstreamViewsForHorizontalMode()` exposed as a public method;
-  `VisibilityChanged` calls the same method as a fallback.
+  `VisibilityChanged` calls the same method as a fallback. Also (Attempt 7,
+  2026-06-29): `EnsureTabStripVisible()` now bails immediately if
+  `tab_strip_region_view_->parent() != this`.
+- `src/custom/patches/chrome-browser-ui-views-tabs-tab_strip.cc.patch` —
+  (Attempt 7, 2026-06-29): `TabStrip::SetVisible` now only blocks *hide*
+  calls in vertical mode, letting *show* calls through unconditionally.
 
-None of these have been reverted. They're plausibly correct individually
-but together they still don't produce a working horizontal strip.
+None of these have been reverted. Attempts 1-6 were plausibly correct
+individually but were confirmed (at the time) to still not produce a
+working horizontal strip together. Attempt 7's actual effect is
+unverified — see the Status note at the top of this doc.
 
 ## Hypotheses worth investigating next
 
