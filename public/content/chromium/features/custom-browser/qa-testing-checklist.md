@@ -1445,6 +1445,23 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: the standalone password manager page loaded directly from the omnibox.*
 
+### Advanced Preferences (chrome://advanced-prefs)
+
+**What it is:** A full profile-preference editor — the about:config equivalent — listing every registered pref with type/value/default-state, editable inline.
+**Where to find it:** `chrome://advanced-prefs` (typed directly). As of v1.8.31, moved off `chrome://settings/advanced-prefs` to this dedicated, unlisted host — deliberately not linked from the Settings nav or the omnibox `settings:` quick actions, so casual users don't stumble into it.
+**Default state:** Enabled by default.
+
+- [ ] Navigate directly to `chrome://advanced-prefs` — **Expected:** page loads with the full preference table (key/type/value/status columns).
+- [ ] Open `chrome://settings` and look through the nav — **Expected:** no "Advanced preferences" entry appears anywhere in the Settings UI.
+- [ ] Type `settings: advanced` in the omnibox — **Expected:** no quick-action suggestion for it appears (it's no longer part of the Settings route table).
+- [ ] Type a filter term into the search box — **Expected:** table narrows to matching preference keys live.
+- [ ] Toggle a boolean pref's checkbox — **Expected:** value flips immediately and the row highlights as "modified".
+- [ ] Click a string/number value to edit it, change it, press Enter — **Expected:** new value saves and the row shows "modified".
+- [ ] Click the reset (↺) icon on a modified pref — **Expected:** value reverts to default and the row's status returns to "default".
+- [ ] Restart the browser after modifying a pref here — **Expected:** the change persists (this is real `PrefService` access, not a mock).
+
+📷 *Screenshot suggestion: the advanced-prefs table with a few modified (highlighted) rows.*
+
 ### Custom WebUI Pages — Fleet Smoke Test
 
 **What it is:** A broad sweep across every other single-purpose `chrome://` React page in the fork, to catch pages left broken by upstream Chromium changes after a rebase (e.g. a patch to `chrome_web_ui_configs.cc` failing to reapply). Host names below follow the fork's `chrome://<name>` convention (no `custom_` prefix) — confirm the exact string in the omnibox autocomplete if a guess below is off.
