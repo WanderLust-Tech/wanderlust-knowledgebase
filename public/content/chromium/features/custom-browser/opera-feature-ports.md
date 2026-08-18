@@ -1,5 +1,11 @@
 # Opera Feature Ports
 
+> **Historical (2026-08-17):** last touched 2026-07-07, before this fork's
+> versioned release era began (v1.7.25, 2026-07-29). Retained for
+> reference — not an active backlog. Check the changelog and each
+> feature's current doc for what's actually shipped before treating
+> anything below as open work.
+
 Features ported from the Opera 16 (Chromium-based) source release. Opera 16 was the first
 Chromium-based Opera browser; its modifications were surgical patches on top of the content
 layer and a proprietary `libopera.a` shell. The features below are the subset that are

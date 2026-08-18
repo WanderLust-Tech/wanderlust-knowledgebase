@@ -1,5 +1,11 @@
 # NTP Feature Roadmap
 
+> **Historical (2026-08-17):** last touched 2026-07-07, before this fork's
+> versioned release era began (v1.7.25, 2026-07-29). Retained for
+> reference — not an active backlog. Check the changelog and
+> [`remote-ntp-documentation.md`](../remote-ntp-documentation.md) for what's
+> actually shipped before treating anything below as open work.
+
 Analysis of the `maxmilton/new-tab` Chrome extension (v0.21.0) as a reference for
 features that can be built into the WanderLust remote NTP.
 

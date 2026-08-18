@@ -1,5 +1,10 @@
 # Helium Browser Port — Phase C (UX Enhancements)
 
+> **Historical (2026-08-17):** last touched 2026-07-07, before this fork's
+> versioned release era began (v1.7.25, 2026-07-29). Retained for
+> reference — these features already shipped; this doc is not an active
+> backlog.
+
 Four features ported or adapted from the [Helium browser](https://github.com/helium-browser/helium)
 patch catalogue. All are gated by `BUILDFLAG(CUSTOM_BROWSER)`. New source files live under
 `src/custom/`; vanilla Chromium files contain only minimal integration hooks.

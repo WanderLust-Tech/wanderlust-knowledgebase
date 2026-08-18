@@ -1,5 +1,10 @@
 # Bloomberg Feature Ports
 
+> **Historical (2026-08-17):** last touched 2026-07-07, before this fork's
+> versioned release era began (v1.7.25, 2026-07-29). Retained for
+> reference — these features already shipped; this doc is not an active
+> backlog.
+
 Seven browser features ported from Bloomberg's chromium.bb (M104) fork. All expose
 settings through `CustomSettingsHandler`
 (`src/custom/browser/ui/webui/settings/custom_settings_handler.*`) and are accessible

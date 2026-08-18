@@ -1,5 +1,10 @@
 # Helium Browser Port — Phase B (Privacy & UX Refinements)
 
+> **Historical (2026-08-17):** last touched 2026-07-07, before this fork's
+> versioned release era began (v1.7.25, 2026-07-29). Retained for
+> reference — these features already shipped; this doc is not an active
+> backlog.
+
 Five features ported from the [Helium browser](https://github.com/helium-browser/helium)
 patch catalogue. All are implemented as `BUILDFLAG(CUSTOM_BROWSER)`-guarded changes to
 vanilla Chromium files — no new source files, no new build targets. Apply or refresh

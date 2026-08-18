@@ -1,5 +1,11 @@
 # Helium Browser Port — Backlog & Out-of-Scope Features
 
+> **Historical (2026-08-17):** last touched 2026-07-07, before this fork's
+> versioned release era began (v1.7.25, 2026-07-29). Retained for
+> reference — not an active backlog. Check the changelog and each
+> feature's current doc for what's actually shipped before treating
+> anything below as open work.
+
 Features from the [Helium browser](https://github.com/helium-browser/helium) FEATURES.md
 that were reviewed but not implemented in Phase A. Organised by priority tier and
 feasibility.
