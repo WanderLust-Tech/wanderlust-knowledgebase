@@ -23,6 +23,7 @@ const OmahaManagement: React.FC = () => {
   const [form, setForm] = useState<CreateReleaseRequest>(emptyForm());
   const [submitting, setSubmitting] = useState(false);
   const [deactivating, setDeactivating] = useState<number | null>(null);
+  const [activating, setActivating] = useState<number | null>(null);
 
   const load = async () => {
     try {
@@ -66,6 +67,23 @@ const OmahaManagement: React.FC = () => {
       setError(e.message ?? 'Failed to deactivate release');
     } finally {
       setDeactivating(null);
+    }
+  };
+
+  const handleActivate = async (release: BrowserRelease) => {
+    const rolloutNote = release.rolloutWeight < 100
+      ? ` It's staged at ${release.rolloutWeight}% rollout${release.experimentName ? ` ("${release.experimentName}")` : ''} -- it will only go to that share of clients, not everyone.`
+      : '';
+    if (!confirm(`Activate ${release.version} (${release.platform}/${release.arch})? Clients will start receiving it immediately.${rolloutNote}`)) return;
+    setActivating(release.id);
+    setError(null);
+    try {
+      await releasesService.activate(release.id);
+      await load();
+    } catch (e: any) {
+      setError(e.message ?? 'Failed to activate release');
+    } finally {
+      setActivating(null);
     }
   };
 
@@ -167,7 +185,7 @@ const OmahaManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
-                {['Version', 'Platform', 'Arch', 'Installer', 'Size', 'Status', 'Created', ''].map(h => (
+                {['Version', 'Platform', 'Arch', 'Installer', 'Size', 'Status', 'Rollout', 'Created', ''].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                     {h}
                   </th>
@@ -197,17 +215,33 @@ const OmahaManagement: React.FC = () => {
                       {r.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap font-mono">
+                    {r.rolloutWeight < 100 ? `${r.rolloutWeight}%` : '—'}
+                    {r.experimentName && (
+                      <span className="block text-xs text-gray-400 dark:text-gray-500 font-sans truncate max-w-[8rem]">
+                        {r.experimentName}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                     {new Date(r.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    {r.isActive && (
+                    {r.isActive ? (
                       <button
                         onClick={() => handleDeactivate(r.id)}
                         disabled={deactivating === r.id}
                         className="text-xs text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
                       >
                         {deactivating === r.id ? 'Deactivating…' : 'Deactivate'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleActivate(r)}
+                        disabled={activating === r.id}
+                        className="text-xs text-green-600 dark:text-green-400 hover:underline disabled:opacity-50"
+                      >
+                        {activating === r.id ? 'Activating…' : 'Activate'}
                       </button>
                     )}
                   </td>

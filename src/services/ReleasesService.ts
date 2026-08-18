@@ -18,6 +18,8 @@ export interface BrowserRelease {
   sizeBytes: number;
   isActive: boolean;
   createdAt: string;
+  rolloutWeight: number;
+  experimentName: string | null;
 }
 
 export interface CreateReleaseRequest {
@@ -47,6 +49,12 @@ class ReleasesService {
 
   async deactivate(id: number): Promise<void> {
     await authService.makeAuthenticatedRequest<void>(`/releases/${id}/deactivate`, {
+      method: 'POST',
+    });
+  }
+
+  async activate(id: number): Promise<void> {
+    await authService.makeAuthenticatedRequest<void>(`/releases/${id}/activate`, {
       method: 'POST',
     });
   }
