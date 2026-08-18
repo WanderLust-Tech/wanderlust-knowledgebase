@@ -26,6 +26,8 @@ import ArticleSyncPage from './components/ArticleSyncPage';
 import RealTimeDemoPage from './components/RealTimeDemoPage';
 import { CMSDashboard } from './components/CMSDashboard';
 import OmahaManagement from './components/OmahaManagement';
+import QaChecklistManagement from './components/QaChecklistManagement';
+import QaChecklistRunDetail from './components/QaChecklistRunDetail';
 
 import Header from './components/Header';
 import SearchResults from './components/SearchResults';
@@ -101,6 +103,16 @@ const App: React.FC = () => (
                         <Route path="/admin/omaha" element={
                           <ProtectedRoute requiredRole="Admin">
                             <OmahaManagement />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/admin/qa-checklist" element={
+                          <ProtectedRoute requiredRole="Admin">
+                            <QaChecklistManagement />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/admin/qa-checklist/:runId" element={
+                          <ProtectedRoute requiredRole="Admin">
+                            <QaChecklistRunDetail />
                           </ProtectedRoute>
                         } />
                         <Route path="/versioning/:contentPath?" element={<ContentVersioningPage />} />
