@@ -74,6 +74,8 @@
 - [ ] Add the same shortcut twice (or two different shortcuts pointing at the same .exe) — **Expected:** only one icon appears (silent de-dupe by executable path).
 - [ ] Repeat the "Add to Wanderlust Sidebar" step with the browser fully closed — **Expected:** browser launches, opens a normal window, and the app is pinned (same end state as the running-browser case).
 - [ ] As of v1.8.36: check the pinned app's icon in the sidebar — **Expected:** shows the actual application's real icon (resolved via `SHGetFileInfo`), not a generic/placeholder icon.
+- [ ] As of v1.8.38: repeat "Click it while the browser is already running" and "Repeat... with the browser fully closed" above — **Expected:** both now actually work end to end (previously the registered shell verb used space-separated switch syntax that Chromium's command-line parser couldn't pair with its value, so `AddApp()` silently never ran — clicking while running did nothing, and on cold start the `.lnk` path opened/downloaded as a normal file argument instead of being pinned).
+- [ ] On an install that already had the old broken verb registered, just relaunch the browser (no reinstall, no manual registry edit) — **Expected:** the self-heal check on launch (`EnsureSidebarAppsContextMenuRegistered()`) detects and corrects the stale registry command automatically.
 
 📷 *Screenshot suggestion: File Explorer right-click menu showing "Add to Wanderlust Sidebar", next to the sidebar showing the resulting pinned icon.*
 
