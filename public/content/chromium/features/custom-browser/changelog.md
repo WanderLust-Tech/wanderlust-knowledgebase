@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.30)
+## Versioned releases (1.7.25 → 1.8.37)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,135 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.37 — 2026-08-20
+
+Fixes `chrome://settings`'s "Check for updates" button, which could only
+ever report that an update was available — it never actually downloaded
+or installed one.
+
+- `OnUpdateCheckResult()` stopped at `status_ = kUpdateAvailable` without
+  ever calling `DownloadUpdate()`. The only other caller of
+  `DownloadUpdate()`/`InstallUpdate()` in the whole browser,
+  `UpdateNotificationBubble`, was unreachable dead code — its owner
+  (`UpdateNotificationManager`) is never instantiated anywhere, just a
+  stale "will be initialized by browser UI" comment.
+- Chains `OnUpdateCheckResult()` into `DownloadUpdate()` and
+  `OnUpdaterProcessComplete()` into `InstallUpdate()`, but only for
+  user-initiated checks — the periodic 6-hour background timer check
+  stays report-only on purpose (it exists so the tray icon can show a
+  badge, not to silently download and restart the browser on a timer),
+  per `UpdateCheckTrafficAnnotation`'s own description.
+- Previously, an update would only ever actually get applied by the
+  independent background Scheduled Task/Service on its own schedule,
+  regardless of whether the user clicked the button.
+
+### 1.8.36 — 2026-08-20
+
+Implements Sidebar Apps (the "Add to Wanderlust Sidebar" `.lnk`
+right-click verb) — `docs/sidebar-apps.md` fully specified this feature,
+but no code existed for it at all, so the context-menu entry never
+appeared.
+
+- New `SidebarApp` struct + `SidebarAppRegistry` (a prefs-backed
+  `KeyedService`, mirroring `SidebarPinnedPanelsService`'s
+  JSON-string-pref pattern) for the data model.
+- `sidebar_app_resolver_win.cc` resolves a `.lnk` shortcut to its target
+  exe, icon location, and display name via `IShellLink`/`IPersistFile`.
+- Shell-verb registration under
+  `HKEY_CURRENT_USER\Software\Classes\lnkfile\shell` runs as a self-heal
+  check on every browser launch (`PostProfileInit`), not just from an
+  installer, so it applies to existing installs immediately without a
+  reinstall — idempotent via a single registry read that short-circuits
+  the already-registered case.
+- Handles `--add-to-sidebar` for both cold start and the
+  browser-already-running case (patched
+  `ProcessSingletonNotificationCallbackImpl` in vanilla
+  `chrome_browser_main.cc`).
+- Reuses `SidebarTopPane`'s existing pinned-button infrastructure (same
+  pattern as Web Panels) — pinned apps get their own button cluster
+  below Web Panels, real icons via `SHGetFileInfo` on a thread-pool
+  task, and a right-click "Remove from Sidebar" context menu.
+
+### 1.8.35 — 2026-08-19
+
+Adds real favicons and an unpin option for Web Panels sidebar buttons,
+which previously always showed a generic globe icon with no way to
+remove them except through Settings → Sidebar → Web Panels.
+
+- `SidebarContainerView` now looks up each pinned site's favicon via the
+  same local `FaviconService` bookmarks/most-visited/vertical-tabs
+  already use (no network fetch), pushing the resolved icon into the
+  matching button via a new `SidebarTopPane::SetPinnedPanelIcon()`.
+  Deliberately doesn't persist through `SetPanelFaviconUrl()` — that
+  notifies observers, which would re-enter `RefreshPinnedPanelButtons()`
+  → re-request every favicon → notify again, an unbounded loop since the
+  same URL always resolves the same way. Sites never visited before
+  still fall back to the globe.
+- Pinned panel buttons get their own "Unpin from Sidebar" context menu
+  (new `IDS_SIDEBAR_UNPIN_PANEL` string), wired to the already-functional
+  `SidebarPinnedPanelsService::RemovePanel()` — previously only
+  reachable from the Settings page's Remove button.
+
+### 1.8.34 — 2026-08-19
+
+Fixes case-sensitive RSS reader search — `RequestFeedContentBySearch`
+matched item titles with plain `std::u16string::find()`, an exact-case
+substring search.
+
+- Replaced with `base::i18n::StringSearchIgnoringCaseAndAccents`, the
+  same idiom used elsewhere in Chromium (task manager filtering,
+  bookmark search), which also handles accented characters correctly,
+  not just ASCII case.
+
+### 1.8.33 — 2026-08-19
+
+Adds `chrome://settings/manageProfile` for real profile-editing menu
+items — vanilla Chromium's "Edit" pencil in the profile menu, the app
+menu's "Customize profile" item, and the profile-picker card's "Edit"
+option all navigate here, but it was previously unrecognized by the
+Settings React router and silently fell back to the "You and
+Wanderlust" page.
+
+- New `manageProfile` route (deep-link only, not in the sidebar,
+  matching vanilla) backed by `ManageProfilePage.tsx`, which reuses the
+  same `CustomProfileCustomizationHandler` backend as the standalone
+  `chrome://profile-customization` first-run wizard — minus that page's
+  Skip/Done-to-profile-picker flow, since edits here just save in place
+  like every other settings field.
+
+### 1.8.32 — 2026-08-19
+
+Fixes `chrome://terms` dark mode and a `chrome://credits`
+content-blocked error.
+
+- `chrome://terms` had no background color set anywhere, so
+  `dark:text-white` rendered as white text on the default white canvas
+  in dark mode — added `bg-white dark:bg-navy-900` plus missing `dark:`
+  variants on secondary text/border colors.
+- `chrome://credits`'s React shell embeds `full.html` in an `<iframe>`,
+  but only `AddFrameAncestor()` (granting `full.html` permission to be
+  embedded) was set — nothing overrode `ChildSrc`/`FrameSrc` on the
+  shell itself, so it inherited Chromium's default `child-src 'none'`
+  and the iframe was blocked before `frame-ancestors` was ever
+  consulted. Added a `ChildSrc` override scoped to `chrome://credits/`.
+
+### 1.8.31 — 2026-08-18
+
+Moves Advanced preferences (the about:config-equivalent
+profile-preference editor) off `chrome://settings/advanced-prefs` to
+its own dedicated, unlisted host, `chrome://advanced-prefs` —
+deliberately not linked from the Settings nav or the omnibox `settings:`
+quick actions, since this is an expert-only surface a casual user
+shouldn't stumble into.
+
+- New standalone WebUI (`CustomAdvancedPrefsUI`/
+  `CustomAdvancedPrefsUIConfig`), following the same pattern as
+  `chrome://password-manager` — its own `WebUIDataSource`-backed React
+  bundle, reusing `AdvancedPrefsHandler` unchanged (now attached only
+  here, removed from `CustomSettingsUI`).
+- Removed from `custom_settings/App.tsx`'s `ROUTES`/`SIDEBAR` and from
+  the omnibox's `settings:` quick-action mirror list.
 
 ### 1.8.30 — 2026-08-17
 
