@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.37)
+## Versioned releases (1.7.25 → 1.8.38)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,31 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.38 — 2026-08-20
+
+Fixes the "Add to Wanderlust Sidebar" `.lnk` shell verb from v1.8.36,
+which was silently broken end to end — the registered shell command used
+space-separated switch syntax (`--add-to-sidebar "%1"`).
+
+- `base::CommandLine::IsSwitch()` splits argv tokens on `=` — it doesn't
+  pair a bare `--add-to-sidebar` flag with a following positional
+  argument as its value. So `HasSwitch("add-to-sidebar")` was true but
+  `GetSwitchValuePath("add-to-sidebar")` was always empty,
+  `ResolveLnkToSidebarApp()` failed on the empty path, and `AddApp()`
+  never ran.
+- Explains both reported symptoms: clicking the context-menu entry while
+  the browser was already running silently did nothing (the
+  `ProcessSingleton` path just returned early), and on cold start the
+  `.lnk` path opened/downloaded as a normal startup file argument
+  instead, since it was never consumed as a switch value and fell
+  through to Chromium's default "open this" handling.
+- Fixed by joining the switch and its value into one token:
+  `--add-to-sidebar="%1"`. Self-healing: since
+  `EnsureSidebarAppsContextMenuRegistered()` already compares against the
+  registry's existing command string on every launch, installs with the
+  old broken verb correct themselves on the next browser start with no
+  manual registry cleanup needed.
 
 ### 1.8.37 — 2026-08-20
 
