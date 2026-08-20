@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.38)
+## Versioned releases (1.7.25 → 1.8.39)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,36 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.39 — 2026-08-20
+
+Fixes dark/light-mode text contrast across custom WebUI pages — a full
+sweep of every custom React WebUI page turned up three related bug
+patterns.
+
+- Six placeholder pages (`custom_history`, `custom_bookmarks`,
+  `custom_certificate_manager`, `custom_chrome_urls`, `custom_tab_search`,
+  `custom_print`) had `dark:text-white` with no `bg-*`/`dark:bg-*` at
+  all — the same bug `chrome://terms` had before its earlier (1.8.32)
+  fix, so dark mode left white text on a still-white page.
+- ~25 files across `custom_settings`, `custom_password_manager`, and
+  `custom_reader` had secondary/body text (`text-gray-600`,
+  `text-gray-900`, hover states) with no `dark:text-*` pairing, so it
+  stayed dark-on-dark once the page background correctly switched to
+  navy in dark mode.
+- 32 `custom_settings` pages had a bare `<h2>` page title with no color
+  class at all, going dark-on-dark for the same reason — brought in
+  line with the working `text-navy-700 dark:text-white` convention used
+  elsewhere in the same app.
+- Two related instances the sweep surfaced, fixed alongside the rest:
+  `AccountPage.tsx` was written dark-theme-only (`bg-white/5`,
+  `text-gray-400/300`, unthemed text) and was washed out in light mode —
+  added light-mode counterparts throughout. `custom_sidebar`'s
+  `NotesPage.tsx` had a fully inverted pairing (`text-gray-300
+  dark:text-gray-600` — too light for light mode *and* too dark for
+  dark mode); fixed to a tone legible in both.
+- Every affected React WebUI bundle rebuilt clean (0 errors) to verify
+  no syntax regressions from the fix.
 
 ### 1.8.38 — 2026-08-20
 
