@@ -54,6 +54,9 @@
 - [x] Right-click the undocked widget → "Dock Sidebar" — **Expected:** it re-attaches inside the browser window at its last docked position.
 - [x] Drag the sidebar's inner resize handle (docked, expanded) — **Expected:** sidebar width changes and persists after restart.
 - [x] Open Settings → pin a site by URL under "Web Panels" — **Expected:** a new globe-icon button appears in the pane strip; clicking it loads the live site in place, keeping scroll/session state when you switch away and back.
+- [ ] As of v1.8.35: pin a site under Web Panels that you've visited before (has a favicon in local history/bookmarks) — **Expected:** the pane-strip button shows that site's real favicon instead of the generic globe icon.
+- [ ] Pin a site you've never visited before — **Expected:** button falls back to the generic globe icon (nothing to resolve in the local favicon DB — no network fetch is attempted).
+- [ ] As of v1.8.35: right-click a pinned Web Panel button → "Unpin from Sidebar" — **Expected:** the button disappears immediately from the sidebar itself (previously only removable via Settings → Sidebar → Web Panels).
 - [x] On any New Tab Page layout, click the gear/settings icon — **Expected:** sidebar opens directly to the NTP Settings panel.
 
 📷 *Screenshot suggestion: the sidebar in both docked-expanded and undocked-floating states, side by side.*
@@ -70,6 +73,7 @@
 - [ ] Right-click the pinned app icon in the sidebar → "Remove from Sidebar" — **Expected:** the icon disappears from the strip.
 - [ ] Add the same shortcut twice (or two different shortcuts pointing at the same .exe) — **Expected:** only one icon appears (silent de-dupe by executable path).
 - [ ] Repeat the "Add to Wanderlust Sidebar" step with the browser fully closed — **Expected:** browser launches, opens a normal window, and the app is pinned (same end state as the running-browser case).
+- [ ] As of v1.8.36: check the pinned app's icon in the sidebar — **Expected:** shows the actual application's real icon (resolved via `SHGetFileInfo`), not a generic/placeholder icon.
 
 📷 *Screenshot suggestion: File Explorer right-click menu showing "Add to Wanderlust Sidebar", next to the sidebar showing the resulting pinned icon.*
 
@@ -853,6 +857,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Click **↻ Refresh** in the reader header — **Expected:** button shows a brief spin; feeds refresh regardless of their normal update interval.
 - [ ] Click **All feeds** — **Expected:** aggregated item list across every feed, with a summed unread badge.
 - [ ] Type in **Search articles** — **Expected:** debounced (~250ms) results filter to matching titles; clearing the box restores the previous feed/group view.
+- [ ] As of v1.8.34: search using different letter-case than the article title (e.g. a lowercase query for an uppercase-heavy title), or an accented variant of a word in the title — **Expected:** matching articles still appear (search is case- and accent-insensitive, not an exact-case substring match).
 - [ ] Switch item-list layout using the **☰ / ▤ / ▦** buttons — **Expected:** Title/Magazine/Full views render distinctly (thumbnail in Magazine, full image + "Open original article" button in Full); selection persists across a reload.
 - [ ] Toggle RSS off from Settings while `chrome://reader` is open in another tab — **Expected:** the reader tab live-swaps to the disabled-message screen without a manual reload.
 - [ ] As of v1.8.28: open `chrome://reader` on a fresh profile with zero subscriptions — **Expected:** a categorized starter-feed picker (Tech/News/Science/Culture) appears in the main pane instead of "Select a feed to read articles." Check a few feeds and click "Add N feeds" — **Expected:** the picker disappears and the reader switches to the normal feed view with the selected feeds subscribed.
@@ -1234,6 +1239,18 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: the settings hub left-nav fully expanded, showing the full page list, for a baseline comparison after the next rebase — plus one shot of the narrow-width hamburger/drawer state and one of a rule-editor form in its single-column narrow layout.*
 
+### Manage Profile (chrome://settings/manageProfile)
+
+**What it is:** As of v1.8.33, a deep-link-only settings route (not in the left-nav, matching vanilla) that vanilla Chromium's profile-menu "Edit" pencil, the app menu's "Customize profile" item, and the profile-picker card's "Edit" option all navigate to. Reuses the same backend as the standalone `chrome://profile-customization` first-run wizard, minus its Skip/Done-to-profile-picker flow.
+**Where to find it:** Not linked from the Settings left-nav — reached via the profile-menu "Edit" pencil, app menu → "Customize profile", or the profile-picker card's "Edit" option.
+**Default state:** Enabled by default.
+
+- [ ] Click the profile-menu "Edit" pencil (avatar icon → pencil) — **Expected:** navigates to `chrome://settings/manageProfile` and loads real avatar/name/theme-color controls (previously unrecognized by the Settings router, silently falling back to the "You and Wanderlust" page).
+- [ ] From the app menu (⋮), click "Customize profile" — **Expected:** lands on the same `manageProfile` page.
+- [ ] From the profile picker, click a profile card's "Edit" option — **Expected:** lands on the same `manageProfile` page for that profile.
+- [ ] Change the avatar, name, or theme color on this page — **Expected:** change saves in place immediately (no Skip/Done buttons or redirect back to the profile picker — that flow is specific to the first-run `chrome://profile-customization` wizard, not this page).
+- [ ] Navigate directly to `chrome://settings/manageProfile` via the omnibox — **Expected:** loads normally even though it's not reachable from the Settings left-nav.
+
 ### Custom Cache & Clear Browsing Data
 
 **What it is:** Adds a user-selectable custom disk cache directory (via native folder picker) and a granular "clear data on exit" system (cache, cookies, history, downloads, passwords, form data individually toggleable), layered on top of Chromium's `BrowsingDataRemover`.
@@ -1344,6 +1361,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Click **↻ Refresh** in the header — **Expected:** button shows a brief spin; feeds refresh regardless of their normal update interval.
 - [ ] Click **All feeds** — **Expected:** aggregated item list across every feed, with a summed unread badge.
 - [ ] Type in **Search articles** — **Expected:** debounced (~250ms) results filter to matching titles; clearing the box restores the previous feed/group view.
+- [ ] As of v1.8.34: search using different letter-case than the article title (e.g. a lowercase query for an uppercase-heavy title), or an accented variant of a word in the title — **Expected:** matching articles still appear (search is case- and accent-insensitive, not an exact-case substring match).
 - [ ] Hover a feed row, click **✎ edit** — **Expected:** inline panel lets you change title/folder; hover **✕ delete** — confirm prompt, then removal.
 - [ ] Switch item-list layout using the **☰ / ▤ / ▦** buttons — **Expected:** Title/Magazine/Full views render distinctly (thumbnail in Magazine, full image + "Open original article" button in Full); selection persists across a reload.
 - [ ] Click an item — **Expected:** opens the source article in a new tab; item dims to indicate it's now read, and the feed's unread badge decrements immediately.
@@ -1481,6 +1499,8 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] `chrome://whats-new` — **Expected:** loads a features list (network fetch with hardcoded fallback if the API is unreachable).
 - [ ] `chrome://tab-search` — **Expected:** loads and searches open tabs.
 - [ ] `chrome://terms`, `chrome://credits` — **Expected:** both load their respective legal/license text.
+- [ ] As of v1.8.32: switch to dark mode (OS or browser theme), then open `chrome://terms` — **Expected:** text renders light-on-dark, not white-on-white (the page previously had no background color set, so `dark:text-white` rendered invisibly on the default white canvas).
+- [ ] As of v1.8.32: open `chrome://credits` — **Expected:** the embedded license-text iframe (`full.html`) actually renders inside the page instead of being blocked (previously the shell's CSP inherited Chromium's default `child-src 'none'`, blocking the iframe before `frame-ancestors` was even consulted).
 - [ ] `chrome://feedback` — **Expected:** form loads and submits without error.
 - [ ] `chrome://apps` — **Expected:** installed web apps list, launch/uninstall work.
 - [ ] `chrome://proxy-routing` — **Expected:** proxy configuration UI loads.
@@ -1637,6 +1657,13 @@ always works regardless.
   attempted.
 - [ ] With a newer version published on the update server, click "Check
   for updates" — **Expected:** reports an update is available.
+- [ ] As of v1.8.37: with an update available, let the check proceed all
+  the way through — **Expected:** it actually downloads and installs
+  (previously, the check would report an update was available but never
+  call `DownloadUpdate()` — the button could only ever report
+  availability; an update would only actually get applied by the
+  independent background Scheduled Task/Service on its own schedule,
+  regardless of this button).
 - [ ] Let it proceed to download — **Expected:** a real, live progress
   indicator advances (not an instant jump to 100%) as `omaha_client.exe
   --update` runs in the background — check Task Manager for a transient
