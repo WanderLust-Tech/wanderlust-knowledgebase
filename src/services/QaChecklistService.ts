@@ -65,6 +65,12 @@ class QaChecklistService {
       body: JSON.stringify({ isComplete, notes }),
     });
   }
+
+  async deleteRun(id: number): Promise<void> {
+    await authService.makeAuthenticatedRequest<void>(`/qachecklist/runs/${id}/delete`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const qaChecklistService = new QaChecklistService();

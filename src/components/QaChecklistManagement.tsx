@@ -15,6 +15,7 @@ const QaChecklistManagement: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<CreateRunRequest>(emptyForm());
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const load = async () => {
     try {
@@ -44,6 +45,20 @@ const QaChecklistManagement: React.FC = () => {
       setError(e.message ?? 'Failed to start checklist run');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (run: QaChecklistRun) => {
+    if (!confirm(`Delete the ${run.version} checklist run? This removes all ${run.totalCount} item statuses and can't be undone.`)) return;
+    setDeletingId(run.id);
+    setError(null);
+    try {
+      await qaChecklistService.deleteRun(run.id);
+      await load();
+    } catch (e: any) {
+      setError(e.message ?? 'Failed to delete checklist run');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -166,12 +181,21 @@ const QaChecklistManagement: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{r.createdBy ?? '—'}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <button
-                        onClick={() => navigate(`/admin/qa-checklist/${r.id}`)}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Open
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => navigate(`/admin/qa-checklist/${r.id}`)}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          Open
+                        </button>
+                        <button
+                          onClick={() => handleDelete(r)}
+                          disabled={deletingId === r.id}
+                          className="text-xs text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
+                        >
+                          {deletingId === r.id ? 'Deleting…' : 'Delete'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
