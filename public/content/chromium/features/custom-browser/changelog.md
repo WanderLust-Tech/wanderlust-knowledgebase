@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.39)
+## Versioned releases (1.7.25 → 1.8.42)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,53 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.42 — 2026-08-20
+
+Adds Parental Controls PIN lock for history erasure and settings —
+PIN-gates deleting browsing history (both `chrome://history` and the
+sidebar history panel) and the "clear browsing data on exit" settings
+toggle, so a shared device can't have its history wiped or that setting
+flipped without the PIN.
+
+- New `ParentalControlsService` (a `KeyedService`, registered in
+  `custom_browser_context_keyed_service_factories.cc`) backs the PIN
+  itself and a 10-minute sliding idle-unlock window — once unlocked,
+  gated actions stay available until 10 minutes of inactivity pass, not
+  a single one-shot check per action.
+- `CustomParentalControlsHandler` is the new WebUI message-handler
+  surface; `CustomHistoryHandler`, `SidebarDOMHandler`, and
+  `CustomSettingsUI` each gained a small hook into it to gate their
+  respective delete/toggle actions.
+- "Forgot PIN?" resets via Windows Hello device reauth, reusing the same
+  `device_reauth::DeviceAuthenticator` pattern already used for
+  revealing saved passwords — no separate recovery-flow plumbing needed.
+
+### 1.8.41 — 2026-08-20
+
+Fixes `chrome://history` and `chrome://bookmarks`'s background not
+filling the viewport — introduced by the previous entry's real
+implementation of both pages.
+
+- The background color was applied to the same element as the
+  centering `max-w-*`/`mx-auto` classes, so the margins outside the
+  constrained content column fell through to the unstyled white body.
+- Split into an outer full-bleed dark/light background `div` wrapping
+  the centered content, matching `custom_downloads`' existing pattern.
+
+### 1.8.40 — 2026-08-20
+
+Implements real `chrome://history` and `chrome://bookmarks` pages —
+both were bare placeholder `WebUIController`s with no backend wiring
+until now.
+
+- New `CustomHistoryHandler`: `HistoryService`-backed search,
+  date-range filter, host-only filter, batch delete, and live updates.
+- New `CustomBookmarksHandler`: `BookmarkModel`-backed tree with
+  add/rename/move/delete and full drag-and-drop reordering in the React
+  UI.
+- Both mirror `SidebarDOMHandler`'s already-proven IPC patterns rather
+  than inventing a new message protocol.
 
 ### 1.8.39 — 2026-08-20
 
