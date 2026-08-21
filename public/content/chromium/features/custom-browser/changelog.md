@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.42)
+## Versioned releases (1.7.25 → 1.8.43)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,33 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.43 — 2026-08-21
+
+Adds Website Restrictions to Parental Controls — a basic "Net Nanny"-style
+site blocker: a domain blocklist/allowlist plus forced SafeSearch and
+YouTube Restricted Mode. Category-based filtering is a deliberate later
+step, not part of this pass.
+
+- New `ParentalControlsThrottle` (a `blink::URLLoaderThrottle`, registered
+  in `CustomContentBrowserClient::CreateURLLoaderThrottles()`) enforces
+  the domain list for frame-level navigations only, independent of the
+  PIN's own unlock state — editing the list is what's PIN-gated, not the
+  enforcement itself.
+- Deliberately doesn't reuse the existing power-user `ContentPolicyManager`/
+  `ContentPolicyThrottle` URL-filter engine (Settings → Security &
+  Privacy) — mixing simple parent-facing domain entries into that shared,
+  order-sensitive rules array would be fragile.
+- SafeSearch/YouTube Restricted needed zero new C++: `settings.
+  force_google_safesearch` and `settings.force_youtube_restrict` are
+  already-registered, already-enforced vanilla Chromium prefs (via
+  `GoogleURLLoaderThrottle`) — the new UI just reads/writes them through
+  the existing generic pref bridge.
+- Found (but didn't fix, out of scope) a likely pre-existing gap in
+  `ContentPolicyThrottle`: its destination-to-content-type mapping never
+  handles `RequestDestination::kDocument` (top-level navigation), only
+  `kFrame`/`kIframe` (nested frames) — so its own block rules probably
+  never stop a direct top-level page load, only frame embeds.
 
 ### 1.8.42 — 2026-08-20
 

@@ -869,7 +869,7 @@ const internalContent: ContentNode[] = [
             { title: "Scheme Aliases", path: "features/custom-browser/scheme-aliases" },
             { title: "Security & Privacy Features", path: "features/custom-browser/security-privacy-features" },
             { title: "Timezone Override", path: "features/custom-browser/timezone-override" },
-            { title: "Parental Controls PIN Lock", path: "features/custom-browser/parental-controls" },
+            { title: "Parental Controls", path: "features/custom-browser/parental-controls" },
         ]
     },
     {
