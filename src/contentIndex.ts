@@ -837,6 +837,7 @@ const internalContent: ContentNode[] = [
             { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
             { title: "Split View", path: "architecture/split-view" },
             { title: "Shareable Theme JSON", path: "features/custom-browser/shareable-theme-json" },
+            { title: "Boss Key", path: "features/custom-browser/boss-key" },
         ]
     },
     {
@@ -867,6 +868,8 @@ const internalContent: ContentNode[] = [
             { title: "UA Overrides", path: "features/custom-browser/ua-overrides" },
             { title: "Scheme Aliases", path: "features/custom-browser/scheme-aliases" },
             { title: "Security & Privacy Features", path: "features/custom-browser/security-privacy-features" },
+            { title: "Timezone Override", path: "features/custom-browser/timezone-override" },
+            { title: "Parental Controls PIN Lock", path: "features/custom-browser/parental-controls" },
         ]
     },
     {
@@ -914,6 +917,8 @@ const internalContent: ContentNode[] = [
             { title: "Feature Flag Management", path: "features/custom-browser/feature-flag-management" },
             { title: "Custom Cache Feature", path: "features/custom-browser/custom-cache-feature" },
             { title: "Feature Management", path: "architecture/feature-management" },
+            { title: "Advanced Preferences", path: "features/custom-browser/advanced-prefs" },
+            { title: "Manage Profile", path: "features/custom-browser/manage-profile" },
         ]
     },
     {
@@ -939,6 +944,15 @@ const internalContent: ContentNode[] = [
             { title: "Pages Inventory", path: "features/custom-browser/custom-webui/pages-inventory" },
             { title: "Password Manager Import/Export", path: "features/custom-browser/password-manager-import-export" },
             { title: "Password Manager View/Edit/Checkup", path: "features/custom-browser/password-manager-view-edit-checkup" },
+            { title: "History & Bookmarks Pages", path: "features/custom-browser/history-bookmarks-webui" },
+            { title: "Certificate Manager", path: "features/custom-browser/certificate-manager" },
+            { title: "Tab Search", path: "features/custom-browser/tab-search" },
+            { title: "Feedback Submission", path: "features/custom-browser/feedback" },
+            { title: "Intro & Import Wizard", path: "features/custom-browser/intro-wizard" },
+            { title: "Profile Picker & Customization", path: "features/custom-browser/profile-picker-customization" },
+            { title: "Sync Confirmation", path: "features/custom-browser/sync-confirmation" },
+            { title: "Management Page", path: "features/custom-browser/management-page" },
+            { title: "What's New Feed", path: "features/custom-browser/whats-new" },
         ]
     },
     {
