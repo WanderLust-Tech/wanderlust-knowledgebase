@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.44)
+## Versioned releases (1.7.25 → 1.8.45)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,20 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.45 — 2026-08-21
+
+Fixes sidebar icon rail colors being inconsistent with the rest of the
+toolbar.
+
+- Bookmarks, History, RSS, Page Notes, both Settings buttons, and
+  Expand/Collapse were still using hardcoded raster PNGs (flat
+  dark-gray glyphs, one hardcoded orange) instead of the theme-aware
+  vector icon + `kColorToolbarButtonIcon` pattern already used by the
+  Agent, Recently Closed, and Dock-toggle buttons in the same pane — so
+  they didn't recolor with the theme and visually stood out.
+- Also gives Page Notes its own icon instead of secretly reusing
+  History's, a known placeholder.
 
 ### 1.8.44 — 2026-08-21
 
