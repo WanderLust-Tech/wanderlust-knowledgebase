@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.43)
+## Versioned releases (1.7.25 → 1.8.44)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,21 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.44 — 2026-08-21
+
+Fixes disabling Parental Controls not actually stopping Website
+Restrictions from blocking sites.
+
+- `ParentalControlsThrottle`'s registration in
+  `CreateURLLoaderThrottles()` only checked the restriction mode pref,
+  never `ParentalControlsService::IsEnabled()` — so a blocklist/allowlist
+  kept enforcing even after the whole feature was disabled.
+- `Disable()` now also resets the restriction mode back to `"off"`, so a
+  leftover domain list can't silently re-arm itself if the feature is
+  re-enabled later with a new PIN — the editing UI is itself locked
+  behind being enabled, so there'd otherwise be no way to have inspected
+  or cleared it in between.
 
 ### 1.8.43 — 2026-08-21
 

@@ -110,11 +110,18 @@ are captured **once, on the UI thread**, at throttle-construction time —
 `WillStartRequest` isn't guaranteed to run on the UI thread, so the
 throttle never holds a live `Profile*`/`PrefService*`.
 
-**Enforcement is independent of the PIN unlock state** — restrictions
-apply whether or not Parental Controls is currently unlocked. The PIN
-only gates *editing* the mode/domain list, since that section lives
-inside `ParentalControlsPage.tsx`'s `ManageCard` alongside Change
-PIN/Disable/Lock now.
+**Enforcement tracks whether Parental Controls is *enabled*, not whether
+it's currently *unlocked*** — restrictions apply the same way whether the
+PIN is locked or unlocked, as long as the feature as a whole is turned
+on; the throttle checks `ParentalControlsService::IsEnabled()` before
+even looking at the restriction mode. Editing the mode/domain list itself
+is what requires *unlocking*, since that section lives inside
+`ParentalControlsPage.tsx`'s `ManageCard` alongside Change PIN/Disable/
+Lock now. `Disable()` also resets the restriction mode back to `"off"` —
+otherwise a domain list left behind from before disabling would silently
+reactivate the moment someone re-enables with a new PIN, with no way to
+have inspected or cleared it in between (the editing UI is itself locked
+behind being enabled).
 
 ---
 
