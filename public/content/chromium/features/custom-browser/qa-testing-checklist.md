@@ -1411,7 +1411,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 ### Sidebar — Bookmarks panel (chrome://sidebar/bookmarks)
 
-**What it is:** A read-only recursive bookmark tree in the sidebar (Bookmarks bar / Other / Mobile roots).
+**What it is:** A recursive bookmark tree in the sidebar (Bookmarks bar / Other / Mobile roots). As of v1.8.46, right-click brings this panel up to full CRUD parity with `chrome://bookmarks` — previously it was read-only with no add/rename/delete/move capability at all.
 **Where to find it:** Click the **Bookmarks** button on the sidebar's top pane.
 **Default state:** Enabled by default (part of the sidebar bundle).
 
@@ -1419,8 +1419,12 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Click a bookmark row — **Expected:** opens in a new foreground tab in the same window.
 - [ ] Type in the search filter — **Expected:** tree prunes client-side to matching entries.
 - [ ] Add/rename a bookmark via `chrome://bookmarks` while the sidebar panel is open — **Expected:** sidebar tree updates live (no manual refresh).
+- [ ] As of v1.8.46: right-click a bookmark in this panel — **Expected:** a context menu appears with Open / Open in new tab / Open in new window / Copy URL / Add bookmark or folder here / Edit… / Move to folder… / Delete — this panel previously had no context menu at all.
+- [ ] Use **Open in new tab** and **Open in new window** — **Expected:** each opens with the correct disposition (background/foreground tab, or a new window) via the same `bookmarkOpenUrl` message `chrome://bookmarks` uses.
+- [ ] Use **Move to folder…** to move a bookmark — **Expected:** a folder picker appears and the move applies immediately; note this panel doesn't get drag-and-drop reordering in this pass, only the picker.
+- [ ] Use **Delete** on a bookmark added from this panel — **Expected:** it disappears from both this panel and `chrome://bookmarks` immediately.
 
-📷 *Screenshot suggestion: the bookmarks tree with a folder expanded.*
+📷 *Screenshot suggestion: the bookmarks tree with the new right-click context menu open on a bookmark row.*
 
 ### Sidebar — History panel (chrome://sidebar/history)
 
@@ -1519,6 +1523,11 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] `chrome://bookmarks` — **Expected:** full CRUD bookmark manager loads.
 - [ ] As of v1.8.40: on `chrome://bookmarks`, add a folder and a bookmark, rename each, then drag a bookmark into a different folder and reorder it within that folder — **Expected:** the tree reflects every change immediately (real `BookmarkModel` CRUD + drag-and-drop, not a static tree); rapid multi-node changes (e.g. a drag touching several nodes) collapse into a single UI update rather than flickering per node.
 - [ ] As of v1.8.41: open either page in dark mode at a narrow-ish window width — **Expected:** the background fills the full viewport edge-to-edge, no white/light bars in the margins outside the centered content column (previously the background color was applied to the same element as the centering classes, so the margins fell through to the unstyled body).
+- [ ] As of v1.8.46: right-click a bookmark on `chrome://bookmarks` — **Expected:** a context menu appears (previously there wasn't one) with Open / Open in new tab / Open in new window / Copy URL / Add bookmark or folder here / Edit… / Move to folder… / Delete.
+- [ ] Use **Copy URL**, then paste — **Expected:** clipboard contains that bookmark's URL.
+- [ ] Use **Add bookmark or folder here** from a right-click on a folder — **Expected:** a new bookmark/folder is created inside that folder.
+- [ ] Use **Edit…** on a bookmark — **Expected:** opens an editor for its title/URL; saving updates the tree immediately.
+- [ ] Use **Move to folder…** — **Expected:** a folder picker appears; confirming moves the bookmark, reflected immediately in the tree.
 - [ ] `chrome://flags` (custom_flags) — **Expected:** experimental-flags page loads and search/filter works.
 - [ ] `chrome://print` — **Expected:** print preview loads for a normal page.
 - [ ] `chrome://certificate-manager` — **Expected (as of this writing, still a stub):** the page loads a static placeholder card reading roughly "not wired up yet," directing you to the OS certificate store — **no real certificate list loads**. If a real list ever does load, this line needs updating to describe the working feature.
