@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.47)
+## Versioned releases (1.7.25 → 1.8.48)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,26 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.48 — 2026-08-22
+
+Adds a site-wide Picture-in-Picture hover button for videos — a floating
+button appears over any `<video>` element on hover and toggles native
+Picture-in-Picture for it, independent of whatever native video controls
+(or lack thereof) the page itself ships.
+
+- New `PictureInPictureButtonTabHelper` injects a self-contained script
+  via `RenderFrameHost::ExecuteJavaScript` on real top-level navigations
+  only (skips same-document/error-page navigations).
+- The injected script installs a page-lifetime `MutationObserver` so
+  videos added later by client-side routing, infinite scroll, etc. are
+  picked up without re-injecting — unlike `InstagramDownloaderTabHelper`,
+  which needs to re-inject on same-document navigations.
+- Only attaches to videos at least 80×80px, and skips any video with the
+  `disablePictureInPicture` attribute entirely.
+- Gated behind a new enabled-by-default toggle: Settings → Others → Web
+  content → "Show a Picture-in-Picture button when hovering videos"
+  (pref `custom.picture_in_picture_button.enabled`).
 
 ### 1.8.47 — 2026-08-22
 
