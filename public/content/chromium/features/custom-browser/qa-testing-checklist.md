@@ -58,6 +58,7 @@
 - [ ] Pin a site you've never visited before — **Expected:** button falls back to the generic globe icon (nothing to resolve in the local favicon DB — no network fetch is attempted).
 - [ ] As of v1.8.35: right-click a pinned Web Panel button → "Unpin from Sidebar" — **Expected:** the button disappears immediately from the sidebar itself (previously only removable via Settings → Sidebar → Web Panels).
 - [x] On any New Tab Page layout, click the gear/settings icon — **Expected:** sidebar opens directly to the NTP Settings panel.
+- [ ] As of v1.8.45: switch between a couple of different browser themes (or light/dark mode) and look at the Bookmarks, History, RSS, Page Notes, both Settings, and Expand/Collapse icons in the pane strip — **Expected:** all of them recolor to match the active theme, consistent with the Agent/Recently-Closed/Dock-toggle icons in the same strip (previously these six were hardcoded flat-color raster PNGs that never recolored and visually stood out). Also confirm Page Notes shows its own distinct icon, not History's icon reused.
 
 📷 *Screenshot suggestion: the sidebar in both docked-expanded and undocked-floating states, side by side.*
 
@@ -718,6 +719,29 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Revert to "System default" — **Expected:** the browser's reported timezone reverts to the real host system timezone (verify via `Intl.DateTimeFormat().resolvedOptions().timeZone`).
 
 📷 *Screenshot suggestion: DevTools console showing `Intl.DateTimeFormat().resolvedOptions().timeZone` reporting a spoofed zone (e.g. "Asia/Tokyo") that doesn't match the host machine's actual timezone.*
+
+### Parental Controls (PIN Lock & Website Restrictions)
+
+**What it is:** As of v1.8.42, PIN-gates deleting browsing history (`chrome://history` and the sidebar history panel) and the "Clear browsing data on exit" toggle group, so a shared device can't have its history wiped or that setting changed without the PIN. As of v1.8.43, also adds a basic domain blocklist/allowlist site blocker plus forced SafeSearch and YouTube Restricted Mode.
+**Where to find it:** Settings → a Parental Controls sub-page sets up the PIN and, once unlocked, hosts the Website Restrictions section. Gated actions (history delete, clear-on-exit) prompt for the PIN at the point of the action itself, wherever you are — no need to visit the settings page first.
+**Default state:** Disabled by default.
+
+- [ ] Open Settings → Parental Controls and set a PIN — **Expected:** the feature enables and unlocks immediately (you already know the PIN you just set).
+- [ ] With Parental Controls enabled, wait past 10 minutes of inactivity (or restart the browser, which always starts locked), then try to delete a history entry on `chrome://history` — **Expected:** the delete is blocked and a PIN prompt appears instead of the entry disappearing.
+- [ ] Enter the correct PIN — **Expected:** the entry deletes, and further history deletes and the "Clear browsing data on exit" toggle group work without re-prompting for the next 10 minutes of activity.
+- [ ] Try deleting an entry from the sidebar's History panel while locked — **Expected:** same PIN gate as `chrome://history` (independent gate, same behavior).
+- [ ] Try toggling "Clear browsing data on exit" in Settings while locked — **Expected:** also PIN-gated.
+- [ ] Click "Change PIN" and enter the current PIN plus a new one — **Expected:** succeeds; the old PIN no longer works, the new one does.
+- [ ] Click "Forgot PIN?" — **Expected:** a real OS-level reauth prompt (Windows Hello or platform equivalent) appears; on success, you can set a brand-new PIN without knowing the old one.
+- [ ] Turn Parental Controls off (requires the current PIN) — **Expected:** all gates stop applying; history deletes and the clear-on-exit toggle work with no PIN prompt.
+- [ ] As of v1.8.43: with Parental Controls enabled, add a domain to the blocklist (e.g. `example.com`) and navigate to it — **Expected:** the top-level navigation is blocked (`ERR_BLOCKED_BY_CLIENT`); a subdomain (`www.example.com`) is blocked too, but an unrelated site loads normally.
+- [ ] Switch to allowlist mode with one domain listed, then visit that domain and a different one — **Expected:** the listed domain loads, the other is blocked.
+- [ ] Enable "Force SafeSearch" and search on Google or Bing — **Expected:** results are filtered (`safe=active`/`ssui=on` present on the request).
+- [ ] Enable "YouTube Restricted Mode" (Moderate or Strict) and browse YouTube — **Expected:** restricted-mode behavior applies.
+- [ ] As of v1.8.44: with a blocklist/allowlist configured, disable Parental Controls entirely (current PIN required) — **Expected:** previously-blocked sites now load normally — this used to silently keep enforcing the domain list even after the whole feature was turned off.
+- [ ] Re-enable Parental Controls with a new PIN after having disabled it with a domain list configured — **Expected:** restriction mode comes back as "Off," not silently re-armed with the old list (disabling resets the mode).
+
+📷 *Screenshot suggestion: the PIN prompt interrupting a history-delete attempt, next to the Website Restrictions section showing a configured blocklist.*
 
 ---
 
@@ -1491,18 +1515,23 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] `chrome://extensions` — **Expected:** list + Apps section load; icons render; enable/disable/remove/reload work; detail page opens on click with permissions/site-access/activity-log sections.
 - [ ] `chrome://downloads` — **Expected:** loads and lists recent downloads.
 - [ ] `chrome://history` — **Expected:** loads and lists recent visits.
+- [ ] As of v1.8.40: on `chrome://history`, search by a title/URL term, then filter by date range and by a specific host — **Expected:** each filter narrows results live (real `HistoryService`-backed query, not a static list); select several rows and batch-delete — **Expected:** they disappear immediately and the page updates live without a manual reload.
 - [ ] `chrome://bookmarks` — **Expected:** full CRUD bookmark manager loads.
+- [ ] As of v1.8.40: on `chrome://bookmarks`, add a folder and a bookmark, rename each, then drag a bookmark into a different folder and reorder it within that folder — **Expected:** the tree reflects every change immediately (real `BookmarkModel` CRUD + drag-and-drop, not a static tree); rapid multi-node changes (e.g. a drag touching several nodes) collapse into a single UI update rather than flickering per node.
+- [ ] As of v1.8.41: open either page in dark mode at a narrow-ish window width — **Expected:** the background fills the full viewport edge-to-edge, no white/light bars in the margins outside the centered content column (previously the background color was applied to the same element as the centering classes, so the margins fell through to the unstyled body).
 - [ ] `chrome://flags` (custom_flags) — **Expected:** experimental-flags page loads and search/filter works.
 - [ ] `chrome://print` — **Expected:** print preview loads for a normal page.
-- [ ] `chrome://certificate-manager` — **Expected:** certificate list loads.
+- [ ] `chrome://certificate-manager` — **Expected (as of this writing, still a stub):** the page loads a static placeholder card reading roughly "not wired up yet," directing you to the OS certificate store — **no real certificate list loads**. If a real list ever does load, this line needs updating to describe the working feature.
 - [ ] `chrome://management` — **Expected:** loads; shows real managed-status (unmanaged on a personal profile is expected and correct).
 - [ ] `chrome://sync-confirmation` (best triggered via the sign-in flow) — **Expected:** shows real account name/email and sync-benefits list; "Yes, I'm in" / "Settings" / "Cancel" all function.
 - [ ] `chrome://intro` (best triggered via first-run) — **Expected:** Welcome step, then a real cross-browser import step (Firefox / legacy Edge bookmarks / Bookmarks HTML file).
 - [ ] `chrome://whats-new` — **Expected:** loads a features list (network fetch with hardcoded fallback if the API is unreachable).
-- [ ] `chrome://tab-search` — **Expected:** loads and searches open tabs.
+- [ ] `chrome://tab-search` — **Expected (as of this writing, still a stub):** the toolbar button opens the bubble correctly (real top-chrome surface, no crash), but the search input is disabled and shows "not wired up yet" — **no real tab list, no search.** If real search ever ships, this line needs updating.
 - [ ] `chrome://terms`, `chrome://credits` — **Expected:** both load their respective legal/license text.
 - [ ] As of v1.8.32: switch to dark mode (OS or browser theme), then open `chrome://terms` — **Expected:** text renders light-on-dark, not white-on-white (the page previously had no background color set, so `dark:text-white` rendered invisibly on the default white canvas).
 - [ ] As of v1.8.32: open `chrome://credits` — **Expected:** the embedded license-text iframe (`full.html`) actually renders inside the page instead of being blocked (previously the shell's CSP inherited Chromium's default `child-src 'none'`, blocking the iframe before `frame-ancestors` was even consulted).
+- [ ] As of v1.8.39: in dark mode, spot-check `chrome://history`, `chrome://bookmarks`, `chrome://certificate-manager`, `chrome://chrome-urls`, `chrome://tab-search`, and `chrome://print` — **Expected:** all render with a proper dark background (no white-text-on-white-page); also check several `chrome://settings` sub-pages and `chrome://password-manager` for illegible dark-on-dark secondary/body text or an unstyled `<h2>` page title — none should appear (a full sweep across ~30+ files fixed exactly this pattern in one pass).
+- [ ] As of v1.8.39: check the Profile menu's Account page (`AccountPage.tsx`) in **light** mode, and the sidebar's Notes panel in both light and dark mode — **Expected:** Account page text is legible in light mode (it was previously written dark-theme-only and washed out); Notes panel text isn't too light for light mode *and* too dark for dark mode at the same time (a previously fully-inverted color pairing).
 - [ ] `chrome://feedback` — **Expected:** form loads and submits without error.
 - [ ] `chrome://apps` — **Expected:** installed web apps list, launch/uninstall work.
 - [ ] `chrome://proxy-routing` — **Expected:** proxy configuration UI loads.
