@@ -1,6 +1,6 @@
 # Privacy Shield
 
-A unified toolbar button that surfaces the status of all six browser-level
+A unified toolbar button that surfaces the status of all seven browser-level
 privacy and security features in a single bubble panel, with per-feature
 toggles. Clicking any toggle writes the corresponding pref immediately —
 no page reload or settings navigation required.
@@ -18,8 +18,8 @@ Gated by `BUILDFLAG(ENABLE_PRIVACY_SHIELD)`. Controlled by `enable_privacy_shiel
 
 The Privacy Shield button (shield icon) lives in the bottombar alongside the
 existing custom toolbar buttons. Clicking it opens a 360×340 px bubble panel
-showing six feature rows, each with a label, a one-line description, and an
-on/off toggle. Below the toggles a four-cell stats strip shows live per-tab
+showing seven feature rows, each with a label, a one-line description, and an
+on/off toggle. Below the toggles a five-cell stats strip shows live per-tab
 counts for the current page:
 
 | Feature | Pref written | Default |
@@ -27,11 +27,17 @@ counts for the current page:
 | Ad Blocker | `custom.enable_ad_block` | `true` |
 | Force Private Mode | `custom.force_incognito` | `false` |
 | Strip Referrer | `custom.strip_referrer` | `false` |
+| Block Ping/Beacon | `custom.block_ping_beacon` | `false` |
 | Disable WebGL | `custom.disable_webgl` | `false` |
 | Session Cookies | `custom.session_only_cookies` | `false` |
 | Connection Control | `custom.connection_control.enabled` | `false` |
 
-The stats strip shows four counters for the active tab, reset on each top-level
+As of v1.8.49, "Block Ping/Beacon" cancels `<a ping>`/`navigator.sendBeacon()`
+requests (see [security-privacy-features.md](security-privacy-features.md)'s
+"Ping/Beacon Blocking" section) — off by default, since some sites use
+`sendBeacon` for functional, not just analytics, pings.
+
+The stats strip shows five counters for the active tab, reset on each top-level
 navigation:
 
 | Stat | Source |
@@ -39,6 +45,7 @@ navigation:
 | Ads blocked | `AdBlockTabHelper::count()` |
 | Params stripped | `PrivacyStatsTabHelper::params_stripped_count()` |
 | Referrers stripped | `PrivacyStatsTabHelper::referrers_stripped_count()` |
+| Pings blocked | `PrivacyStatsTabHelper::pings_blocked_count()` |
 | Trackers on page | `TrackingRelationshipService::GetTrackerCountForSite(host)` |
 
 The header shows a live count of how many features are currently active. The
@@ -69,7 +76,7 @@ PrivacyShieldButton (ToolbarButton subclass)
                  style-src  chrome://resources 'self' 'unsafe-inline'
 │
             └─► PrivacyShieldHandler (WebUIMessageHandler)
-                  On JS ready: registers PrefChangeRegistrar for all 6 prefs.
+                  On JS ready: registers PrefChangeRegistrar for all 7 prefs.
                   Fires privacyShieldStatusChanged on any pref change.
                   Queries per-tab stats from AdBlockTabHelper,
                   PrivacyStatsTabHelper, and TrackingRelationshipService
@@ -124,7 +131,7 @@ window.cr.sendWithPromise<ShieldStatus>('privacyShieldGetStatus')
 // JS → C++ (fire-and-forget)
 window.chrome.send('privacyShieldSetFeature', [feature: string, enabled: bool])
 
-// C++ → JS (pushed whenever any of the 6 prefs changes)
+// C++ → JS (pushed whenever any of the 7 prefs changes)
 cr.addWebUIListener('privacyShieldStatusChanged', (status: ShieldStatus) => {})
 
 // ShieldStatus shape
@@ -133,6 +140,7 @@ interface ShieldStatus {
   adBlockEnabled:    boolean;
   forceIncognito:    boolean;
   stripReferrer:     boolean;
+  blockPingBeacon:   boolean;
   disableWebGL:      boolean;
   sessionCookies:    boolean;
   connectionControl: boolean;
@@ -140,17 +148,18 @@ interface ShieldStatus {
   adBlockCount:          number;
   paramsStrippedCount:   number;
   referrersStrippedCount: number;
+  pingsBlockedCount:     number;
   trackersOnPageCount:   number;
 }
 ```
 
 The `feature` string in `privacyShieldSetFeature` must be one of:
-`adBlock`, `forceIncognito`, `stripReferrer`, `disableWebGL`,
-`sessionCookies`, `connectionControl`.
+`adBlock`, `forceIncognito`, `stripReferrer`, `blockPingBeacon`,
+`disableWebGL`, `sessionCookies`, `connectionControl`.
 
 ---
 
 ## Related docs
 
-- [security-privacy-features.md](security-privacy-features.md) — the six features the shield controls
+- [security-privacy-features.md](security-privacy-features.md) — the seven features the shield controls
 - [smart-proxy-routing.md](smart-proxy-routing.md) — similar toolbar button / bubble / WebUI pattern

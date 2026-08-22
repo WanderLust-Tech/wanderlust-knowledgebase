@@ -503,6 +503,72 @@ no restart needed — direct pref edits below still work identically.
 
 ---
 
+## 7. Ping/Beacon Blocking
+
+Cancels `<a ping>` and `navigator.sendBeacon()` requests unless the
+destination host matches a user-configured exception list. Added
+v1.8.49 (2026-08-22), mirroring Referrer Control's throttle shape
+exactly — same `IsExempt()`/`ParseExceptions()` pattern, same
+`blink::URLLoaderThrottle` structure.
+
+### Prefs
+
+| Pref key | Type | Default | Purpose |
+|---|---|---|---|
+| `custom.block_ping_beacon` | bool | `false` | Master on/off switch — **off by default**, since some sites use `sendBeacon` for functional (not just analytics) pings |
+| `custom.ping_beacon_exceptions` | string (JSON) | `"[]"` | JSON array of glob patterns that are exempt |
+
+### How it works
+
+`PingBeaconBlockThrottle::WillStartRequest` checks the request's
+resource type against `blink::mojom::ResourceType::kPing` — this single
+resource type covers `<a ping>`, `navigator.sendBeacon()`, and
+Attribution-Reporting background pings indistinguishably at this layer,
+so there's no way to block one without the others. If the destination
+host isn't in the exception list, the request is canceled with
+`net::ERR_BLOCKED_BY_CLIENT` (error string `"wanderlust-pingblock"`) and
+`PrivacyStatsTabHelper::IncrementPingsBlocked()` is posted to the UI
+thread for the live per-tab count shown in Privacy Shield.
+
+### Per-domain override
+
+A new `kPingBeaconBlock` entry in the `ShieldFeature` enum and
+`ping_beacon_block` field on `DomainShield` let
+[Ad Blocker](ad-blocker.md)'s existing per-domain `DomainShieldsManager`
+override this feature per-site in either direction — a site can be
+exempted even with the global toggle on, or blocked even with it off.
+`CustomContentBrowserClient::CreateURLLoaderThrottles()` resolves the
+effective value via `shields->Resolve(page_host, ShieldFeature::kPingBeaconBlock, global)`
+before deciding whether to attach the throttle at all.
+
+### File map
+
+| File | Purpose |
+|---|---|
+| [`browser/net/blockers/ping_beacon_block_throttle.{cc,h}`](../src/custom/browser/net/blockers/ping_beacon_block_throttle.cc) | `URLLoaderThrottle`. `IsExempt()`, `ParseExceptions()`, cancellation in `WillStartRequest()` |
+| [`browser/security/domain_shields/domain_shields_manager.h`](../src/custom/browser/security/domain_shields/domain_shields_manager.h) | `ShieldFeature::kPingBeaconBlock`, `DomainShield::ping_beacon_block` |
+| [`browser/privacy_stats/privacy_stats_tab_helper.{cc,h}`](../src/custom/browser/privacy_stats/privacy_stats_tab_helper.cc) | `IncrementPingsBlocked()` / `pings_blocked_count()` |
+
+### Integration points
+
+| File | What it changes |
+|---|---|
+| [`browser/custom_content_browser_client.cc`](../src/custom/browser/custom_content_browser_client.cc) | `CreateURLLoaderThrottles()` — resolves the per-domain-overridden effective value, parses `kPingBeaconExceptions`, appends `PingBeaconBlockThrottle` |
+| [`browser/prefs/custom_prefs.cc`](../src/custom/browser/prefs/custom_prefs.cc) | Registers both prefs |
+| [`browser/ui/webui/privacy_shield/privacy_shield_handler.cc`](../src/custom/browser/ui/webui/privacy_shield/privacy_shield_handler.cc) | Exposes the toggle + `pingsBlockedCount` stat — see [privacy-shield.md](privacy-shield.md) |
+| `components/custom_settings/components/SecurityPage.tsx` | Settings → Security & Privacy toggle + exception-list editor |
+
+### Testing
+
+1. Enable: `custom.block_ping_beacon = true`, exceptions = `[]`.
+2. Visit a page that fires `navigator.sendBeacon(...)` or has an `<a ping="...">` link (or run `navigator.sendBeacon('https://example.com/x', 'y')` in DevTools console).
+3. In DevTools → Network, the ping request shows as blocked
+   (`(blocked:other)`, initiator referencing the throttle).
+4. Add the destination host to exceptions → the same call now succeeds.
+5. Open the Privacy Shield bubble — "Pings blocked" increments for the current tab.
+
+---
+
 ## Letterboxing (viewport quantization)
 
 > Added after the six numbered features above (canvas fingerprint noise and
@@ -793,7 +859,7 @@ projects (Breeze-Core, PMC, Aviator). Ordered roughly by implementation effort.
 
 | Enhancement | Where to add | Description |
 |---|---|---|
-| **Per-tab stats in Privacy Shield** ✅ | `privacy_shield_handler.cc`, `PrivacyStatsTabHelper` | **Done.** Ads blocked, params stripped, referrers stripped, and trackers on page are now shown in the shield bubble for the active tab. |
+| **Per-tab stats in Privacy Shield** ✅ | `privacy_shield_handler.cc`, `PrivacyStatsTabHelper` | **Done.** Ads blocked, params stripped, referrers stripped, pings blocked (added v1.8.49), and trackers on page are now shown in the shield bubble for the active tab. |
 | **Filter list curation** ✅ | `custom/components/privacy_guard/core/url_purify_rule_loader.cc`, `custom/browser/net/url_purify_rule_updater.cc` | **Done (v1.8.26).** `FilterListUpdateService` periodically fetches the ClearURLs project's `data.min.json` (its own canonical distribution, the same repo the ClearURLs browser extension fetches from), parses each provider entry into a `URLPurifyRule`, and hot-swaps the per-site rule list via a new `URLPurifier::ReloadPerSiteRules()`/`ReloadURLPurifyPerSiteRules()`. The hand-maintained `global_` rules (generic `utm_*`/`fbclid`/`gclid` patterns) are untouched by the fetch — only per-site provider coverage is refreshed. Gated by a sanity check (refuses a parsed rule count under half the current set) rather than a signature, matching this fork's other fetchers. See ad-blocker.md's "Background auto-refresh" section for the shared scheduling mechanism. |
 | **uBlock filter list freshness** ✅ | `custom/browser/net/blockers/ad_block_list_updater.cc` | **Done (v1.8.26).** The same `FilterListUpdateService` also periodically re-fetches EasyList / EasyPrivacy and hot-swaps them into `BlockersWorker` via a new `ReloadFromText()` method, caching the result to disk so the next launch starts from the fetched copy instead of the build-time `bundled_filter_rules.cc` snapshot. No signature verification — a sanity gate (refuses a parse with under half the current filter count) instead, since nothing in this codebase does cryptographic verification of fetched content today. See ad-blocker.md for the full mechanism. |
 | **Referrer policy grades** | `referrer_control_throttle.h/.cc` | Instead of a binary strip/keep, expose three modes: *strip-all*, *same-origin only* (send referrer only when first- and third-party share a host), and *off*. This would allow users who need referrers for login flows to choose a less invasive mode. |
@@ -804,6 +870,6 @@ projects (Breeze-Core, PMC, Aviator). Ordered roughly by implementation effort.
 
 ## Related docs
 
-- [privacy-shield.md](privacy-shield.md) — unified toolbar toggle panel for all six features
+- [privacy-shield.md](privacy-shield.md) — unified toolbar toggle panel for all seven features
 - [tracking-dashboard.md](tracking-dashboard.md) — passive third-party tracker relationship visualiser
 - [de-googling.md](de-googling.md) — telemetry pruning, feature flag overrides, and pref defaults that reduce Google data flows
