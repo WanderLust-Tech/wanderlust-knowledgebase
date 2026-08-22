@@ -443,11 +443,11 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 ### Privacy Shield (unified toolbar panel)
 
-**What it is:** A single toolbar shield-icon button that surfaces on/off toggles for six privacy features (Ad Blocker, Force Private Mode, Strip Referrer, Disable WebGL, Session Cookies, Connection Control) plus live per-tab stats, without visiting Settings.
+**What it is:** A single toolbar shield-icon button that surfaces on/off toggles for seven privacy features (Ad Blocker, Force Private Mode, Strip Referrer, Block Ping/Beacon, Disable WebGL, Session Cookies, Connection Control) plus live per-tab stats, without visiting Settings.
 **Where to find it:** Shield icon in the bottombar → click to open the 360×340px bubble. Bubble visibility itself is controlled by pref `custom.toolbar.show_privacy_shield_button` (default shown).
 **Default state:** Enabled by default. Gated by `BUILDFLAG(ENABLE_PRIVACY_SHIELD)` (`enable_privacy_shield = true`).
 
-- [ ] Click the shield icon — **Expected:** bubble opens showing six toggle rows and a 4-cell stats strip (Ads blocked / Params stripped / Referrers stripped / Trackers on page).
+- [ ] Click the shield icon — **Expected:** as of v1.8.49, bubble opens showing seven toggle rows and a 5-cell stats strip (Ads blocked / Params stripped / Referrers stripped / Pings blocked / Trackers on page) — previously six toggles and four stats.
 - [ ] Toggle "Connection Control" on inside the bubble — **Expected:** the change is reflected immediately if `chrome://settings` is also open in another tab (no reload needed).
 - [ ] Visit a page that triggers ad blocks and tracker requests — **Expected:** the stats strip numbers update live while the bubble is open.
 - [ ] Click the footer link — **Expected:** navigates to `chrome://settings/privacy`.
@@ -480,6 +480,20 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Disable the feature — **Expected:** `Referer` is sent normally on all cross-site navigations again.
 
 📷 *Screenshot suggestion: DevTools Request Headers panel with `Referer` absent, annotated with the toggle state.*
+
+### Ping/Beacon Blocking
+
+**What it is:** As of v1.8.49, cancels `<a ping>`/`navigator.sendBeacon()` requests unless the destination host matches a user-configured exception list — the same throttle shape as Referrer Control, piggybacking on the ad-block infrastructure.
+**Where to find it:** `chrome://settings` → Privacy and security → Security & Privacy → "Block Ping/Beacon" section (`SecurityPage.tsx`) — toggle plus a live exceptions list. Master toggle is also mirrored in the Privacy Shield bubble as "Block Ping/Beacon".
+**Default state:** Disabled by default (`custom.block_ping_beacon` = `false`) — some sites use `sendBeacon` for functional, not just analytics, pings.
+
+- [ ] Enable "Block Ping/Beacon" with an empty exceptions list, then visit a page that fires `navigator.sendBeacon(...)` (or run `navigator.sendBeacon('https://example.com/x', 'y')` in DevTools console on any page) — **Expected:** DevTools → Network shows the beacon request blocked (`(blocked:other)`).
+- [ ] Add the destination host to the exceptions list and repeat — **Expected:** the beacon request now succeeds for that host only.
+- [ ] With the feature enabled, open the Privacy Shield bubble and trigger a blocked ping/beacon — **Expected:** the "Pings blocked" stat increments live for the current tab.
+- [ ] Add a per-domain override for one site (via whatever per-domain shields UI is exposed) that flips this feature opposite to the global toggle — **Expected:** that site's ping/beacon requests behave per the override, not the global setting.
+- [ ] Disable the feature globally — **Expected:** `<a ping>`/`sendBeacon()` requests succeed normally everywhere (except any per-domain override still forcing them blocked).
+
+📷 *Screenshot suggestion: DevTools Network tab showing a blocked beacon request, next to the Privacy Shield bubble's incremented "Pings blocked" count.*
 
 ### Force Private Mode (Force Incognito)
 
