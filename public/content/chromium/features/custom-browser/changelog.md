@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.45)
+## Versioned releases (1.7.25 → 1.8.47)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,41 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.47 — 2026-08-22
+
+Hot-reloads Site Injection rules after a Save/Delete in the settings UI —
+previously an edit only took effect after a full browser restart, since
+`SiteInjectionManager` was parsed once at profile startup.
+
+- `SiteInjectionService::Reload()` builds a fresh manager on the thread
+  pool from `rules.ini` and its payload files, then swaps it in on the
+  UI thread — already-open tabs pick up the change on their next
+  navigation, not retroactively into the currently-loaded DOM.
+- `CustomSettingsHandler`'s `HandleSaveSiteInjectionRule`/
+  `HandleDeleteSiteInjectionRule` both now call through
+  `OnSiteInjectionRuleMutated`, which triggers the reload after a
+  successful write.
+
+### 1.8.46 — 2026-08-22
+
+Adds right-click context menus for bookmarks — neither `chrome://bookmarks`
+nor the sidebar's Bookmarks panel had one before.
+
+- `chrome://bookmarks` gets: Open / Open in new tab / Open in new window
+  / Copy URL / Add bookmark or folder here / Edit… / Move to folder… /
+  Delete.
+- The sidebar's Bookmarks panel gets the same menu, bringing it up to
+  full CRUD parity with `chrome://bookmarks` — it was previously a
+  read-only viewer with no add/rename/delete/move capability at all.
+- New `bookmarkOpenUrl` message (on both `CustomBookmarksHandler` and
+  `SidebarDOMHandler`) opens with an explicit disposition (current tab /
+  new tab / new window) via `NavigateParams`.
+- `SidebarDOMHandler`'s bookmark CRUD mirrors `CustomBookmarksHandler`'s
+  existing implementations under the same message names, rather than a
+  separate protocol.
+- The new "Move to folder…" picker covers moving bookmarks without
+  drag-and-drop, which the sidebar panel doesn't get in this pass.
 
 ### 1.8.45 — 2026-08-21
 
