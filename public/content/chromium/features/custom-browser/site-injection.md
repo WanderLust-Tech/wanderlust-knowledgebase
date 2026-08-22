@@ -122,9 +122,10 @@ Place any `.css` or `.js` file alongside `rules.ini`. No subdirectory support �
 filenames must be plain names (no `/`, `\`, or `..`). The manager rejects
 path-traversal attempts with a `DLOG(WARNING)` and skips the rule.
 
-Each file is read once and cached in memory for the lifetime of the service
-(per-profile, per-session). Edits to payload files take effect after the
-browser restarts or the profile reloads.
+Each file is read once and cached in memory, rebuilt whenever
+`SiteInjectionService::Reload()` runs. As of v1.8.47, that happens
+automatically after any Save/Delete in the settings UI — open tabs pick
+up edited payload content on their next navigation, no restart needed.
 
 **Size limit:** 1 MB per payload file. Files exceeding this are silently skipped.
 
@@ -223,7 +224,7 @@ ensures the task is dropped (not run) if shutdown races the init.
 | Item | Notes |
 |---|---|
 | ~~Settings UI~~ | **Done (v1.8.11).** `chrome://settings` → Security & Privacy → "Site injection" (`SiteInjectionSection` in `SecurityPage.tsx`) lists/adds/edits/deletes rules, including the CSS/JS content itself, via `CustomSettingsHandler` reading/writing `rules.ini` and payload files directly (`SiteInjectionManager::ParseRuleEntries()`/`SerializeRuleEntries()`). |
-| Hot reload | Rule changes still require a browser restart — the settings UI writes rules.ini immediately but there's no `FilePathWatcher`/live reload yet. One could trigger `SiteInjectionManager::ReloadFromDirectory` and notify open tab helpers to re-inject on the current page. |
+| ~~Hot reload~~ | **Done (v1.8.47).** After a Save/Delete in the settings UI, `SiteInjectionService::Reload()` re-parses `rules.ini` and its payload files into a brand-new `SiteInjectionManager` on the thread pool and swaps it in on the UI thread — no `FilePathWatcher` needed, since the settings UI is the only writer. Already-open tabs pick up the change on their **next navigation**, not retroactively into the current DOM — no browser restart required either way. |
 | Sub-frame injection | `DidFinishNavigation` is only acted upon for the primary main frame. Sub-frames that match a rule are not injected into. This is intentional for now — injecting into cross-origin frames raises security concerns. |
 | Same-document navigations | Hash changes and `pushState` navigations are explicitly skipped. Single-page apps that make significant DOM changes on `pushState` will not get re-injection. A `DOMContentLoaded`-equivalent MutationObserver in injected JS can work around this at the user script level. |
 | `*.` wildcard depth | `*.example.com` matches any subdomain via eTLD+1 comparison. A rule for `*.co.uk` would match everything on `co.uk` — be careful with short eTLDs. The manager uses `INCLUDE_PRIVATE_REGISTRIES` which handles most PSL edge cases. |
