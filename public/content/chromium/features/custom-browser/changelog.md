@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.48)
+## Versioned releases (1.7.25 → 1.8.49)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,24 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.49 — 2026-08-22
+
+Adds ping/beacon blocking, piggybacking on the ad-block throttle
+infrastructure — cancels `<a ping>`/`navigator.sendBeacon()` requests
+unless the destination is allowlisted.
+
+- New `PingBeaconBlockThrottle` mirrors `ReferrerControlThrottle`'s
+  shape exactly (`IsExempt()`/`ParseExceptions()`, same
+  `blink::URLLoaderThrottle` structure). Off by default — some sites
+  use `sendBeacon` for functional, not just analytics, pings.
+- Adds a per-domain `DomainShieldsManager` override (`ShieldFeature::
+  kPingBeaconBlock`) so a site can be exempted even with the global
+  toggle on, or blocked even with it off.
+- Surfaces the toggle and a live blocked-count in both Settings →
+  Security & Privacy and the Privacy Shield toolbar bubble, which now
+  shows seven toggles and five per-tab stat cells (previously six and
+  four).
 
 ### 1.8.48 — 2026-08-22
 
