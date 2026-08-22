@@ -898,6 +898,7 @@ const internalContent: ContentNode[] = [
             { title: "Page Notes", path: "features/custom-browser/page-notes" },
             { title: "AI Page Assistant", path: "features/custom-browser/ai-page-assistant" },
             { title: "JavaScript Content Controls", path: "features/custom-browser/javascript-content-controls" },
+            { title: "Picture-in-Picture Hover Button", path: "features/custom-browser/picture-in-picture-button" },
         ]
     },
     {
