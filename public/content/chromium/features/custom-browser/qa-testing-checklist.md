@@ -992,6 +992,25 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: the page right-click context menu showing the Block/Allow/Default JavaScript entries.*
 
+### Picture-in-Picture Hover Button
+
+**What it is:** As of v1.8.48, a floating button that appears over any `<video>` element on hover and toggles native Picture-in-Picture for it — works site-wide, independent of a page's own native video controls.
+**Where to find it:** No dedicated page — hover a large-enough video on any site. Toggle: Settings → Others → Web content → "Show a Picture-in-Picture button when hovering videos."
+**Default state:** Enabled by default (`custom.picture_in_picture_button.enabled` pref).
+
+- [ ] Hover over a reasonably large (80×80px or bigger) `<video>` on any site — **Expected:** a small floating button appears over the top-right of the video within a moment.
+- [ ] Click the button — **Expected:** the video enters native Picture-in-Picture (a separate always-on-top mini window).
+- [ ] Hover the same video again while it's in PiP — **Expected:** the button's tooltip reads "Exit picture in picture"; clicking it exits PiP.
+- [ ] Move the mouse from the video onto the button itself (not away) — **Expected:** the button stays visible (doesn't flicker/hide) while the cursor is over it.
+- [ ] Move the mouse away from both the video and the button — **Expected:** the button hides after a brief delay (~250ms), not instantly.
+- [ ] Hover a very small video (well under 80×80px, e.g. a thumbnail-sized `<video>`) — **Expected:** no button appears.
+- [ ] On a site using client-side routing (an SPA) or infinite scroll, navigate/scroll to reveal a video that wasn't present on initial page load — **Expected:** hovering it still shows the button, with no full-page reload needed.
+- [ ] Hover a `<video>` with the `disablePictureInPicture` attribute set (test page or DevTools-added attribute) — **Expected:** no button ever appears for that video.
+- [ ] Turn the Settings toggle off, then reload a page with video — **Expected:** no button appears on hover anywhere on the page.
+- [ ] Turn the toggle back on and reload — **Expected:** the button returns.
+
+📷 *Screenshot suggestion: the floating PiP button overlaid on the corner of a playing video.*
+
 ---
 
 ## New Tab Page
