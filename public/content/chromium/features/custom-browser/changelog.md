@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.49)
+## Versioned releases (1.7.25 → 1.8.51)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,39 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.51 — 2026-08-23
+
+Adds quit-application confirmation, and exposes the previously-unwired
+"confirm closing tabs" toggle in Settings for the first time.
+
+- Confirms before quitting via the app menu's Exit command or by closing
+  the last open window, reusing the existing tab-close confirmation
+  dialog's shape as a sibling (`ConfirmQuitDialog`).
+- `Browser::CanCloseAsQuit()` reuses the existing `ShouldStartShutdown()`
+  predicate and runs before the tab-close check so the two dialogs never
+  stack for the same close action.
+- Off by default (`custom.confirm_quit_browser`).
+- The pre-existing tab-close confirmation mechanism
+  (`Browser::CanCloseInClosingTabs`, gated on `BUILDFLAG(ENABLE_TAB_SHAPES)`)
+  had no Settings UI until now — both toggles land together under a new
+  "Closing" section in Settings → Tabs.
+
+### 1.8.50 — 2026-08-22
+
+Surfaces the browser-data importer from Settings — previously it was
+only reachable from the first-run `chrome://intro` wizard, with no way
+back in afterward.
+
+- Registers the existing `CustomIntroHandler` a second time, on
+  `CustomSettingsUI` — the same "one handler class, two hosts" pattern
+  already used for the Passwords and Manage Profile sub-pages.
+- Lifts the intro wizard's import step into its own Settings page,
+  `ImportBrowserDataPage.tsx`, with a new `import-data` route — unlike
+  the deep-link-only Manage Profile page, this one is listed in the
+  Settings left-nav sidebar.
+- No new C++ needed — same messages, same real `ImporterList`/
+  `ExternalProcessImporterHost`/`ProfileWriter` machinery underneath.
 
 ### 1.8.49 — 2026-08-22
 
