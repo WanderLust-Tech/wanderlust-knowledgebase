@@ -18,6 +18,17 @@ in via `#if BUILDFLAG(ENABLE_CUSTOM_WEBUI)` in
 fire unmodified; only the rendered content at that host changes. Gated
 by `enable_custom_webui` (default `true`), not a feature-specific flag.
 
+**As of v1.8.51**, the same importer is also reachable after first run —
+Settings → "Import browser data" (route `import-data`, listed in the
+Settings left-nav sidebar, unlike the deep-link-only
+[Manage Profile](manage-profile.md) page). Before this, the importer was
+only ever reachable from the first-run wizard, with no way back in once
+you'd clicked past it. `CustomIntroHandler` is registered a second time
+on `CustomSettingsUI` — the same "one handler class, two hosts" pattern
+already used for Passwords and Manage Profile — backing a new
+`ImportBrowserDataPage.tsx` with the exact same messages listed below.
+No new C++ was needed.
+
 ---
 
 ## Architecture

@@ -838,6 +838,7 @@ const internalContent: ContentNode[] = [
             { title: "Split View", path: "architecture/split-view" },
             { title: "Shareable Theme JSON", path: "features/custom-browser/shareable-theme-json" },
             { title: "Boss Key", path: "features/custom-browser/boss-key" },
+            { title: "Close & Quit Confirmation", path: "features/custom-browser/close-confirmation" },
         ]
     },
     {
