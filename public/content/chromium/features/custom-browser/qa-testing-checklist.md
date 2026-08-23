@@ -169,6 +169,23 @@
 
 📷 *Screenshot suggestion: not essential for this one — a short screen recording of the scroll-to-switch behavior is more useful than a static image.*
 
+### Close & Quit Confirmation
+
+**What it is:** As of v1.8.51, two independently-toggled confirmation prompts under Settings → Tabs → "Closing": confirming before closing a window with 2+ tabs (pre-existing mechanism, newly exposed in Settings), and confirming before quitting the browser entirely (brand new).
+**Where to find it:** Settings → Tabs → "Closing" section — "Confirm before closing a window with multiple tabs" and "Confirm before quitting the browser."
+**Default state:** Both off by default.
+
+- [ ] Enable "Confirm before quitting the browser," then close your only open window (or use the app menu's Exit command) — **Expected:** a "Quit WanderLust" dialog appears asking "This will close all windows and tabs. Are you sure you want to quit?" with OK/Cancel and a "Do not ask next time" checkbox.
+- [ ] Click Cancel — **Expected:** the browser stays open, nothing closes.
+- [ ] Repeat and click OK — **Expected:** the browser quits normally.
+- [ ] Repeat once more, but check "Do not ask next time" before confirming — **Expected:** the browser quits, and the Settings toggle is now off — quitting again doesn't prompt.
+- [ ] With "Confirm before quitting" enabled, open a second browser window, then close just one of the two windows — **Expected:** no prompt (the app isn't quitting — another window remains open).
+- [ ] Enable "Confirm before closing a window with multiple tabs," open 2+ tabs in a window, then close the window (not via the app quitting) — **Expected:** a confirmation dialog appears before the window actually closes.
+- [ ] With only one tab open, close the window — **Expected:** no prompt (the pref only applies at 2+ tabs).
+- [ ] With both toggles enabled, close the last window with multiple tabs open (an action that both closes a multi-tab window *and* quits the app) — **Expected:** per the implementation comment, the two dialogs are checked in a fixed order (quit check before tab-close check) specifically so they don't appear stacked/overlapping on top of each other — confirm what you actually observe (e.g. quit dialog only, or quit dialog followed by a separate tab-close dialog) and note it, since this exact sequencing hasn't been manually verified end-to-end yet.
+
+📷 *Screenshot suggestion: the "Quit WanderLust" confirmation dialog.*
+
 ### Tab Shapes
 
 **What it is:** Lets the user choose the visual shape of browser tabs — Round (default), Rectangle, or Trapezoid.
@@ -1310,6 +1327,17 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] From the profile picker, click a profile card's "Edit" option — **Expected:** lands on the same `manageProfile` page for that profile.
 - [ ] Change the avatar, name, or theme color on this page — **Expected:** change saves in place immediately (no Skip/Done buttons or redirect back to the profile picker — that flow is specific to the first-run `chrome://profile-customization` wizard, not this page).
 - [ ] Navigate directly to `chrome://settings/manageProfile` via the omnibox — **Expected:** loads normally even though it's not reachable from the Settings left-nav.
+
+### Import Browser Data (Settings)
+
+**What it is:** As of v1.8.50, the Firefox/legacy Edge/Bookmarks-HTML importer (previously only reachable from the first-run `chrome://intro` wizard) is now also a normal Settings page, listed in the left-nav — unlike the deep-link-only Manage Profile page above.
+**Where to find it:** Settings → "Import browser data" (visible in the left-nav sidebar).
+**Default state:** Enabled by default.
+
+- [ ] Open Settings and look at the left-nav — **Expected:** an "Import browser data" entry is present (previously the only way to reach this importer was the first-run wizard).
+- [ ] Click into it — **Expected:** the same source-detection/selection UI as the first-run wizard's import step loads (detected browsers with per-item checkboxes for bookmarks/history/passwords/etc., plus a Bookmarks HTML File option).
+- [ ] Run an import from this page (e.g. a Bookmarks HTML File) — **Expected:** it completes the same way it would from `chrome://intro` — same progress states, same success/failure signaling.
+- [ ] Run the import a second time later, well after first-run — **Expected:** works identically; there's no "only during first run" restriction on this entry point.
 
 ### Custom Cache & Clear Browsing Data
 
