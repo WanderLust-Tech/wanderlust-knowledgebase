@@ -77,6 +77,7 @@
 - [ ] As of v1.8.36: check the pinned app's icon in the sidebar — **Expected:** shows the actual application's real icon (resolved via `SHGetFileInfo`), not a generic/placeholder icon.
 - [ ] As of v1.8.38: repeat "Click it while the browser is already running" and "Repeat... with the browser fully closed" above — **Expected:** both now actually work end to end (previously the registered shell verb used space-separated switch syntax that Chromium's command-line parser couldn't pair with its value, so `AddApp()` silently never ran — clicking while running did nothing, and on cold start the `.lnk` path opened/downloaded as a normal file argument instead of being pinned).
 - [ ] On an install that already had the old broken verb registered, just relaunch the browser (no reinstall, no manual registry edit) — **Expected:** the self-heal check on launch (`EnsureSidebarAppsContextMenuRegistered()`) detects and corrects the stale registry command automatically.
+- [ ] As of v1.8.53: launch the browser fresh and immediately (before doing anything else) right-click a `.lnk` shortcut → "Add to Wanderlust Sidebar" — **Expected:** works without crashing (previously `SidebarAppRegistryFactory` wasn't registered at startup alongside its sibling sidebar factories, so being the first thing to construct it post-startup could trip a fatal DCHECK).
 
 📷 *Screenshot suggestion: File Explorer right-click menu showing "Add to Wanderlust Sidebar", next to the sidebar showing the resulting pinned icon.*
 
@@ -202,6 +203,8 @@
 - [ ] With "copy to clipboard" enabled (default), capture either mode, then paste (Ctrl+V) into an image editor — **Expected:** the pasted image matches the capture.
 - [ ] Disable "copy to clipboard" in Settings, capture again, then try pasting — **Expected:** nothing new is on the clipboard from that capture.
 - [ ] Disable the toolbar button's visibility via its pref (`toolbar.show_screenshot_button`, no Settings UI yet — edit `Preferences` directly with the browser closed) — **Expected:** the button no longer appears in the toolbar.
+- [ ] As of v1.8.54: start a region-capture drag, then close the tab (or the whole browser window) before releasing the mouse — **Expected:** no crash; the overlay/selection is simply abandoned. Repeat but navigate the tab to a different page mid-drag instead of closing it — **Expected:** same, no crash.
+- [ ] As of v1.8.54: with a screen reader running (e.g. Narrator), trigger "Capture region…" — **Expected:** the overlay announces an accessible name/role when it gains focus, and the browser doesn't crash on an accessibility paint-check assertion (Debug builds only).
 
 📷 *Screenshot suggestion: the region-select overlay mid-drag, and the toolbar dropdown menu.*
 

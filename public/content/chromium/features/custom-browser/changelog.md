@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.52)
+## Versioned releases (1.7.25 → 1.8.54)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,32 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.54 — 2026-08-24
+
+Fixes a use-after-free crash in Screenshot / Page Capture's region
+mode: `StartRegionCapture` bound a raw `WebContents*`/`NativeWindow`
+into a callback that only fires once the user finishes an open-ended
+drag on the selection overlay, so closing or navigating the tab mid-drag
+left both pointers dangling by the time the callback ran. Now captures
+`web_contents->GetWeakPtr()` through the whole chain, checked before
+each use, with the native window re-derived fresh from the validated
+`WebContents` instead of cached. Applied the same pattern to the
+visible-area path for consistency.
+
+Also gives the region-select overlay an accessible name — it's
+focusable (to catch Escape) but had none, which trips
+`views::RunAccessibilityPaintChecks` in Debug builds and was a likely
+second contributor to the same crash reports.
+
+### 1.8.53 — 2026-08-23
+
+Fixes `SidebarAppRegistryFactory` never being registered alongside its
+sibling sidebar factories in `EnsureBrowserContextKeyedServiceFactoriesBuilt()`
+— it stayed unconstructed until something first called `GetForProfile()`
+well after startup, which trips `DependencyManager`'s
+`disallow_factory_registration_` DCHECK (fatal), since all
+`KeyedService` factories must be built before any `Profile` exists.
 
 ### 1.8.52 — 2026-08-23
 
