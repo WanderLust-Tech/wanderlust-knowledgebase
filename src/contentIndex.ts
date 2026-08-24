@@ -839,6 +839,7 @@ const internalContent: ContentNode[] = [
             { title: "Shareable Theme JSON", path: "features/custom-browser/shareable-theme-json" },
             { title: "Boss Key", path: "features/custom-browser/boss-key" },
             { title: "Close & Quit Confirmation", path: "features/custom-browser/close-confirmation" },
+            { title: "Screenshot / Page Capture", path: "features/custom-browser/screenshot-capture" },
         ]
     },
     {

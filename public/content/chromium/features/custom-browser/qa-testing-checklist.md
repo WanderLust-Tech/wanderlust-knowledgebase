@@ -186,6 +186,25 @@
 
 📷 *Screenshot suggestion: the "Quit WanderLust" confirmation dialog.*
 
+### Screenshot & Page Capture
+
+**What it is:** As of v1.8.52, a toolbar button for capturing the visible viewport or a user-dragged region of the page, saved and/or copied to the clipboard. Full-page capture and a right-click context-menu entry are not yet implemented.
+**Where to find it:** Toolbar camera-icon button → dropdown with "Capture visible area" and "Capture region…". Settings → Others → "Screenshots" section for save behavior and clipboard toggle.
+**Default state:** Toolbar button visible by default. Save behavior defaults to "Ask where to save each time"; copy-to-clipboard defaults to on.
+
+- [ ] Click the toolbar screenshot button — **Expected:** a dropdown appears with "Capture visible area" and "Capture region…".
+- [ ] On a page taller than the viewport, click "Capture visible area" — **Expected:** a Save-As dialog appears (default behavior); the resulting PNG contains only what was visible on screen, not the full scrollable page.
+- [ ] On a HiDPI display (scale factor > 100%), repeat the visible-area capture — **Expected:** the saved image is sharp, not blurry/upscaled — its pixel dimensions should be larger than the viewport's DIP size by the scale factor.
+- [ ] Click "Capture region…" — **Expected:** the page dims under a translucent overlay; dragging draws a clear rectangle with a visible border that tracks the cursor.
+- [ ] Complete a region drag and release — **Expected:** only the dragged rectangle is captured (verify the saved/copied image's dimensions roughly match the dragged area, not the full viewport).
+- [ ] Start a region drag, then press Escape before releasing — **Expected:** the overlay closes and nothing is captured.
+- [ ] In Settings → Others → Screenshots, switch save behavior to "Save automatically," then capture again — **Expected:** no Save-As dialog appears; the file is written directly (default location is the profile's Downloads folder unless an auto-save folder is configured).
+- [ ] With "copy to clipboard" enabled (default), capture either mode, then paste (Ctrl+V) into an image editor — **Expected:** the pasted image matches the capture.
+- [ ] Disable "copy to clipboard" in Settings, capture again, then try pasting — **Expected:** nothing new is on the clipboard from that capture.
+- [ ] Disable the toolbar button's visibility via its pref (`toolbar.show_screenshot_button`, no Settings UI yet — edit `Preferences` directly with the browser closed) — **Expected:** the button no longer appears in the toolbar.
+
+📷 *Screenshot suggestion: the region-select overlay mid-drag, and the toolbar dropdown menu.*
+
 ### Tab Shapes
 
 **What it is:** Lets the user choose the visual shape of browser tabs — Round (default), Rectangle, or Trapezoid.

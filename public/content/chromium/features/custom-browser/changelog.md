@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.51)
+## Versioned releases (1.7.25 → 1.8.52)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,25 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.52 — 2026-08-23
+
+Adds Screenshot / Page Capture — a toolbar button for capturing the
+visible viewport or a user-dragged region, saved and/or copied to the
+clipboard per Settings.
+
+- Visible-area capture via `RenderWidgetHostView::CopyFromSurface()`,
+  explicitly scaled for HiDPI. Region capture crops the same capture
+  to a rectangle drawn on a translucent drag-to-select overlay
+  `Widget`, modeled on the existing mouse-gesture trail overlay.
+- Output pipeline shared by both modes: clipboard copy (on by
+  default), plus either a native Save-As dialog or straight-to-folder
+  auto-save, per a new Settings → Others → "Screenshots" section.
+- Full-page capture (`paint_preview`) and a right-click "Capture
+  region…" context-menu entry are follow-up commits, not yet shipped.
+- Required granting `views::WidgetDelegateView` friend access to the
+  new region-select widget class, since its default constructor is
+  private in this Chromium version.
 
 ### 1.8.51 — 2026-08-23
 
