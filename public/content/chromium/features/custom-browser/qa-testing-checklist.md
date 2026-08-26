@@ -205,6 +205,7 @@
 - [ ] Disable the toolbar button's visibility via its pref (`toolbar.show_screenshot_button`, no Settings UI yet — edit `Preferences` directly with the browser closed) — **Expected:** the button no longer appears in the toolbar.
 - [ ] As of v1.8.54: start a region-capture drag, then close the tab (or the whole browser window) before releasing the mouse — **Expected:** no crash; the overlay/selection is simply abandoned. Repeat but navigate the tab to a different page mid-drag instead of closing it — **Expected:** same, no crash.
 - [ ] As of v1.8.54: with a screen reader running (e.g. Narrator), trigger "Capture region…" — **Expected:** the overlay announces an accessible name/role when it gains focus, and the browser doesn't crash on an accessibility paint-check assertion (Debug builds only).
+- [ ] As of v1.8.55: drag a region that is narrower than the full visible viewport (i.e. not full-width), then either let it auto-copy to clipboard or paste after — **Expected:** no crash, and pasting elsewhere produces exactly the cropped region, not garbled/corrupted image data (previously any non-full-width crop crashed on copy due to a stride mismatch).
 
 📷 *Screenshot suggestion: the region-select overlay mid-drag, and the toolbar dropdown menu.*
 
@@ -852,6 +853,20 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Edge case: turn off the master enable toggle in settings — **Expected:** Toolbar/bottom-bar buttons disappear (or stop working) and magnet links are no longer intercepted.
 
 📷 *Screenshot suggestion: chrome://bittorrent showing an active torrent with live download/upload rate, peer count, and progress bar.*
+
+### Mail Client (IMAP)
+
+**What it is:** As of v1.8.56, a native IMAP4rev1 client foundation — currently Settings account management only (add/remove IMAP accounts, verified against the real server). No inbox/message UI yet. v1.8.57 added a structured FETCH parser and a SQLite message store, but it's storage-layer only — not wired to anything user-visible, so no additional manual test surface from that phase.
+**Where to find it:** Settings → "Mail accounts".
+**Default state:** Enabled by default (`enable_mail_client = true`, `BUILDFLAG(ENABLE_MAIL_CLIENT)`).
+
+- [ ] Open Settings → Mail accounts, and add a real IMAP account (valid host/port/username/password) — **Expected:** the Add action blocks briefly (real server round-trip), then the account appears in the list with no password visible anywhere in the UI.
+- [ ] Add an account with a wrong password or an unreachable host — **Expected:** a visible error is shown and the account is NOT saved (verified-before-persisted, not saved-then-validated).
+- [ ] Remove an account — **Expected:** it disappears from the list immediately.
+- [ ] Restart the browser after adding an account — **Expected:** the account persists across restart.
+- [ ] With DevTools/network inspection open on the Settings page while adding an account — **Expected:** the plaintext password is not observable in any `customMail*` WebUI message payload sent back to the renderer (only the backend should ever see it; it's OSCrypt-encrypted at rest in the `custom.mail.accounts` pref).
+
+📷 *Screenshot suggestion: Settings → Mail accounts with one configured account listed.*
 
 ### Crash-Resilient Downloads
 

@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.54)
+## Versioned releases (1.7.25 → 1.8.57)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,61 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.57 — 2026-08-25
+
+Phase 2 of the Mail Client (IMAP): structured FETCH response parsing
+and a per-profile SQLite message store — storage layer only, not yet
+wired to any user-visible flow.
+
+- Phase 2a: the IMAP response parser now tracks literal byte ranges,
+  so FETCH responses can locate a header-block literal's exact bytes
+  without scanning for IMAP structural characters that may legitimately
+  appear in message content. Adds `imap_fetch_response.{cc,h}` (UID +
+  raw header block) and `mail_header_parser.{cc,h}` (RFC 5322 header
+  unfolding for Subject/From/Date).
+- Phase 2b: adds `MailDatabase`/`MailBackend`, mirroring the
+  `RSSDatabase`/`RSSBackend` pattern (`sql::MetaTable` versioning,
+  `RefCountedThreadSafe` backend on a sequenced task runner).
+- `MailService` doesn't call any of this yet — that wiring is a later
+  phase. See [Mail Client (IMAP)](mail-client) for full status.
+
+### 1.8.56 — 2026-08-25
+
+Adds the foundation of a native IMAP4rev1 Mail Client — hand-rolled
+directly on Chromium's network service rather than a vendored library
+(libetpan's TLS backends aren't BoringSSL-compatible and need the same
+dedicated-thread bridge libtorrent required).
+
+- `imap_response_parser`: incremental byte-stream parser for tagged/
+  untagged responses and `{n}`-byte literals.
+- `imap_command_builder` + `imap_connection`: command tagging/quoting
+  and the Login/SelectMailbox/FetchHeaders/Logout state machine, kept
+  transport-agnostic so it's fully unit-tested via a fake transport.
+- `mojo_imap_transport`: the real transport, via
+  `NetworkContext::CreateTCPConnectedSocket` + `UpgradeToTLS`.
+- `MailService`/`MailServiceFactory`: per-profile `KeyedService`,
+  correctly registered in `EnsureBrowserContextKeyedServiceFactoriesBuilt`
+  from the start (the exact step that was missing for
+  `SidebarAppRegistryFactory` in 1.8.53).
+- `MailAccountStore` + `CustomMailHandler` + a new Settings "Mail
+  accounts" page: add any IMAP server (host/port/username/password),
+  verified against the real server before saving; password
+  OSCrypt-encrypted at rest, never sent to the renderer.
+- 23 unit tests in a standalone `mail_unittests` target.
+- Still backend/settings-only — no inbox UI yet. See
+  [Mail Client (IMAP)](mail-client) for full architecture and
+  limitations.
+
+### 1.8.55 — 2026-08-24
+
+Fixes a clipboard-copy crash in Screenshot / Page Capture's region
+mode on non-full-width selections: `extractSubset()` shares the parent
+bitmap's pixel ref and row stride, so a crop narrower than the full
+capture ended up with `rowBytes()` based on the original width. The
+Windows clipboard writer requires a tightly-packed N32 bitmap and
+`CHECK_EQ`-crashed on the mismatch. Replaced with `tryAllocN32Pixels()`
++ `readPixels()`, a real deep copy with correct stride.
 
 ### 1.8.54 — 2026-08-24
 
