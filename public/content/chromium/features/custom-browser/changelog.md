@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.58)
+## Versioned releases (1.7.25 → 1.8.59)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,27 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.59 — 2026-08-26
+
+Fixed the tab strip's product logo — a baseline branding element gated by
+`BUILDFLAG(ENABLE_TABSTRIP_LOGO)` that predates this fork's versioned era
+and had never actually been correct on HiDPI displays.
+
+- The `default_200_percent` `wanderlust`/`olabar` `product_logo_16.png`/
+  `product_logo_32.png` assets were byte-identical duplicates of their
+  `default_100_percent` counterparts — never actually rendered at 2x
+  resolution. On a HiDPI display, the compositor sampled a 1x-resolution
+  texture into a 2x-sized quad, tiling the logo into a visible 2x2 grid.
+  Regenerated all four from the correct master art.
+- `BrowserView::Init()` also sized/positioned the logo once from
+  `TAB_STRIP_HEIGHT` at construction time and never revisited it, unlike
+  every other tab-strip-row child, which `BrowserViewLayout` recomputes on
+  every `Layout()` pass. Moved the sizing into
+  `BrowserViewLayout::LayoutTabStripRegion()` so it tracks the tab strip's
+  actual current height instead of going stale — this is what caused the
+  logo to appear too large or too small depending on when `Init()` ran
+  relative to the window's final scale factor/density.
 
 ### 1.8.58 — 2026-08-26
 

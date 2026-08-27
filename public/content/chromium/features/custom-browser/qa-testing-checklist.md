@@ -224,6 +224,19 @@
 
 📷 *Screenshot suggestion: the `chrome://settings/customTab` page showing the three shape previews, and the actual tab strip in each of the three shapes.*
 
+### Tab Strip Logo
+
+**What it is:** The product logo rendered at the left edge of the horizontal tab strip, ahead of the tabs themselves. A baseline branding element (`BUILDFLAG(ENABLE_TABSTRIP_LOGO)`) that predates this fork's versioned era.
+**Where to find it:** Top-left corner of the browser window, to the left of the first tab, whenever the horizontal tab strip is shown (not visible with Vertical Tabs enabled).
+**Default state:** Enabled by default (`enable_tabstrip_logo = true`) in every build today.
+
+- [ ] Look at the logo at 100% display scaling — **Expected:** renders crisp and fully visible, roughly square, sized to the tab strip's height.
+- [ ] Switch the display to a HiDPI scale factor (e.g. Windows display scaling at 200%) and relaunch/move the browser window onto that display — **Expected:** logo still renders as a single crisp icon, not tiled into a repeating grid and not blurry.
+- [ ] Resize the browser window and try both compact/comfortable density settings if available — **Expected:** logo stays proportionally sized to the tab strip's current height in every case, never clipped or oversized.
+- [ ] As of v1.8.59: repeat the HiDPI check above — **Expected:** logo no longer tiles into a visible 2x2 grid (previously the `default_200_percent` logo assets were duplicates of the 100% versions, so a HiDPI compositor sampled a 1x texture into a 2x quad) and no longer goes stale-sized depending on when the window's tab strip height settled after launch.
+
+📷 *Screenshot suggestion: the tab strip logo at 100% scaling next to the same window on a 200% HiDPI display.*
+
 ### Vertical Tabs
 
 **What it is:** Replaces the horizontal tab strip across the top of the window with a narrow, collapsible vertical column of tab buttons on the left or right edge — with many additional features layered on: hover-to-expand, pinning, drag-resize, tree/nested-tab mode, density presets, search/filter, multi-select, sorting, saved sessions, hover thumbnail previews, and vim-style keyboard navigation.
