@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.57)
+## Versioned releases (1.7.25 → 1.8.58)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,47 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.58 — 2026-08-26
+
+Phases 3-5 of the Mail Client (IMAP): background sync, a `chrome://mail`
+inbox WebUI, and message body reading — the feature is now actually
+usable end-to-end for the first time, not just a Settings-page account
+manager.
+
+- Phase 3: `MailSyncService` polls every configured account's INBOX on a
+  timer, fetching only messages newer than the last-synced UID per
+  account (batched into a single SQLite transaction — the naive
+  per-message-write version took over a minute to sync a large mailbox,
+  root-caused to `SetLastSyncedUid`'s SQL using an `ON CONFLICT ... DO
+  UPDATE` upsert that this Chromium build's SQLite doesn't support
+  (`SQLITE_OMIT_UPSERT`) and was silently falling back to something much
+  slower). New mail triggers a desktop notification and a toolbar-button
+  unread-count badge.
+- Phase 4: `chrome://mail` — a combined inbox across every account,
+  capped at the 200 most-recent messages (the uncapped version reloaded
+  every one of a 10,000+ message mailbox on every list refresh). "Sync
+  now" triggers an immediate sweep; clicking a message fetches/caches
+  and marks it read.
+- Phase 5: message body reading, over its own independent IMAP
+  connection so opening a message never blocks on a sync in progress.
+  Plain-text bodies render directly. HTML bodies render inside a
+  sandboxed `chrome-untrusted://mail-body/` iframe — this fork's first
+  `chrome-untrusted://` page — with remote images blocked by default
+  (tracking-pixel privacy leak) behind a per-message "Load images"
+  button. Getting the untrusted page's Trusted Types policy and CSP
+  correctly wired up surfaced a real gap in `//ui/webui/resources/tools/
+  generate_grd.gni` (edits to `input_files` content don't trigger a
+  rebuild, since that mechanism is never added to the build action's
+  `inputs`), worked around with a hand-authored, checked-in `.grd`
+  instead of the usual generated one.
+- Also bundled: an unrelated ad-blocker fix — the filter-list fetch's
+  8 MB response cap exceeded `SimpleURLLoader`'s actual 5 MB hard cap,
+  which could crash the updater; now tied directly to the loader's own
+  constant.
+- See [Mail Client (IMAP)](mail-client) for full status/architecture —
+  HTML rendering is flagged there as not yet fully confirmed working
+  end-to-end.
 
 ### 1.8.57 — 2026-08-25
 

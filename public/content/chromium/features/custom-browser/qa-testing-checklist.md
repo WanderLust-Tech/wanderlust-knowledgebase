@@ -480,6 +480,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Toggle it off, restart the browser — **Expected:** neither the EasyList/EasyPrivacy fetch nor the ClearURLs fetch fires on startup (no new request to `easylist.to` / the ClearURLs data source; no cache file timestamp update).
 - [ ] Toggle it back on, restart — **Expected:** both fetches resume on their normal schedule (immediately if overdue, per `last_fetch_time + interval`).
 - [ ] Quit and relaunch the browser shortly after a successful fetch (well inside the 96-hour interval) — **Expected:** no new fetch fires — `custom.filter_list_refresh.last_adblock_fetch_time` / `.last_url_purify_fetch_time` correctly suppress a redundant re-fetch.
+- [ ] As of v1.8.58: force a background refresh of the EasyList/EasyPrivacy filter list (see the Ad Blocker section above for how) — **Expected:** the fetch completes and hot-swaps normally with no browser crash, even though the response is a large file (the response-size cap previously exceeded the network loader's own hard limit, which could crash the updater).
 
 ### Privacy Shield (unified toolbar panel)
 
@@ -856,8 +857,8 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 ### Mail Client (IMAP)
 
-**What it is:** As of v1.8.56, a native IMAP4rev1 client foundation — currently Settings account management only (add/remove IMAP accounts, verified against the real server). No inbox/message UI yet. v1.8.57 added a structured FETCH parser and a SQLite message store, but it's storage-layer only — not wired to anything user-visible, so no additional manual test surface from that phase.
-**Where to find it:** Settings → "Mail accounts".
+**What it is:** As of v1.8.58, a working background-synced inbox: Settings account management (add/remove IMAP accounts, verified against the real server), a `chrome://mail` inbox with background sync/notifications/toolbar badge, and message body reading (plain text solid, HTML rendering still being debugged — see [Mail Client (IMAP)](mail-client) for current status).
+**Where to find it:** Settings → "Mail accounts"; `chrome://mail`; a mail toolbar button in the bottom bar.
 **Default state:** Enabled by default (`enable_mail_client = true`, `BUILDFLAG(ENABLE_MAIL_CLIENT)`).
 
 - [ ] Open Settings → Mail accounts, and add a real IMAP account (valid host/port/username/password) — **Expected:** the Add action blocks briefly (real server round-trip), then the account appears in the list with no password visible anywhere in the UI.
@@ -865,8 +866,13 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Remove an account — **Expected:** it disappears from the list immediately.
 - [ ] Restart the browser after adding an account — **Expected:** the account persists across restart.
 - [ ] With DevTools/network inspection open on the Settings page while adding an account — **Expected:** the plaintext password is not observable in any `customMail*` WebUI message payload sent back to the renderer (only the backend should ever see it; it's OSCrypt-encrypted at rest in the `custom.mail.accounts` pref).
+- [ ] As of v1.8.58: leave the browser running with a mail account configured, and send a new message to that account from elsewhere — **Expected:** within one sync interval (`custom.mail.sync_interval_seconds`, default 300s) a desktop notification appears and the mail toolbar button's unread-count badge updates, with no manual action taken.
+- [ ] As of v1.8.58: open `chrome://mail` — **Expected:** a combined inbox across every configured account loads, newest messages first, capped at 200 total. Click "Sync now" — **Expected:** an immediate sync sweep runs and any new mail appears without waiting for the timer.
+- [ ] As of v1.8.58: click a message in `chrome://mail` — **Expected:** it opens promptly (not blocked on a sync in progress, even if one is currently running) and is marked read; click "Mark as unread" — **Expected:** it reverts to unread in the list.
+- [ ] As of v1.8.58: open a plain-text message — **Expected:** the body renders directly and is readable.
+- [ ] As of v1.8.58: open an HTML message — **Expected:** the body renders inside the message pane with remote images blocked by default and a "Load images" button that reveals them on click. **Note:** this path is still being debugged as of v1.8.58 — if it doesn't render, that's a known open issue, not a new regression to file (check [Mail Client (IMAP)](mail-client) for current status before reporting).
 
-📷 *Screenshot suggestion: Settings → Mail accounts with one configured account listed.*
+📷 *Screenshot suggestion: chrome://mail showing a synced inbox with an open HTML message.*
 
 ### Crash-Resilient Downloads
 
