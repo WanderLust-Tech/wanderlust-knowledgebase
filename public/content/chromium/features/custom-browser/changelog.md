@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.59)
+## Versioned releases (1.7.25 → 1.8.60)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,19 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.60 — 2026-08-27
+
+Fixed `chrome://chrome-urls` and `chrome://terms` using the wrong
+light-mode background color — another instance of the same
+`bg-white`-vs-`bg-lightPrimary` drift already fixed on other Tier-1 static
+WebUI pages (see 1.8.32, 1.8.39 below).
+
+- Both pages' root `<main>` used `bg-white` instead of the `bg-lightPrimary`
+  token every other Tier-1 static page (`whats-new`, `intro`, `bookmarks`)
+  uses, producing a slightly-off-white background inconsistent with the
+  rest of the browser's light theme. Switched both to
+  `bg-lightPrimary dark:bg-navy-900`.
 
 ### 1.8.59 — 2026-08-26
 

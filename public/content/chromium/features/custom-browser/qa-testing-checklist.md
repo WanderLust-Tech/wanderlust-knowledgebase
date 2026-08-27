@@ -1676,6 +1676,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] As of v1.8.30: apply a custom theme with a distinctly different `cornerRadius` (e.g. edit the exported JSON to `4` and re-import) and a visible `focusShadow`, then open `chrome://settings` — **Expected:** every page's cards/panels now render with the new corner radius, and Tab-focusing a button/checkbox/input anywhere shows the themed focus shadow — confirm on at least two different settings pages to verify it's fork-wide, not page-specific.
 - [ ] Restart the browser after applying a custom theme (without resetting first) — **Expected:** the custom colors are still applied post-restart (persisted via prefs, not just in-memory for that session).
 - [ ] `chrome://chrome-urls` — **Expected:** lists all internal `chrome://` URLs, including the custom ones above.
+- [ ] As of v1.8.60: in **light** mode, compare `chrome://chrome-urls` and `chrome://terms` against `chrome://whats-new` or `chrome://intro` — **Expected:** all render the same off-white background (previously `chrome-urls` and `terms` used a slightly different pure-white background instead of the shared `bg-lightPrimary` token).
 
 📷 *Screenshot suggestion: a grid/collage of the omnibox autocomplete dropdown showing all `chrome://` custom hosts, useful as a quick post-rebase completeness check.*
 
