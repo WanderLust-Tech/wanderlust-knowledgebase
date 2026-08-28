@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.60)
+## Versioned releases (1.7.25 → 1.8.63)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,56 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.63 — 2026-08-28
+
+Fixed Settings → Sidebar's Web Panels list going stale when a panel was
+unpinned from the sidebar itself instead of from Settings.
+
+- `CustomSettingsHandler` only fired the `pinnedPanelsChanged` WebUI event
+  from inside its own `pinnedPanelsAdd`/`pinnedPanelsRemove` message
+  handlers, so removing a panel via the sidebar's "Unpin from Sidebar"
+  context menu (which calls `SidebarPinnedPanelsService::RemovePanel`
+  directly) never notified an open Settings tab. The handler now observes
+  `SidebarPinnedPanelsService` directly — matching the pattern it already
+  uses for `TemplateURLServiceObserver`/`SyncServiceObserver` — so any
+  mutation path, regardless of origin, reaches the Settings page.
+
+### 1.8.62 — 2026-08-27
+
+Fixed a never-visited Web Panels pin always showing the generic globe icon
+instead of a real favicon.
+
+- Falls back to `LargeIconService`'s Google-favicon-server fetch when the
+  local `FaviconService` has no cached icon (i.e. the pinned site has
+  never been visited), resized to 16x16 to match the size already used by
+  the normal (already-visited) favicon path.
+
+### 1.8.61 — 2026-08-27
+
+Fixed the undocked sidebar's auto-hide peek strip being stuck at roughly
+37px instead of its intended 4px, plus two related bugs found while
+chasing it.
+
+- `WS_CAPTION`/`WS_SYSMENU` were left set on the frameless undocked
+  widget's native window style (`Widget::InitParams::remove_standard_frame`
+  only strips `WS_MINIMIZEBOX`/`WS_MAXIMIZEBOX` for `TYPE_WINDOW`), so
+  Windows enforced an internal minimum-track-size floor for captioned
+  windows that `WM_GETMINMAXINFO`'s `ptMinTrackSize` can't override —
+  silently clamping the peek strip well above its intended 4px width.
+  Those style bits are now stripped directly on the HWND after creation.
+- The undocked widget could get permanently stuck "engaged" (never
+  auto-hiding) because raw OS window activation — which fires for any
+  click, including the drag used to reposition it — was treated as "user
+  is reading/typing"; it's now keyed off actual `WebContents` focus
+  instead, plus reactivating the last browser window after a drag ends.
+- Reveal-on-hover could jump to the wrong monitor because the display was
+  re-matched against the widget's live, edge-hugging bounds instead of
+  the persisted snapped-display pref.
+- Peek/reveal transitions are now animated instead of an instant resize
+  (avoids a stale composited frame flashing at the old size), and hide
+  pane/webview content immediately rather than relying on the shrunk
+  window to clip it.
 
 ### 1.8.60 — 2026-08-27
 
