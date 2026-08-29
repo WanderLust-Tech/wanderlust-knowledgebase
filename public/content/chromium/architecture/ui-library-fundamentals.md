@@ -153,7 +153,7 @@ The View system creates a tree structure that mirrors the visual organization of
 Widget (Root Window)
 └── RootView
     └── NonClientView (Window Frame Management)
-        ├── NonClientFrameView (Title Bar, Borders)
+        ├── FrameView (Title Bar, Borders)
         │   ├── WindowTitleView
         │   ├── WindowControlsView (Min/Max/Close)
         │   └── WindowIconView
@@ -183,7 +183,7 @@ class NonClientView : public View {
     AddChildView(frame_view_.get());
   }
   
-  void SetFrameView(std::unique_ptr<NonClientFrameView> frame_view) {
+  void SetFrameView(std::unique_ptr<FrameView> frame_view) {
     if (frame_view_) {
       RemoveChildView(frame_view_.get());
     }
@@ -210,10 +210,10 @@ class NonClientView : public View {
   }
   
  private:
-  std::unique_ptr<NonClientFrameView> frame_view_;
+  std::unique_ptr<FrameView> frame_view_;
   std::unique_ptr<ClientView> client_view_;
   
-  std::unique_ptr<NonClientFrameView> CreateFrameView() {
+  std::unique_ptr<FrameView> CreateFrameView() {
     // Platform-specific frame view creation
     #if defined(OS_WIN)
       return std::make_unique<GlassBrowserFrameView>();
@@ -226,13 +226,17 @@ class NonClientView : public View {
 };
 ```
 
-#### NonClientFrameView: Window Decorations
+#### FrameView: Window Decorations
 
-The `NonClientFrameView` handles platform-specific window decorations:
+The `FrameView` class handles platform-specific window decorations. It was renamed
+from `NonClientFrameView` in Chromium 142 — `NonClientFrameView` now survives only as
+a type alias for source compatibility, and the widget-delegate hook that creates one
+was renamed alongside it: `WidgetDelegate::CreateNonClientFrameView()` became
+`CreateFrameView()`.
 
 ```cpp
 // Platform-specific frame implementations
-class GlassBrowserFrameView : public NonClientFrameView {
+class GlassBrowserFrameView : public FrameView {
  public:
   void OnPaint(gfx::Canvas* canvas) override {
     // Windows Aero Glass implementation
@@ -259,7 +263,7 @@ class GlassBrowserFrameView : public NonClientFrameView {
   bool dwm_composition_enabled_;
 };
 
-class NativeBrowserFrameView : public NonClientFrameView {
+class NativeBrowserFrameView : public FrameView {
  public:
   void OnPaint(gfx::Canvas* canvas) override {
     // macOS native window frame - minimal custom drawing
@@ -380,7 +384,7 @@ class WidgetDelegate {
 class BrowserView : public views::WidgetDelegate,
                    public views::View {
  public:
-  explicit BrowserView(std::unique_ptr<Browser> browser);
+  explicit BrowserView(Browser* browser);
   
   // WidgetDelegate implementation
   std::u16string GetWindowTitle() const override {
@@ -423,7 +427,9 @@ class BrowserView : public views::WidgetDelegate,
   }
   
  private:
-  std::unique_ptr<Browser> browser_;
+  // BrowserView doesn't own the Browser -- lifetime is managed elsewhere
+  // (BrowserList and friends).
+  Browser* browser_ = nullptr;
   ToolbarView* toolbar_ = nullptr;
   TabStripView* tabstrip_ = nullptr;
   ContentsWebView* contents_web_view_ = nullptr;
@@ -446,12 +452,14 @@ Understanding the window creation process is essential for customizing browser b
 class WindowCreationExample {
  public:
   static Widget* CreateBrowserWindow() {
-    // Step 1: Create browser model
+    // Step 1: Create browser model. BrowserView doesn't take ownership of
+    // Browser -- its lifetime is managed elsewhere (BrowserList and
+    // friends), so the caller keeps this unique_ptr alive.
     auto browser = std::make_unique<Browser>(
         Browser::CreateParams(profile, true));
     
     // Step 2: Create BrowserView as WidgetDelegate
-    auto browser_view = std::make_unique<BrowserView>(std::move(browser));
+    auto browser_view = std::make_unique<BrowserView>(browser.get());
     BrowserView* browser_view_ptr = browser_view.get();
     
     // Step 3: Configure Widget initialization parameters
@@ -490,7 +498,12 @@ class BrowserWindowArchitecture {
   struct WindowComponents {
     // Core window management
     Widget* widget_;                    // Platform window wrapper
-    BrowserFrame* browser_frame_;       // Widget subclass for browsers
+    BrowserWidget* browser_widget_;     // Widget subclass for browsers
+                                        // (renamed from BrowserFrame in
+                                        // Chromium 142; the old name
+                                        // survives only as a temporary
+                                        // alias, `using BrowserFrame =
+                                        // BrowserWidget;`)
     
     // UI hierarchy management  
     BrowserView* browser_view_;         // Main UI coordinator
@@ -498,7 +511,7 @@ class BrowserWindowArchitecture {
     ClientView* client_view_;           // Content area
     
     // Frame-specific views
-    NonClientFrameView* frame_view_;    // Platform-specific decorations
+    FrameView* frame_view_;              // Platform-specific decorations
     
     // Content views
     ToolbarView* toolbar_;              // Address bar and controls
@@ -513,7 +526,7 @@ class BrowserWindowArchitecture {
     
     // NonClientView manages frame and client areas
     components.non_client_view_->SetFrameView(
-        std::unique_ptr<NonClientFrameView>(components.frame_view_));
+        std::unique_ptr<FrameView>(components.frame_view_));
     components.non_client_view_->SetContentsView(components.client_view_);
     
     // ClientView contains BrowserView
@@ -552,8 +565,8 @@ class StartupBrowserCreator {
   
  private:
   void CreateBrowserWindow(Browser* browser) {
-    // Create BrowserFrame (Widget subclass)
-    BrowserFrame* frame = new BrowserFrame();
+    // Create BrowserWidget (Widget subclass)
+    BrowserWidget* frame = new BrowserWidget();
     
     // Create BrowserView
     BrowserView* browser_view = new BrowserView(browser);
@@ -562,7 +575,7 @@ class StartupBrowserCreator {
     browser->set_window(browser_view);
     
     // Initialize frame with browser view
-    frame->InitBrowserFrame(browser_view);
+    frame->InitBrowserWidget(browser_view);
     
     // This triggers the full Widget creation flow
     frame->Show();

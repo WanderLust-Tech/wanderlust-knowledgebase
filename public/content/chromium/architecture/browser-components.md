@@ -200,7 +200,10 @@ graph TB
 
 ## 7. Modern UI Layer Architecture (v134+)
 
-### BrowserView/BrowserFrame (Cross-Platform)
+### BrowserView/BrowserWidget (Cross-Platform)
+*(`BrowserWidget` was `BrowserFrame` before Chromium 142; the old name is
+kept only as a temporary compatibility alias.)*
+
 - **Enhanced UI Framework**: Modern views system with accessibility support
 - **Platform Integration**:
   - **Windows**: WinUI 3 integration with modern styling
