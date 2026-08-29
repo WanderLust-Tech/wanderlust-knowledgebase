@@ -71,7 +71,7 @@ nullptr` in its ctor. Code paths in the container that need a `Browser*`
 | [`SidebarContainerView`](../src/custom/browser/ui/views/frame/sidebar_container_view.cc) | The per-window (or per-undocked-widget) view. Lays out the pane strip + WebView + resize area. Owns the `views::WebView` lazily (created on first pane button press to avoid spinning up a render process for users who never click the sidebar). Implements `views::ContextMenuController` + `ui::SimpleMenuModel::Delegate` for the right-click menu. Also provides `ShowPanel(Type)` to programmatically open a panel (used by `RemoteNtpTabHelper` to open the NTP settings panel from the NTP page), and the static `FindForBrowserView(BrowserView*)` registry that maps a `BrowserView` to its docked `SidebarContainerView`. |
 | [`SidebarTopPane`](../src/custom/browser/ui/views/frame/sidebar_top_pane.cc) | The pane-button strip — bookmarks / history / rss / notes / ntp-settings / agent / recently-closed / expand-collapse / settings — plus a dynamic row of Web Panels buttons rebuilt from `SidebarPinnedPanelsService::GetPanels()`. Delegates content-pane clicks to `SidebarContainerView` via `SidebarTopPaneDelegate::TopPaneButtonPressed(Type)` (built-ins) or `TopPanePinnedPanelPressed(panel_id)` (Web Panels). |
 | [`SidebarTopPaneButton`](../src/custom/browser/ui/views/frame/sidebar_top_pane.cc) | Themed `views::ImageButton` subclass with a selected/hover state. |
-| [`UndockedSidebarWidget`](../src/custom/browser/ui/views/sidebar/undocked_sidebar_widget.cc) | Per-profile floating Widget. PanelView-cribbed init params (`TYPE_WINDOW`, `remove_standard_frame=true`, `z_order=kFloatingWindow`, `NATIVE_WIDGET_OWNS_WIDGET` so `Widget::Close` async-destroys the Widget+view tree and our dtor runs to release the keep-alives — `CLIENT_OWNS_WIDGET` would require `unique_ptr<Widget>` plumbing we haven't wired); Windows-specific `WS_EX_TOOLWINDOW` so it stays out of the taskbar / Alt-Tab. Hosts a `SidebarContainerView(nullptr, profile)`. Owns the right-edge bounds math; observes `kSidebarIsCollapsed` (profile pref) to resize and `kBackgroundModeEnabled` (local_state pref) to (de)activate the keep-alives. |
+| [`UndockedSidebarWidget`](../src/custom/browser/ui/views/sidebar/undocked_sidebar_widget.cc) | Per-profile floating Widget. PanelView-cribbed init params (`TYPE_WINDOW_FRAMELESS` — see "Why `TYPE_WINDOW_FRAMELESS`, not `TYPE_WINDOW`" below, `remove_standard_frame=true`, `z_order=kFloatingWindow`, `NATIVE_WIDGET_OWNS_WIDGET` so `Widget::Close` async-destroys the Widget+view tree and our dtor runs to release the keep-alives — `CLIENT_OWNS_WIDGET` would require `unique_ptr<Widget>` plumbing we haven't wired); `dont_show_in_taskbar=true` so it stays out of the taskbar / Alt-Tab. Hosts a `SidebarContainerView(nullptr, profile)`. Owns the right-edge bounds math; observes `kSidebarIsCollapsed` (profile pref) to resize and `kBackgroundModeEnabled` (local_state pref) to (de)activate the keep-alives. |
 | [`SidebarWebContentsDelegate`](../src/custom/browser/sidebar/sidebar_web_contents_delegate.cc) | Shared `WebContentsDelegate` for every `WebContents` the sidebar hosts — the built-in `chrome://sidebar/*` one and every pooled Web Panel `WebContents` alike. Handles `OpenURLFromTab` (same-tab nav in place; anything else opens a real browser tab), `AddNewContents` (redirects `window.open()`-created contents into a real browser tab via `chrome::AddWebContents`, since this surface has no tab strip of its own), keyboard event routing, and zoom. |
 | [`SidebarPinnedPanelsService`](../src/custom/browser/sidebar/sidebar_pinned_panels_service.cc) | Per-profile `KeyedService` backing Web Panels — CRUD over a list of `PinnedSidebarPanel {id, url, title, favicon_url}`, persisted as a JSON-string pref (`sidebar.pinned_panels`). Modeled on `WorkspaceService`'s shape rather than `SidebarService`'s dead, unsalvageable `SidebarItem`/`web_apps_list_` code (see "Web Panels" below for why). Deliberately kept separate from `SidebarService::Type`, which stays reserved for the compile-time-fixed built-ins. |
 | [`SidebarPinnedPanelsServiceFactory`](../src/custom/browser/sidebar/sidebar_pinned_panels_service_factory.cc) | Standard `BrowserContextKeyedServiceFactory`. OTR profiles share the parent profile's pins. |
@@ -611,6 +611,70 @@ sizing per axis. The default expanded thickness (`kDefaultExpandedWidth`,
 top/bottom ribbon's *height* until the user resizes it down — a real, if
 minor, first-run cosmetic wrinkle worth knowing about.
 
+### Why `TYPE_WINDOW_FRAMELESS`, not `TYPE_WINDOW`
+
+Fixed 2026-08-28, after top/bottom snapping shipped 2026-07-22 with the
+widget still using its original `TYPE_WINDOW` init params. Top/bottom's
+auto-hide peek strip (see "Auto-hide and peek" above) never actually
+reached its intended 4px height — it settled around 36 DIP tall,
+rendering as a solid grey bar across most of the screen wherever it was
+snapped, and made worse by "SidebarTopPane needs to know the orientation"
+below also not existing yet at the time.
+
+Diagnostic logging (requested vs. actual bounds, logged at every layer —
+`ApplyPeekState`'s target, `AnimationEnded`'s post-`SetBounds` actual,
+`WM_GETMINMAXINFO`'s `ptMinTrackSize` before/after a hard clamp, and
+finally a raw `::SetWindowPos` bypassing Views entirely) ruled out every
+Views/Aura-level explanation one at a time: the widget's own
+`GetMinimumSize()` override was already correct (4 DIP), the
+`WM_GETMINMAXINFO` handler reported a correspondingly small
+`ptMinTrackSize`, and yet the actual applied height stayed ~36 DIP even
+through a raw Win32 call that bypassed `views::Widget::SetBounds`
+entirely. That last result was the key data point: if even a direct
+`::SetWindowPos` on the HWND gets silently overridden back up, the floor
+isn't expressed through any size-negotiation message at all — it's tied
+to the window having been created `WS_OVERLAPPED` in the first place.
+`Widget::InitParams::TYPE_WINDOW` maps to `WS_OVERLAPPEDWINDOW` (`WS_OVERLAPPED
+| WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | ...`) at `CreateWindowEx`
+time; stripping those style bits afterward via `SetWindowLong` (which is
+what the 1.8.61 fix for the *left/right* peek strip did — see the
+changelog) changes how the window paints and hit-tests, but apparently
+not this particular floor.
+
+The fix: use `Widget::InitParams::TYPE_WINDOW_FRAMELESS` instead, which
+maps to plain `WS_POPUP` from creation (see
+`CalculateWindowStylesFromInitParams` in
+[`widget_hwnd_utils.cc`](../src/ui/views/widget/widget_hwnd_utils.cc)) —
+the same style category Views itself uses for `TYPE_BUBBLE`/`TYPE_POPUP`/
+`TYPE_MENU`/`TYPE_TOOLTIP`, all of which routinely size down to a handful
+of pixels without special-casing. `params.dont_show_in_taskbar = true`
+replaces the widget's previous post-creation `GWL_EXSTYLE |=
+WS_EX_TOOLWINDOW` poke (`TYPE_WINDOW_FRAMELESS` applies it at creation
+when this is set). The post-creation `WS_CAPTION`/`WS_SYSMENU`/
+`WS_THICKFRAME` stripping from 1.8.61 is gone entirely — none of those
+bits are ever set in the first place now. What's left post-creation is
+belt-and-suspenders only: a `WM_GETMINMAXINFO` hook
+(`MinTrackSizeWndProc`) that hard-clamps `ptMinTrackSize` in case
+anything ever reintroduces a floor, and `DwmSetWindowAttribute(...,
+DWMWA_NCRENDERING_POLICY, DWMNCRP_DISABLED, ...)` to suppress DWM's
+standard non-client shadow (present on ordinary top-level windows; a
+fixed ~10-20px halo that's easy to miss on a long, thin left/right strip
+but dwarfs a genuinely-4px-tall top/bottom strip).
+
+Second bug found alongside it, unrelated to window styles:
+`SidebarContainerView::Layout()` and `SidebarTopPane::Layout()` only knew
+how to lay out a tall-narrow strip — pane buttons always stacked in a
+column via a `y` cursor, regardless of orientation. On a top/bottom snap
+the container is a wide-short ribbon instead, so the ~10 pane buttons
+overflowed a container that's often only as tall as one button, clipping
+most of them — the sidebar wasn't just showing a strip of the wrong
+*size*, it had no icons in it at all. `SidebarTopPane::SetHorizontal(bool)`
+is the fix: when true, `Layout()` stacks buttons left-to-right along an
+`x` cursor instead. `SidebarContainerView::Layout()` calls it based on
+whether the undocked edge is TOP/BOTTOM, and for the expanded
+(non-collapsed) state now also positions the pane strip as a band hugging
+whichever edge is actually snapped, rather than always left/right.
+
 ## Known limitations
 
 | | |
@@ -622,6 +686,8 @@ minor, first-run cosmetic wrinkle worth knowing about.
 | ~~**Drag affordance is invisible**~~ **Fixed 2026-07-22.** | New `SidebarDragGripView` (a small `views::View` local to `sidebar_top_pane.cc`) paints 3 vertically-stacked dots and a hover background in the blank space between the content-pane buttons and the bottom cluster. Constructed only when `SidebarTopPane`'s new `show_drag_grip` ctor param is true — passed as `!browser_view_` from `SidebarContainerView::InitViews()`, so it only appears on the pane instance hosted inside `UndockedSidebarWidget` (a docked sidebar's pane strip is much shorter and can't be dragged as a window at all, so a grip there would be misleading). It's a plain `View`, not a `Button` — `OnMousePressed` returns `false` so the press bubbles to `UndockedSidebarWidget::OnMousePressed` exactly as it did before this view occupied that space (see `View::OnMousePressed`'s doc comment: returning false lets the event bubble through parent views). Purely a visual change; nothing about what's draggable changed. |
 | **Auto-hide polls every 100ms** | Cheaper alternatives exist (per-platform mouse hooks, `aura::WindowEventDispatcher` filters), but the polling timer is simple and the cost is negligible. If profiling ever flags it, the panels subsystem's `PanelMouseWatcher` is a more efficient reference implementation. |
 | ~~**English-only context menu strings**~~ **Already fixed — this entry was stale.** | Checked 2026-07-22: `ShowContextMenuForViewImpl` already calls `l10n_util::GetStringUTF16(IDS_SIDEBAR_DOCK/UNDOCK/EXPAND/COLLAPSE)` — no raw `u""` literals anywhere in the function. All four strings exist in `generated_resources.grdp`. This limitation must have been fixed in an undocumented pass; the doc just never caught up. |
+| ~~**Top/bottom snap effectively unusable**~~ **Fixed 2026-08-28.** | Two independent bugs, both specific to the top/bottom orientation added 2026-07-22. (1) The floating widget was created as `TYPE_WINDOW` — `WS_OVERLAPPEDWINDOW` under the hood — and Windows enforces a size floor tied to a window ever having been `WS_OVERLAPPED`, invisible to `WM_GETMINMAXINFO`'s `ptMinTrackSize` and immune to stripping style bits after creation *or* a raw `::SetWindowPos` call (confirmed via diagnostic logging tracing requested vs. actual bounds through every layer). The peek strip settled at ~36 DIP tall instead of 4, showing a fat grey bar across the screen. Fixed by switching to `TYPE_WINDOW_FRAMELESS` (see "Why `TYPE_WINDOW_FRAMELESS`, not `TYPE_WINDOW`" below), which creates the HWND as `WS_POPUP` from the moment it's created — the same category as menus/tooltips/bubbles, which routinely size down to a few pixels. (2) `SidebarContainerView::Layout()` and `SidebarTopPane::Layout()` only knew how to lay out a tall-narrow strip (pane buttons stacked in a column) regardless of orientation, so on a top/bottom snap the ~10 pane buttons overflowed a container that's often only as tall as one button, clipping most of them. `SidebarTopPane` gained a `SetHorizontal()` flag that switches its button stacking from a column to a row; `SidebarContainerView` now detects a TOP/BOTTOM undocked edge and lays the pane strip out as a band hugging the actual snapped edge instead of always left/right. |
+| **Resize handle isn't orientation-aware for top/bottom** | `views::ResizeArea` (the inner drag handle) only tracks horizontal mouse drags natively — it reports resize deltas from `event.x()` regardless of how it's positioned. When the sidebar is snapped top/bottom, the handle is laid out as a horizontal bar (correctly, per the "Top/bottom snap effectively unusable" fix above), but dragging it still resizes on left-right mouse movement instead of the up-down movement a horizontal bar visually suggests. Not fixed as part of the 2026-08-28 pass — would need a custom vertical-tracking resize control, since upstream doesn't ship one. |
 
 ## Integration patches
 

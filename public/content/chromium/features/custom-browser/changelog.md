@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.63)
+## Versioned releases (1.7.25 → 1.8.64)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,39 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0
 bundles a whole Chromium rebase plus everything QA testing turned up
 immediately afterward, for the same reason.
+
+### 1.8.64 — 2026-08-28
+
+Fixed the undocked sidebar being effectively unusable when snapped to the
+top or bottom screen edge — a regression that shipped alongside top/bottom
+snapping itself (1.7.x-era). See [Sidebar](sidebar) for the full writeup.
+
+- The floating widget was created as `TYPE_WINDOW` (`WS_OVERLAPPEDWINDOW`
+  under the hood), and Windows enforces a size floor tied to a window
+  ever having been `WS_OVERLAPPED` — invisible to `WM_GETMINMAXINFO`'s
+  `ptMinTrackSize`, and immune to stripping style bits after creation or
+  even a raw `::SetWindowPos` call bypassing Views entirely (confirmed
+  via diagnostic logging tracing requested-vs-actual bounds through every
+  layer). The auto-hide peek strip settled at ~36 DIP tall instead of 4,
+  showing a fat grey bar across the screen instead of a thin hover strip.
+  Fixed by switching to `TYPE_WINDOW_FRAMELESS`, which creates the HWND
+  as `WS_POPUP` from the moment it's created — the same category as
+  menus/tooltips/bubbles, which routinely size down to a few pixels. This
+  also let the post-creation `WS_CAPTION`/`WS_SYSMENU`/`WS_THICKFRAME`
+  stripping and manual `WS_EX_TOOLWINDOW` poke (both from 1.8.61) be
+  dropped entirely, since none of those styles are ever set now.
+- `SidebarContainerView::Layout()` and `SidebarTopPane::Layout()` only
+  knew how to lay out a tall-narrow strip (pane buttons stacked in a
+  column) regardless of orientation. On a top/bottom snap the container
+  is a wide-short ribbon instead, so the ~10 pane buttons overflowed a
+  container that's often only as tall as one button, clipping most of
+  them. `SidebarTopPane` gained a `SetHorizontal()` flag that stacks
+  buttons in a row when set; `SidebarContainerView` now detects a
+  TOP/BOTTOM undocked edge and lays the pane strip out as a band hugging
+  the actual snapped edge instead of always left/right.
+- Known follow-up, not fixed here: the resize handle (`views::ResizeArea`)
+  only tracks horizontal mouse drags natively, so dragging it while
+  snapped top/bottom resizes on left-right movement instead of up-down.
 
 ### 1.8.63 — 2026-08-28
 
