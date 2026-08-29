@@ -11,15 +11,44 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.8.64)
+## Versioned releases (1.7.25 → 1.9.0)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
 1.7.38 is the one exception so far: three small, related pieces of update-
 system work landed as separate commits without a version bump each, so
-this entry bundles all three under one release instead of three. 1.8.0
-bundles a whole Chromium rebase plus everything QA testing turned up
-immediately afterward, for the same reason.
+this entry bundles all three under one release instead of three. 1.8.0 and
+1.9.0 each bundle a whole Chromium rebase plus its own build-fix cleanup,
+for the same reason.
+
+### 1.9.0 — 2026-08-29
+
+Rebases the fork's entire patch stack onto Chromium 142.0.7444.177 (from
+141.0.7390.125). No user-facing feature changes — this release is entirely
+rebase/build-infrastructure work.
+
+- **Chromium 142 patch rebase**: all 76 failed/rejected patches resolved
+  (context shifts, 6 files relocated by upstream, 2 patches retired as
+  obsolete). See [Chromium 141 → 142 migration notes](version-updates/chromium-141-to-142-migration)
+  for the full breakdown, including several Chromium API removals/renames
+  that broke fork code even where the patch itself applied cleanly
+  (`CanvasNoiseToken` removed, `Screen::GetScreen()` → `Get()`,
+  `BrowserView::frame()` → `browser_widget()`, and others), a GN
+  visibility gap that blocked the mail client from even reaching
+  compilation, two new upstream WebUI resources needing resource-ID
+  entries, a libtorrent thread-safety-analysis regression from the
+  updated toolchain, and a genuinely new gap (not a rebase artifact) in
+  upstream's freshly-split `BrowserViewLayoutDelegateImpl` that had no
+  implementation at all for 4 of the fork's custom layout-delegate
+  methods.
+- Bumped `custom_chromium_base_version` (141.0.7390.125 → 142.0.7444.177),
+  which had gone stale after the Chromium tag pin and would have kept
+  reporting Chromium 141 in the User-Agent string despite the rebase.
+- Known follow-up, not verified yet: a coordinate-space interaction
+  between the fork's custom compact/zen-mode/vertical-tabs layout code
+  and a new `main_container_` concept upstream introduced alongside the
+  `BrowserViewLayoutDelegateImpl` split — compiles clean, but hasn't been
+  runtime-verified (bottom bar, vertical tab bar, split view).
 
 ### 1.8.64 — 2026-08-28
 
