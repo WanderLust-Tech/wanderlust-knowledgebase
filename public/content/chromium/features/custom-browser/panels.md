@@ -141,7 +141,7 @@ for panels to be visible:
 
 1. **Construction:** `Panel::Panel(profile, app_name, min_size, max_size)` runs first. The init list initializes `theme_service_` and `session_id_` early (before `profile_`) — both must be initialized from the constructor argument `profile`, *not* the member `profile_`, because their declarations appear earlier in the header than `profile_` and C++ init runs in declaration order. The same applies to `extension_registry_`.
 2. **`Panel::Initialize(url, bounds, always_on_top)`** wires:
-   - `native_panel_` via `CreateNativePanel` (`PanelView` ctor, which `Widget::Init`s the OS window — `PanelFrameView::Init()` runs from `CreateNonClientFrameView()` before `Widget::Init` returns, so child views exist when `Widget::Init` immediately calls `UpdateWindowIcon`).
+   - `native_panel_` via `CreateNativePanel` (`PanelView` ctor, which `Widget::Init`s the OS window — `PanelFrameView::Init()` runs from `CreateFrameView()` before `Widget::Init` returns, so child views exist when `Widget::Init` immediately calls `UpdateWindowIcon`).
    - `extension_window_controller_` — registered with `WindowControllerList` in its own ctor.
    - `panel_host_` + its `WebContents`. `SetViewType(..kPanel)` triggers `AttachExtensionTaskManagerTag`; under `ENABLE_PANELS` the patched `chrome_extensions_browser_client.cc` short-circuits the `kPanel` case (it would otherwise hit `WebContentsTags::CreateForExtension`, which DCHECKs because `IsExtensionWebContents` excludes `kPanel`).
    - `WebContentsTags::CreateForPanel(web_contents, this)` — attaches the actual `PanelTag` for the task manager.
@@ -183,7 +183,7 @@ Panels are a custom-framed Widget where `PanelView` is the contents view and `Pa
 
 3. **`PanelFrameView::Layout(PassKey)` must chain to `NonClientFrameView::Layout` via `LayoutSuperclass<NonClientFrameView>(this)`.** This is the modern Chromium gotcha — see [`non_client_view.cc:289`](../src/ui/views/window/non_client_view.cc#L289): `NonClientView::Layout` only sizes `frame_view_` and `overlay_view_`. ClientView (and therefore the contents view) is sized by [`NonClientFrameView::Layout`](../src/ui/views/window/non_client_view.cc#L125), which calls `client_view->SetBoundsRect(GetBoundsForClientView())`. The pre-deprecation Panel code didn't need this because `NonClientView::Layout` itself used to size the client view; the responsibility was moved into `NonClientFrameView::Layout` (with the matching reparent of ClientView to be a child of FrameView). Without chaining, ClientView stays 0×0 forever — the symptom is "title bar paints, content area is black, `GetBoundsForClientView` never fires."
 
-The bug was reproducible at every step — diagnostic VLOGs in each of the layout-related callbacks (`CreateNonClientFrameView`, `GetContentsView`, `OnWidgetBoundsChanged`, `GetBoundsForClientView`, `Layout(PassKey)`) and a parent-chain walk after `Widget::Init` pinpointed which requirement was missing. The VLOGs are still in the code at `VLOG(1)` for the next revival regression.
+The bug was reproducible at every step — diagnostic VLOGs in each of the layout-related callbacks (`CreateFrameView`, `GetContentsView`, `OnWidgetBoundsChanged`, `GetBoundsForClientView`, `Layout(PassKey)`) and a parent-chain walk after `Widget::Init` pinpointed which requirement was missing. The VLOGs are still in the code at `VLOG(1)` for the next revival regression.
 
 ## Threading
 

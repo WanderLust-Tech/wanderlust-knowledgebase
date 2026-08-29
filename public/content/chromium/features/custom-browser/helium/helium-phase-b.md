@@ -33,7 +33,8 @@ See `CLAUDE.md` (items 17–21) for the full technical spec of each change.
 - `src/custom/browser/prefs/custom_prefs.cc`
 - `src/custom/browser/custom_content_browser_client_parts.cc`
 
-Adds ±0.01% amplitude jitter (xorshift32 seeded from `CanvasNoiseToken::Get()`) to the
+Adds ±0.01% amplitude jitter (xorshift32 seeded from a self-seeded per-renderer-process
+token) to the
 four `AnalyserNode.get*Data()` methods. Also rounds `AudioContext.baseLatency` to 2
 decimal places. Breaks audio fingerprinting while remaining perceptually inaudible.
 
@@ -41,7 +42,7 @@ decimal places. Breaks audio fingerprinting while remaining perceptually inaudib
 |---|---|
 | Pref key | `privacy_guard.audio_context_noise` |
 | Default | `false` (opt-in) |
-| Noise mechanism | xorshift32, `CanvasNoiseToken::Get()` as seed; ±0.01% multiplicative (float) / LSB flip (byte) |
+| Noise mechanism | xorshift32, a self-seeded (`base::RandUint64()`), per-renderer-process `static const` token as seed; ±0.01% multiplicative (float) / LSB flip (byte) |
 | Latency rounding | `std::round(base_latency_ * 100.0) / 100.0` |
 | Source | Helium `patches/helium/core/noise/audio.patch` |
 
@@ -54,8 +55,9 @@ decimal places. Breaks audio fingerprinting while remaining perceptually inaudib
 `navigator.hardwareConcurrency` is clamped to [2, 16], floored to the nearest even
 number (odd core counts are statistically uncommon and thus distinctive), then one of
 three plausible values — n, n−2, n−4 — is selected per session using the top 2 bits of
-`CanvasNoiseToken::Get()`. The result is stable within a session but differs across
-sessions, preventing the true CPU core count from serving as a persistent fingerprint.
+a self-seeded, per-renderer-process `static const uint64_t` token (`base::RandUint64()`).
+The result is stable within a session but differs across sessions, preventing the true
+CPU core count from serving as a persistent fingerprint.
 
 | Detail | Value |
 |---|---|

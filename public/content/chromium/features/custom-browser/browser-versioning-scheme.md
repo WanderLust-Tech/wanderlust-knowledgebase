@@ -357,7 +357,19 @@ form grids), then to `1.8.4` on 2026-08-11 for the shareable theme JSON
 format — all four prompted by the same feature-comparison review (1.8.3
 wasn't itself one of the reviewed features, but a real gap found while
 verifying the review's claims), landed as four separate commits/bumps
-since each is independently revertable.
+since each is independently revertable. (This doc's own play-by-play
+stops being updated after 1.8.4 in favor of `changelog.md`, which has
+kept the per-commit record for every release since — `custom_product_version`
+reached `1.8.64` by the next rebase below.)
+
+For the 2026-08-29 rebase onto Chromium `142.0.7444.177`, `MINOR`
+incremented from `8` to `9` (the 9th distinct Chromium base-version
+upgrade this fork has gone through) and `BUILD` reset to `0` per the rule
+above, giving `1.9.0` — see `changelog.md`'s 1.9.0 entry and the
+[Chromium 141 → 142 migration notes](version-updates/chromium-141-to-142-migration)
+for everything the rebase itself required (76 rebased patches plus a long
+tail of post-rebase build fixes for upstream API removals/renames that
+patch-context rebasing alone couldn't catch).
 
 **`check_versions_match()` rewritten** (`custom/build/commands/lib/
 build.py`, 2026-07-28): previously compared `chrome/VERSION`'s

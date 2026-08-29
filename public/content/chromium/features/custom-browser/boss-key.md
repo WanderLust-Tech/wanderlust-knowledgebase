@@ -41,7 +41,7 @@ No dedicated GN build flag — always compiled in.
 `BossKeyObserver::OnKeyPressed` toggles a `STATE_SHOW`/`STATE_HIDE`
 state machine:
 
-- **Hide:** calls `BrowserFrame::Hide()` on every browser window
+- **Hide:** calls `BrowserWidget::Hide()` on every browser window
   matching the profile/accelerator, and acquires a `ScopedKeepAlive`
   (origin `BOSS_KEY`) so the browser process doesn't exit just because
   every window is hidden.

@@ -1226,7 +1226,7 @@ monitor behaves exactly like before this feature existed — no migration
 step, no "first launch on a new monitor" edge case to handle specially.
 
 **Wiring, all in `vertical_tab_bar.cc`:**
-- `GetCurrentDisplayId()` — `display::Screen::GetScreen()->GetDisplayNearestWindow(GetWidget()->GetNativeWindow()).id()`, or `-1` if the widget isn't attached to a screen yet.
+- `GetCurrentDisplayId()` — `display::Screen::Get()->GetDisplayNearestWindow(GetWidget()->GetNativeWindow()).id()`, or `-1` if the widget isn't attached to a screen yet.
 - `ApplyPinnedState()` (pin toggle, and the pinned-pref-change observer) now loads the *current* display's width via `GetVerticalTabBarWidthForDisplay` instead of the flat global getter.
 - `OnResize`'s `done_resizing` branch persists the drag-resized width to both the global pref (unchanged behavior, keeps single-monitor users' pre-existing pref working exactly as before) and the current display's per-display entry.
 - `Layout(PassKey)` compares `GetCurrentDisplayId()` against a cached `last_applied_display_id_` on every layout pass and re-applies that display's remembered width the moment they differ — this is what actually catches "the whole browser window just got dragged to another monitor," since there's no dedicated display-change observer here, just a cheap check riding an override that already runs on every bounds change.

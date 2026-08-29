@@ -57,7 +57,10 @@ discarded.
 **Vanilla files:**
 - `src/chrome/browser/ui/views/frame/browser_view_layout_delegate.h`
 - `src/chrome/browser/ui/views/frame/browser_view_layout.h` / `.cc`
-- `src/chrome/browser/ui/views/frame/browser_view.cc` (`BrowserViewLayoutDelegateImpl`)
+- `src/chrome/browser/ui/views/frame/browser_view_layout_delegate_impl.h` / `.cc`
+  (`BrowserViewLayoutDelegateImplBase` — as of the Chromium 142 rebase, upstream
+  split this out of `browser_view.cc` into its own file)
+- `src/chrome/browser/ui/views/frame/browser_view.cc` (`IsCompactLayoutEnabled()` accessor)
 
 An optional layout mode that places the tab strip and toolbar side-by-side in a single
 row, reclaiming the full tab-strip height for page content. Implemented purely at the
