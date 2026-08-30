@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.0)
+## Versioned releases (1.7.25 → 1.9.2)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,54 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0 and
 1.9.0 each bundle a whole Chromium rebase plus its own build-fix cleanup,
 for the same reason.
+
+### 1.9.2 — 2026-08-30
+
+Fixed a DCHECK crash resolving a `.lnk` shortcut's target for the "Add to
+Wanderlust Sidebar" feature. See [Sidebar Apps](sidebar-apps) for the
+feature itself.
+
+- `custom::ResolveLnkToSidebarApp` does blocking shell/COM I/O
+  (`base::win::ResolveShortcut`) to read the shortcut's target, but both
+  call sites ran it directly on the UI thread, where blocking is
+  disallowed and asserted against: `ProcessSingletonNotificationCallbackImpl`
+  (the already-running-instance path, itself reached via `PostTask` back
+  to the UI thread from a `SendMessage` handler) and
+  `HandleAddToSidebarSwitch` (the cold-start path, running from
+  `PostProfileInit` during browser startup).
+- Both now hop the resolve step to a `MayBlock()` thread pool task and
+  bounce the result back to the original (UI) sequence to do the
+  `Profile`/`KeyedService` work, matching Chromium's threading rules. The
+  cold-start path additionally captures the profile via `WeakPtr` since
+  the reply crosses an async boundary.
+
+### 1.9.1 — 2026-08-30
+
+Fixed the sidebar/WebUI layout bug flagged as an open risk in 1.9.0's
+Chromium 142 rebase notes — three symptoms, one root cause. See
+[Sidebar](sidebar) for the feature itself.
+
+- M142 introduced a new `main_container_` wrapping view (upstream's own
+  addition, for its Side Panel work) that the 142 rebase reconstructed
+  without fully adapting the fork's sidebar/vertical-tab-bar retrofit to
+  it, in three distinct ways:
+  - `CustomLayoutContainers`'s call site passed a *height* where the
+    function expected a bottom Y-coordinate, double-subtracting the top
+    inset and undersizing the sidebar/vertical-tab-bar/contents area —
+    the sidebar didn't reach the bottom of the window.
+  - `contents_container_` is now `main_container_`'s child rather than
+    the browser window's directly, but was still positioned with the
+    browser window's coordinates instead of coordinates local to its new
+    parent, pushing page content down by an extra top-inset's worth of
+    pixels — a black gap at the top of custom WebUI pages.
+  - `main_container_` was sized to the full window width, including
+    where the sidebar sits, and — being added after the sidebar in the
+    view tree — sat on top of it in hit-testing order, silently
+    swallowing clicks meant for the sidebar.
+- Fixed by correcting the height argument, using parent-local coordinates
+  for the nested contents container, and re-narrowing `main_container_`
+  to the actual computed content rect so it no longer overlaps the
+  sidebar.
 
 ### 1.9.0 — 2026-08-29
 
@@ -48,7 +96,9 @@ rebase/build-infrastructure work.
   between the fork's custom compact/zen-mode/vertical-tabs layout code
   and a new `main_container_` concept upstream introduced alongside the
   `BrowserViewLayoutDelegateImpl` split — compiles clean, but hasn't been
-  runtime-verified (bottom bar, vertical tab bar, split view).
+  runtime-verified (bottom bar, vertical tab bar, split view). **Fixed in
+  1.9.1** (see below) — turned out to affect the sidebar specifically,
+  not just the flagged compact/zen-mode/vertical-tabs paths.
 
 ### 1.8.64 — 2026-08-28
 
