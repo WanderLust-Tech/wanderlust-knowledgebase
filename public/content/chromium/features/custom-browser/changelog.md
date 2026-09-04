@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.2)
+## Versioned releases (1.7.25 → 1.9.5)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,71 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0 and
 1.9.0 each bundle a whole Chromium rebase plus its own build-fix cleanup,
 for the same reason.
+
+### 1.9.5 — 2026-09-04
+
+Fixed a crash on closing the browser window. See [Browser Tools](browser-tools)
+for the working-set-trim behavior involved.
+
+- The on-minimize working-set trim (`BrowserView::OnWidgetVisibilityChanged`
+  calling `SetProcessWorkingSetSize` when the window minimizes) called
+  `IsMinimized()` unconditionally on every visibility-change notification.
+- `Widget::~Widget()`'s `CLIENT_OWNS_WIDGET` teardown path calls
+  `native_widget_->ClientDestroyedWidget()` *before* invalidating its
+  `native_widget_` weak pointer, and that call cascades synchronously back
+  through `OnNativeWidgetVisibilityChanged()` into this same observer hook
+  — reentering `IsMinimized()` while the native widget is mid-teardown and
+  crashing on close.
+- Fixed by skipping the check once `widget->IsClosed()` is true; that flag
+  is set at the very top of `~Widget()`, before any of the teardown
+  notifications fire, so it's safe to read even from this reentrant call.
+
+### 1.9.4 — 2026-09-04
+
+Adds a toggle to unlock Chromium's internal-only debugging pages
+(`chrome://memory-internals`, `chrome://discards`, `chrome://local-state`,
+and ~30 others) from `chrome://chrome-urls`. See
+[Internal Debugging Pages](internal-debugging-pages) for the feature
+itself.
+
+- These pages are always registered but Chromium rewrites navigation to
+  them into a disabled interstitial unless the
+  `chrome_urls::kInternalOnlyUisEnabled` local-state pref is on. This
+  fork's `chrome://chrome-urls` page previously had no message handler at
+  all and its React frontend was a fully static, hand-curated URL list
+  that didn't mention internal-only hosts — there was no way to flip the
+  pref short of hand-editing local state.
+- Added `CustomChromeUrlsHandler` (classic `chrome.send`/
+  `cr.sendWithPromise`, matching this fork's other WebUI pages rather
+  than the Mojo interface upstream's own handler uses): enumerates
+  `content::WebUIConfigMap` the same way upstream does, tags entries via
+  `content::IsInternalWebUI()`, and exposes `setDebugPagesEnabled` to
+  flip the pref directly — the flip is the entire enforcement mechanism,
+  so it takes effect immediately with no restart.
+- `App.tsx` adds a new "Internal Debugging Page URLs" section fed by the
+  handler, honoring the same `?host=` redirect-after-enable and
+  `#internal-debug-pages` anchor-scroll behavior upstream's `app.ts`
+  uses, so the disabled-page interstitial's own link back to this page
+  still works as expected.
+
+### 1.9.3 — 2026-09-01
+
+Fixed the undocked sidebar's WebContents visibly resizing itself while
+being dragged at a fractional DPI scale. See [Sidebar](sidebar) for the
+feature itself.
+
+- `OnMouseDragged` re-queried `window_->GetWindowBoundsInScreen().size()`
+  on every mouse-move during a drag, reusing it as the "unchanged" size
+  argument to `SetBounds(new_origin, cur_size)`. At a fractional scale
+  factor (e.g. 125%), that round-trip through native pixel coordinates
+  can drift by ±1 DIP as the window's screen position changes between
+  drag steps, so the "unchanged" size wasn't actually stable — it
+  fluctuated slightly on nearly every mouse-move, reading as a real size
+  change and reflowing the WebContents visibly while dragging.
+- Fixed by capturing the size once in `OnMousePressed` (alongside the
+  existing `drag_start_origin_`/`drag_start_cursor_`) and reusing that
+  fixed value for every `SetBounds` call during the drag, instead of
+  re-querying it each time.
 
 ### 1.9.2 — 2026-08-30
 

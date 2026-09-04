@@ -828,6 +828,7 @@ const internalContent: ContentNode[] = [
             { title: "Panels", path: "features/custom-browser/panels" },
             { title: "Infobars", path: "features/custom-browser/infobars" },
             { title: "Browser Tools", path: "features/custom-browser/browser-tools" },
+            { title: "Internal Debugging Pages", path: "features/custom-browser/internal-debugging-pages" },
             { title: "Splash Screen", path: "features/custom-browser/splash-screen" },
             { title: "Tab Utilities", path: "features/custom-browser/tab-utilities" },
             { title: "Tab Shapes", path: "features/custom-browser/tab-shapes-feature" },

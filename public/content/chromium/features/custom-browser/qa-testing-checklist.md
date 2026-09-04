@@ -67,6 +67,7 @@
 - [ ] As of v1.8.64: with the widget snapped top or bottom, leave it idle to auto-hide, then compare the peek strip's height against the docked pane-button strip's thickness — **Expected:** peek strip is genuinely ~4px tall, matching the left/right peek strip's width (previously it settled around ~36px tall — a fat grey bar — regardless of the v1.8.61 fix, which only reliably applied to the left/right, width-based case).
 - [ ] As of v1.8.64: with the widget snapped top or bottom, expand it (not collapsed) — **Expected:** the pane strip sits as a band hugging the actual snapped edge (top strip at the top, bottom strip at the bottom), with the web content filling the rest.
 - [ ] As of v1.9.1: dock the sidebar, expand it, and open a WebUI panel (e.g. NTP Settings) or a pinned Web Panel — **Expected:** the sidebar's content fills the full height of the window with no gap at the bottom, the page renders from the very top with no black band above it, and the pane-strip icons respond to clicks normally (previously the Chromium 142 rebase's new `main_container_` wrapping view undersized the sidebar's content area, mis-offset it vertically, and sat on top of it in z-order, silently swallowing clicks meant for the sidebar).
+- [ ] As of v1.9.3: undock the sidebar and, at a fractional display scale (e.g. Windows set to 125%), slowly drag the floating widget by its title/drag area — **Expected:** the sidebar's WebContents stays a stable size throughout the drag, with no visible flicker/reflow of its contents (previously the drag handler re-measured the window's size from screen coordinates on every mouse-move, and DPI rounding drift in that round-trip read as tiny spurious size changes).
 
 📷 *Screenshot suggestion: the sidebar in both docked-expanded and undocked-floating states, side by side.*
 
@@ -125,8 +126,8 @@
 
 ### Browser Tools (app menu utilities)
 
-**What it is:** Four utility commands added to the three-dot app menu: Restart, Restart & Clear Cache, Flush Memory, and Reuse This Window for Popups.
-**Where to find it:** Three-dot app menu (⋮). Restart / Restart & Clear Cache / Flush Memory sit at the bottom of the menu just above Exit. Reuse This Window for Popups sits in its own group right after Print.
+**What it is:** Four utility commands added to the three-dot app menu: Restart, Restart & Clear Cache, Flush Memory, and Reuse This Window for Popups. Windows builds also automatically trim the process working set (`SetProcessWorkingSetSize`) whenever the browser window is minimized — an automatic background behavior, not a menu command.
+**Where to find it:** Three-dot app menu (⋮). Restart / Restart & Clear Cache / Flush Memory sit at the bottom of the menu just above Exit. Reuse This Window for Popups sits in its own group right after Print. The minimize working-set trim has no UI — it fires automatically.
 **Default state:** Enabled by default — gated by `BUILDFLAG(CUSTOM_BROWSER)`, `custom_browser = true`.
 
 - [x] Open several tabs, then app menu → Restart — **Expected:** browser closes and reopens with all previous tabs restored.
@@ -135,6 +136,7 @@
 - [x] Toggle app menu → "Reuse This Window for Popups" on — **Expected:** menu item shows a checkmark.
 - [ ] With it toggled on, visit a page that does `window.open()` or has a `target="_blank"` link — **Expected:** it opens as a new foreground tab in the same window instead of a new window.
 - [ ] Toggle it off and repeat — **Expected:** normal new-window behavior returns. Open a second browser window and confirm its toggle state is independent (per-window, not global, and resets to off after a restart).
+- [ ] As of v1.9.5: close the browser window normally (title bar ✕ or app menu → Exit) — **Expected:** the browser closes cleanly with no crash (previously, tearing down the window's native widget fired a final visibility-change notification that reentered the working-set trim's `IsMinimized()` check while the native widget was mid-teardown, crashing on close).
 
 📷 *Screenshot suggestion: the app menu open, showing all four custom items in their two groups.*
 
@@ -1636,6 +1638,19 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Restart the browser after modifying a pref here — **Expected:** the change persists (this is real `PrefService` access, not a mock).
 
 📷 *Screenshot suggestion: the advanced-prefs table with a few modified (highlighted) rows.*
+
+### Internal Debugging Pages (chrome://chrome-urls)
+
+**What it is:** A toggle on `chrome://chrome-urls` that unlocks Chromium's internal-only debugging pages (`chrome://memory-internals`, `chrome://discards`, `chrome://local-state`, and ~30 others), which are otherwise rewritten to a "disabled" interstitial.
+**Where to find it:** `chrome://chrome-urls` → **Internal Debugging Page URLs** section, below the existing hand-curated groups.
+**Default state:** Disabled by default (`chrome_urls::kInternalOnlyUisEnabled` local-state pref, `false`).
+
+- [ ] As of v1.9.4: navigate to a gated internal page, e.g. `chrome://memory-internals`, before enabling anything — **Expected:** redirected to the `chrome://internal-debug-pages-disabled` interstitial, with a link back to `chrome://chrome-urls`.
+- [ ] As of v1.9.4: on `chrome://chrome-urls`, find the **Internal Debugging Page URLs** section and click **Enable internal debugging pages** — **Expected:** no restart prompt; the section immediately becomes a list of clickable links (memory-internals, discards, local-state, etc.), and following the interstitial's link now lands directly on the target page instead of the interstitial.
+- [ ] As of v1.9.4: click through a few of the now-enabled links — **Expected:** each internal page loads normally (not the disabled interstitial).
+- [ ] As of v1.9.4: restart the browser after enabling — **Expected:** the setting persists (it's a local-state pref, not per-session).
+
+📷 *Screenshot suggestion: the Internal Debugging Page URLs section on chrome://chrome-urls, before and after clicking Enable.*
 
 ### Custom WebUI Pages — Fleet Smoke Test
 
