@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.5)
+## Versioned releases (1.7.25 → 1.9.9)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,79 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0 and
 1.9.0 each bundle a whole Chromium rebase plus its own build-fix cleanup,
 for the same reason.
+
+### 1.9.9 — 2026-09-06
+
+Fixed the picture-in-picture hover button crashing on every single WebUI
+page load. See [Picture-in-Picture Hover Button](picture-in-picture-button)
+for the feature itself.
+
+- `PictureInPictureButtonTabHelper` injects its button-setup script into
+  every navigation's primary main frame unconditionally via
+  `RenderFrameHost::ExecuteJavaScript`, including `chrome://`/
+  `chrome-untrusted://` WebUI pages that have nothing for a video hover
+  button to attach to. Its `btn.innerHTML = '<svg>...'` has no Trusted
+  Types handling, so it threw "Failed to set the 'innerHTML' property
+  ... TrustedHTML" under every WebUI page's
+  `require-trusted-types-for 'script'` CSP — the source of anonymous
+  `VM#:18`/`VM#:122` console errors seen on both the RSS reader and
+  `chrome://mail`, misleadingly looking page-specific when it was the
+  same shared bug both times.
+- Fixed by scoping injection to http/https navigations only.
+
+### 1.9.8 — 2026-09-05
+
+Fixed `chrome://mail`'s message body iframe being blocked outright by
+the default `child-src` CSP. See [Mail Client (IMAP)](mail-client) for
+current status — this was necessary but not sufficient; the iframe still
+doesn't render as of this release.
+
+- Every `WebUIDataSource` hardcodes `child-src 'none'` by default with
+  no fallback, and `mail_ui.cc` never overrode it — so the
+  `<iframe src="chrome-untrusted://mail-body/">` was blocked before it
+  ever navigated, committing as `about:blank#blocked` rather than a
+  loaded document with missing images.
+- Added a `ChildSrc` override allowing the mail-body origin, matching
+  the same pattern `custom_credits_ui.cc` already uses for its own
+  iframe.
+
+### 1.9.7 — 2026-09-05
+
+Fixed `chrome://mail` message images being blocked by a missing
+`img-src` CSP. See [Mail Client (IMAP)](mail-client) for current status.
+
+- `mail_body_ui.cc` set `default-src 'none'` with no `img-src` override,
+  so every image in a message body was blocked outright — even after
+  the user opts in via the "Load images" toggle (that toggle only
+  removes `receiver.js`'s own src-blocking workaround; it doesn't grant
+  anything CSP-wise on its own).
+- Added an `img-src` override allowing `https:` for remote images and
+  `data:`/`blob:` for inline/attachment images.
+
+### 1.9.6 — 2026-09-05
+
+Fixed a Trusted Types crash in the RSS reader and sidebar RSS panel that
+left item summaries blank, plus a separate bug blocking Magazine/Full
+view thumbnails entirely. See [Sidebar](sidebar) and the reader itself.
+
+- `stripHtml()` in both `chrome://reader`'s `ItemList.tsx` and the
+  sidebar's `RssPage.tsx` called `DOMParser.parseFromString()` directly
+  — itself a Trusted Types sink, throwing under this WebUI's
+  `require-trusted-types-for 'script'` CSP. The exception was silently
+  swallowed by a try/catch, so summaries just rendered blank with no
+  visible crash until DevTools was opened. A pre-existing bug since the
+  reader's original commit, not a Chromium-rebase regression.
+- Fixed by wrapping the string in a pass-through Trusted Types policy
+  (same pattern as `custom_mail_body`'s `receiver.js`) and allowlisting
+  each page's policy name via a `TrustedTypes` CSP override — every
+  `WebUIDataSource` otherwise defaults to an empty trusted-types
+  allowlist, rejecting `createPolicy()` for any name.
+- Separately, Magazine/Full view thumbnails never rendered at all: the
+  default WebUI `img-src` CSP only allows `chrome://` origins and
+  `'self'`, blocking the arbitrary external hosts feed thumbnails come
+  from. Added an `ImgSrc` override to `reader_ui.cc` allowing `https:`,
+  keeping `chrome://favicon2` allowlisted for the existing
+  source-attribution favicons.
 
 ### 1.9.5 — 2026-09-04
 

@@ -986,6 +986,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Switch item-list layout using the **☰ / ▤ / ▦** buttons — **Expected:** Title/Magazine/Full views render distinctly (thumbnail in Magazine, full image + "Open original article" button in Full); selection persists across a reload.
 - [ ] Toggle RSS off from Settings while `chrome://reader` is open in another tab — **Expected:** the reader tab live-swaps to the disabled-message screen without a manual reload.
 - [ ] As of v1.8.28: open `chrome://reader` on a fresh profile with zero subscriptions — **Expected:** a categorized starter-feed picker (Tech/News/Science/Culture) appears in the main pane instead of "Select a feed to read articles." Check a few feeds and click "Add N feeds" — **Expected:** the picker disappears and the reader switches to the normal feed view with the selected feeds subscribed.
+- [ ] As of v1.9.6: switch to Magazine or Full view on a feed whose items have HTML descriptions — **Expected:** item summaries render as plain text (not blank), and a thumbnail appears when the description embeds an inline `<img>` pointing at an external host (previously `stripHtml()`'s `DOMParser.parseFromString()` call silently threw under this WebUI's Trusted Types CSP, leaving summaries blank; separately, thumbnails were blocked outright by the default `img-src` CSP not allowing external image hosts).
 - [ ] As of v1.8.28: subscribe to a feed, then repoint its URL at something that will fail (a 404 or a dead host) and let it attempt at least 3 fetches (use ↻ Refresh to force attempts rather than waiting out the update interval) — **Expected:** a small ⚠ appears next to the feed's title in the sidebar, with a tooltip explaining it hasn't updated successfully in a while.
 - [ ] As of v1.8.28: repoint that same feed back to a working URL and let one fetch succeed (↻ Refresh) — **Expected:** the ⚠ indicator clears.
 - [ ] As of v1.8.28: with existing subscriptions from a pre-upgrade profile (schema v3), launch the upgraded browser — **Expected:** all existing subscriptions are intact (the v3→v4 migration adds columns in place; it must not wipe the database).
@@ -1106,6 +1107,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Hover a `<video>` with the `disablePictureInPicture` attribute set (test page or DevTools-added attribute) — **Expected:** no button ever appears for that video.
 - [ ] Turn the Settings toggle off, then reload a page with video — **Expected:** no button appears on hover anywhere on the page.
 - [ ] Turn the toggle back on and reload — **Expected:** the button returns.
+- [ ] As of v1.9.9: open any `chrome://` or `chrome-untrusted://` page (e.g. `chrome://reader`, `chrome://mail`) with DevTools console open — **Expected:** no "Failed to set the 'innerHTML' property ... TrustedHTML" error appears (previously this feature injected its button-setup script into every page's primary main frame unconditionally, including WebUI pages with no video to attach to, crashing under their Trusted Types CSP every time).
 
 📷 *Screenshot suggestion: the floating PiP button overlaid on the corner of a playing video.*
 
@@ -1523,6 +1525,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Use footer **Export OPML**, then **Import OPML** on a fresh profile — **Expected:** subscriptions round-trip correctly.
 - [ ] Toggle RSS off from Settings while `chrome://reader` is open in another tab — **Expected:** the reader tab live-swaps to the disabled-message screen without a manual reload.
 - [ ] Restart the browser — **Expected:** subscriptions and read/unread state persist.
+- [ ] As of v1.9.6: switch to Magazine or Full view on a feed whose items have HTML descriptions — **Expected:** item summaries render as plain text (not blank), and a thumbnail appears when the description embeds an inline `<img>` pointing at an external host (previously `stripHtml()`'s `DOMParser.parseFromString()` call silently threw under this WebUI's Trusted Types CSP, leaving summaries blank; separately, thumbnails were blocked outright by the default `img-src` CSP not allowing external image hosts).
 
 📷 *Screenshot suggestion: the reader in Magazine view with a couple of subscribed feeds and unread badges visible.*
 
@@ -1535,6 +1538,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Click the sidebar's **RSS** button — **Expected:** panel navigates to `chrome://sidebar/rss` (confirm in DevTools → Network: `custom_sidebar.js`/`.css` load).
 - [ ] Use the feed `<select>` picker — **Expected:** selecting a feed populates the compact item list (favicon, relative time, 2-line summary).
 - [ ] Subscribe to a new feed from the RSS infobar on a regular page — **Expected:** the sidebar's feed list updates live without reopening the panel.
+- [ ] As of v1.9.6: open the sidebar's RSS panel on a feed whose items have HTML descriptions — **Expected:** the 2-line item summary renders as plain text, not blank (previously `stripHtml()`'s `DOMParser.parseFromString()` call silently threw under this WebUI's Trusted Types CSP).
 
 📷 *Screenshot suggestion: the sidebar open to the RSS panel next to a subscribed feed's item list.*
 

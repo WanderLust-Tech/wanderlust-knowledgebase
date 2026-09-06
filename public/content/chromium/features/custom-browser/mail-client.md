@@ -49,11 +49,23 @@ Gated by `BUILDFLAG(ENABLE_MAIL_CLIENT)`.
     `<script>`/`onXXX=` execution regardless of message content;
     remote images are blocked by default (tracking-pixel privacy leak)
     with a per-message "Load images" opt-in. **Currently still being
-    debugged** — several real issues were found and fixed getting this
-    working (a Trusted Types policy requirement, a Chromium restriction
-    on sandboxed `chrome-untrusted://` navigation, a build-dependency
-    gap that silently didn't pick up frontend edits) but it isn't
-    fully confirmed working end-to-end yet as of this writing.
+    debugged** — as of v1.9.9 the iframe still fails to navigate at
+    all, committing as `about:blank#blocked` instead of loading the
+    message body. Two real CSP gaps were found and fixed along the way
+    (`mail_body_ui.cc` had no `img-src` override at all, blocking every
+    image even with "Load images" on; `mail_ui.cc` had no `child-src`
+    override, so the parent page couldn't embed *any* iframe, WebUI or
+    not — both necessary, neither sufficient on its own). The working
+    theory is that the iframe's `sandbox="allow-scripts"` (no
+    `allow-same-origin`) leaves it with an opaque origin that can't get
+    its own `chrome-untrusted:`-locked process, so Chromium's
+    `ChildProcessSecurityPolicyImpl::CanRequestURL` scheme check fails
+    against the parent's `chrome:`-locked process instead — but adding
+    `allow-same-origin` back (plus a matching `postMessage` target
+    origin) did **not** fix it, so that theory is at best incomplete.
+    Parked pending further investigation (e.g. verbose logging to
+    surface the actual `FilterURL` block reason) rather than more blind
+    sandbox-flag attempts.
 
 ---
 
