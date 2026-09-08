@@ -841,6 +841,7 @@ const internalContent: ContentNode[] = [
             { title: "Boss Key", path: "features/custom-browser/boss-key" },
             { title: "Close & Quit Confirmation", path: "features/custom-browser/close-confirmation" },
             { title: "Screenshot / Page Capture", path: "features/custom-browser/screenshot-capture" },
+            { title: "Screenshot Editor", path: "features/custom-browser/screenshot-editor" },
         ]
     },
     {

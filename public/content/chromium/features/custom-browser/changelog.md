@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.9)
+## Versioned releases (1.7.25 → 1.9.12)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -20,6 +20,97 @@ system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0 and
 1.9.0 each bundle a whole Chromium rebase plus its own build-fix cleanup,
 for the same reason.
+
+### 1.9.12 — 2026-09-07
+
+Adds annotation tools, blur redaction, and undo/redo to the
+[Screenshot Editor](screenshot-editor) — shapes, text, blur, crop, and
+undo/redo all landed together since they share the same `DrawElement[]`
++ history-stack model.
+
+- Shape tools: rectangle (outline + filled), ellipse, arrow, freehand
+  line, text caption — tracked as an array rather than painted
+  destructively, so undo can just pop back to a prior snapshot.
+- Blur/redact tool: downsamples the selected region to a tiny offscreen
+  canvas and scales it back up — a real pixelation blur, not an opaque
+  paint-over like the reference extension that inspired this feature.
+- Crop tool: uses `getImageData`/`putImageData` (synchronous) rather
+  than an `Image`+`toDataURL` round trip, after the async version
+  proved unreliable during testing ("crop is not cropping").
+- Undo/redo: two stacks of element-array snapshots; can't reach across
+  a crop boundary (cropping flattens and clears history).
+- The text tool's caption input went through two follow-up fixes after
+  user testing ("can't type", then "clicking does nothing") before
+  landing on capturing the on-screen click position directly from
+  `clientX`/`clientY` minus the canvas wrapper's rect at click time,
+  rendered as a small Caption/Add/Cancel popup right at the click point
+  rather than a below-canvas bar, per explicit UI feedback.
+- Also fixed: `normalizeRect`'s anchor for all drag-based tools used the
+  draft's own mutated x/y instead of the true mousedown origin, which
+  could drift if a drag reversed direction mid-gesture.
+
+### 1.9.11 — 2026-09-07
+
+Adds the [Screenshot Editor](screenshot-editor) — a new
+`chrome://screenshot-editor` page that opens after a capture (behind a
+new, Settings-UI-less `custom.screenshot.open_editor_after_capture`
+pref) to view the raw image and Save/Copy it. No annotation tools yet
+(landed the same day in 1.9.12).
+
+- New `ScreenshotEditorImageStore`: a process-wide
+  `base::UnguessableToken`-keyed PNG-bytes holding pen, so the captured
+  bitmap can be handed to a freshly-opened tab without a giant base64
+  payload over `chrome.send` (`custom_credits_ui.cc` has its own comment
+  on a similarly large payload crashing the renderer before).
+- `ScreenshotEditorUI` serves the image at
+  `chrome://screenshot-editor/<id>/capture.png` via a `WebUIDataSource`
+  request filter that looks the id up from the request path itself, not
+  a member captured at construction time — `WebUIDataSource::
+  CreateAndAdd` replaces any existing source registered under the same
+  host, so a second concurrently-open editor tab would otherwise
+  silently break a first tab's filter.
+- `ScreenshotEditorDOMHandler` exposes `saveScreenshot`/`copyScreenshot`
+  (classic `chrome.send`) backed by two new independent
+  `ScreenshotOutputWriter` methods, `CopyToClipboard`/`SaveAs`, split
+  out from the existing pref-driven `SaveAndOfferClipboard` since an
+  explicit button click shouldn't follow the automatic post-capture
+  save-behavior pref.
+- Registering the page needed two spots beyond the usual
+  `WebUIConfigMap` entry: a `GetWebUIFactoryFunction` switch entry in
+  `chrome_web_ui_controller_factory.cc` (without it, navigation
+  silently `ERR_FAILED`s even with the `WebUIConfig` registered) and
+  `custom/components/resources/BUILD.gn`'s `repack("resources")`
+  deps/sources lists (the per-page `BUILD.gn` dep alone only pulls in
+  resource-ID header constants, not the actual packed bytes).
+
+### 1.9.10 — 2026-09-06
+
+Adds full-page screenshot capture and an optional delay-before-capture
+timer to [Screenshot / Page Capture](screenshot-capture). Both ideas
+came from evaluating a third-party screenshot extension for feature
+gaps this fork's own screenshot tool was missing.
+
+- Full-page capture mirrors DevTools'
+  `Page.captureScreenshot(captureBeyondViewport: true)`
+  (`content/browser/devtools/protocol/page_handler.cc`) rather than a
+  scroll+stitch approach: gets the document size via
+  `blink::mojom::LocalMainFrame::GetFullPageSize()`, resizes the render
+  widget to it via the same device-emulation mechanism DevTools uses
+  (`RenderWidgetHostImpl::GetAssociatedFrameWidget()->
+  EnableDeviceEmulation`, including a documented double-resize
+  scrollbar-artifact workaround), captures once via
+  `GetSnapshotFromBrowser` (forces a fresh repaint before copying,
+  avoiding a stale pre-resize frame), then restores the original view
+  size/web prefs regardless of outcome. One paint, no tiles — sidesteps
+  the sticky-header-repeats-per-tile problem a scroll+stitch approach
+  would need to guard against. Capped at a 16K dimension ceiling; fails
+  cleanly rather than attempting an unsupportable capture.
+- New "Capture full page" toolbar menu item.
+- New `custom.screenshot.capture_delay_seconds` pref (0/3/5/10s,
+  Settings → Others → Screenshots), applied to visible-area and
+  full-page capture via a `PostDelayedTask` before the actual capture
+  runs — not applied to region-select, which already waits on the
+  user's drag.
 
 ### 1.9.9 — 2026-09-06
 

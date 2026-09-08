@@ -200,9 +200,9 @@
 
 ### Screenshot & Page Capture
 
-**What it is:** As of v1.8.52, a toolbar button for capturing the visible viewport or a user-dragged region of the page, saved and/or copied to the clipboard. Full-page capture and a right-click context-menu entry are not yet implemented.
-**Where to find it:** Toolbar camera-icon button → dropdown with "Capture visible area" and "Capture region…". Settings → Others → "Screenshots" section for save behavior and clipboard toggle.
-**Default state:** Toolbar button visible by default. Save behavior defaults to "Ask where to save each time"; copy-to-clipboard defaults to on.
+**What it is:** As of v1.8.52, a toolbar button for capturing the visible viewport or a user-dragged region of the page, saved and/or copied to the clipboard. As of v1.9.10, also full-page capture and an optional delay before a capture fires. A right-click context-menu entry is still not yet implemented.
+**Where to find it:** Toolbar camera-icon button → dropdown with "Capture visible area", "Capture region…", and "Capture full page". Settings → Others → "Screenshots" section for save behavior, clipboard toggle, and capture delay.
+**Default state:** Toolbar button visible by default. Save behavior defaults to "Ask where to save each time"; copy-to-clipboard defaults to on; capture delay defaults to "No delay".
 
 - [ ] Click the toolbar screenshot button — **Expected:** a dropdown appears with "Capture visible area" and "Capture region…".
 - [ ] On a page taller than the viewport, click "Capture visible area" — **Expected:** a Save-As dialog appears (default behavior); the resulting PNG contains only what was visible on screen, not the full scrollable page.
@@ -217,8 +217,28 @@
 - [ ] As of v1.8.54: start a region-capture drag, then close the tab (or the whole browser window) before releasing the mouse — **Expected:** no crash; the overlay/selection is simply abandoned. Repeat but navigate the tab to a different page mid-drag instead of closing it — **Expected:** same, no crash.
 - [ ] As of v1.8.54: with a screen reader running (e.g. Narrator), trigger "Capture region…" — **Expected:** the overlay announces an accessible name/role when it gains focus, and the browser doesn't crash on an accessibility paint-check assertion (Debug builds only).
 - [ ] As of v1.8.55: drag a region that is narrower than the full visible viewport (i.e. not full-width), then either let it auto-copy to clipboard or paste after — **Expected:** no crash, and pasting elsewhere produces exactly the cropped region, not garbled/corrupted image data (previously any non-full-width crop crashed on copy due to a stride mismatch).
+- [ ] As of v1.9.10: on a real long page (ideally one with a sticky/fixed header), click "Capture full page" — **Expected:** the entire document height is captured in one image, with the header appearing once, not repeated. Also try an extremely tall page (e.g. an infinite-scroll page force-scrolled very long) — **Expected:** the capture fails cleanly (no crash) instead of attempting an unsupportable capture past the dimension ceiling.
+- [ ] As of v1.9.10: in Settings → Others → Screenshots, set the capture delay to 5 seconds, then trigger a visible-area or full-page capture and quickly open a hover menu/tooltip somewhere — **Expected:** a real ~5 second pause before the shot fires, with the hover menu visible in the resulting image.
 
 📷 *Screenshot suggestion: the region-select overlay mid-drag, and the toolbar dropdown menu.*
+
+### Screenshot Editor
+
+**What it is:** As of v1.9.11-v1.9.12, a post-capture annotation editor (`chrome://screenshot-editor`) — draw shapes, add captions, blur/redact regions, crop, and undo/redo, then Save or Copy the edited image.
+**Where to find it:** Not opened directly — enable `custom.screenshot.open_editor_after_capture` via `chrome://advanced-prefs` (no Settings UI toggle yet), then any capture opens a new tab showing the image instead of going straight to save/clipboard.
+**Default state:** Disabled by default — captures go straight to save/clipboard unless the pref above is on.
+
+- [ ] With the pref on, take a capture — **Expected:** a new foreground tab opens at `chrome://screenshot-editor/<id>` showing the exact captured image.
+- [ ] Draw a rectangle, a filled rectangle, an ellipse, an arrow, and a freehand line — **Expected:** each renders correctly with the selected color and line width.
+- [ ] Select the text tool and click on the image — **Expected:** a small Caption/Add/Cancel popup appears right at the click point; type a caption and press Enter (or click Add) — **Expected:** the caption is drawn onto the image at that position.
+- [ ] Select the blur tool and drag over a region (e.g. some text) — **Expected:** that region becomes a real pixelated blur, not just painted over with a solid color — the underlying content should be genuinely illegible but not a flat color block.
+- [ ] Select the crop tool and drag a region, then release — **Expected:** the canvas immediately resizes to just that region (no lingering full-size image).
+- [ ] Draw a few different shapes, then click Undo repeatedly — **Expected:** each action reverses one at a time, back to the original image; click Redo — **Expected:** they reapply in the same order.
+- [ ] Crop the image, then click Undo — **Expected:** undo does not restore the pre-crop image or any shapes drawn before the crop (a known limitation — cropping flattens and clears history).
+- [ ] Click Copy — **Expected:** the edited image (including any annotations) is on the clipboard; paste it elsewhere to confirm.
+- [ ] Click Save — **Expected:** a Save-As dialog appears for the edited image, regardless of the main Screenshot feature's save-behavior pref (auto vs. prompt) — the editor's Save button always prompts.
+
+📷 *Screenshot suggestion: the editor open with a mix of a rectangle, an arrow, a text caption, and a blurred region on the same image.*
 
 ### Tab Shapes
 
