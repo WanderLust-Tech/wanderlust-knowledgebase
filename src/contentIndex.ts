@@ -548,7 +548,8 @@ const chromiumContent: ContentNode[] = [
                 title: "Custom Browser Troubleshooting",
                 children: [
                     { title: "Content Blocking Fix", path: "debugging/content-blocking-fix" },
-                    { title: "Vertical → Horizontal Tab Switch", path: "debugging/vertical-to-horizontal-switch" }
+                    { title: "Vertical → Horizontal Tab Switch", path: "debugging/vertical-to-horizontal-switch" },
+                    { title: "Cloudflare Turnstile Bot Detection Failure", path: "debugging/cloudflare-turnstile-bot-detection" }
                 ]
             },
             {
