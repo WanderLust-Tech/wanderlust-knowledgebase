@@ -477,6 +477,20 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: omnibox dropdown showing a typed-history suggestion ranked above/below regular history matches while typing a partial URL.*
 
+### Reverse Image Search (TinEye)
+
+**What it is:** A "Search image with TinEye" right-click context menu item on images, opening TinEye's URL-based reverse image search for that image in a new tab.
+**Where to find it:** Right-click any real `<img>` on a webpage. Toggle: Settings → Others → Web content → "Show 'Search image with TinEye' in the right-click menu on images".
+**Default state:** Enabled by default (`enable_reverse_image_search = true`, `BUILDFLAG(ENABLE_REVERSE_IMAGE_SEARCH)`; pref `custom.reverse_image_search.enabled` defaults `true`).
+
+- [ ] Right-click a real image on any webpage — **Expected:** "Search image with TinEye" appears in the context menu.
+- [ ] Click it — **Expected:** a new foreground tab opens to `tineye.com`'s search results for that exact image, no crash.
+- [ ] Middle-click (or Ctrl-click) the menu item if supported by your test flow, or check disposition handling generally — **Expected:** opens in a background tab rather than stealing focus, matching other "open in new tab" context menu items.
+- [ ] Open Settings → Others, turn off "Show 'Search image with TinEye' in the right-click menu on images" — **Expected:** right-clicking an image no longer shows the item.
+- [ ] Right-click a `chrome://`-scheme image (e.g. on an internal page) or a CSS `background-image` (not a real `<img>`) — **Expected:** the item does not appear (same restriction as the existing "Search web for image" item).
+
+📷 *Screenshot suggestion: the right-click context menu on a webpage image showing "Search image with TinEye".*
+
 ---
 
 ## Privacy & Security
@@ -765,6 +779,8 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Browse a few ordinary sites with DevTools Network tab open (filter by domain) — **Expected:** no outbound requests to `google-analytics.com`, `doubleclick.net`, or other Google telemetry endpoints originating from the browser itself (as opposed to sites you visit making their own such requests).
 - [ ] Visit `chrome://settings/help` (About page) — **Expected:** a "Chromium" version row appears alongside the browser's own version string.
 - [ ] (If telemetry hardening was applied at build time) Confirm via `chrome://net-internals` or packet capture that pruned endpoints (e.g. `clients2.google.com`, `safebrowsing.googleapis.com`) are never contacted — **Expected:** no connection attempts logged to these hosts.
+- [ ] As of v1.9.14: on a fresh profile, open Settings → Privacy and check "Send a 'Do Not Track' request" — **Expected:** off by default (previously defaulted on, sending `DNT: 1` on every request — an existing profile from before this fix needs the toggle flipped off once to clear the stale persisted value, since the new code default only applies to profiles where the pref was never explicitly written).
+- [ ] As of v1.9.14: with DevTools Network tab open, load any page and inspect the document request's headers — **Expected:** `sec-ch-ua`, `sec-ch-ua-mobile`, and `sec-ch-ua-platform` are all present (previously suppressed entirely, regardless of any setting).
 
 📷 *Screenshot suggestion: the Connection security and Cookies settings rows showing their privacy-safe default states on a fresh profile.*
 
@@ -914,7 +930,8 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] As of v1.8.58: open `chrome://mail` — **Expected:** a combined inbox across every configured account loads, newest messages first, capped at 200 total. Click "Sync now" — **Expected:** an immediate sync sweep runs and any new mail appears without waiting for the timer.
 - [ ] As of v1.8.58: click a message in `chrome://mail` — **Expected:** it opens promptly (not blocked on a sync in progress, even if one is currently running) and is marked read; click "Mark as unread" — **Expected:** it reverts to unread in the list.
 - [ ] As of v1.8.58: open a plain-text message — **Expected:** the body renders directly and is readable.
-- [ ] As of v1.8.58: open an HTML message — **Expected:** the body renders inside the message pane with remote images blocked by default and a "Load images" button that reveals them on click. **Note:** this path is still being debugged as of v1.8.58 — if it doesn't render, that's a known open issue, not a new regression to file (check [Mail Client (IMAP)](mail-client) for current status before reporting).
+- [ ] As of v1.8.58: open an HTML message — **Expected:** the body renders inside the message pane with remote images blocked by default and a "Load images" button that reveals them on click.
+- [ ] As of v1.9.13: open an HTML message and confirm the body actually renders instead of a blank pane — **Expected:** the `chrome-untrusted://mail-body/` iframe navigates and displays the message content; previously (v1.9.9–v1.9.12) it failed to navigate at all, committing as a blocked `about:blank`.
 
 📷 *Screenshot suggestion: chrome://mail showing a synced inbox with an open HTML message.*
 

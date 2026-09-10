@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.12)
+## Versioned releases (1.7.25 → 1.9.14)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -19,7 +19,64 @@ once per feature/fix commit, so version and commit map 1:1 for this era.
 system work landed as separate commits without a version bump each, so
 this entry bundles all three under one release instead of three. 1.8.0 and
 1.9.0 each bundle a whole Chromium rebase plus its own build-fix cleanup,
-for the same reason.
+for the same reason. 1.9.13 is a similar bundle: a mail-client fix landed
+without its own version bump, picked up by the next commit's bump instead.
+
+### 1.9.14 — 2026-09-09
+
+Fixes two real deviations from stock Chromium found while investigating a
+Cloudflare Turnstile bot-detection failure (the failure itself is still
+unresolved — see the [Cloudflare Turnstile Bot Detection Failure](../../debugging/cloudflare-turnstile-bot-detection)
+investigation log).
+
+- `IsClientHintSentByDefault()` unconditionally returned `false` for every
+  Client Hint under `BUILDFLAG(CUSTOM_BROWSER)`, completely suppressing
+  `sec-ch-ua`/`sec-ch-ua-mobile`/`sec-ch-ua-platform` regardless of the
+  `kSuppressUAClientHint` feature flag that was clearly meant to be the
+  actual toggle (default off, i.e. not suppressed). A browser claiming
+  `Chrome/142` in its User-Agent string while sending zero Client Hints is
+  a well-known bot/impersonation signal to most bot-management vendors.
+  Confirmed via a byte-level `tls.peet.ws` capture that these headers were
+  entirely absent compared to Edge on the same machine.
+- `kEnableDoNotTrack` and `kTrackingProtection3pcdEnabled` defaulted to
+  `true` in this fork; stock Chromium defaults both to `false`. Confirmed
+  via network capture that the browser was sending `dnt: 1` on every
+  request. Existing profiles need the Settings → Privacy → "Send Do Not
+  Track" toggle flipped off once to clear the stale persisted value — a
+  code default change alone doesn't retroactively rewrite an
+  already-written profile pref.
+
+Both fixes were confirmed working in a running build (headers now present/
+absent as expected) independently of the still-open Turnstile
+investigation.
+
+### 1.9.13 — 2026-09-08
+
+Two changes landed together (the mail fix didn't get its own version
+bump, so it's bundled into this release with the feature that followed it):
+
+- **Reverse Image Search (TinEye)**: a new "Search image with TinEye"
+  right-click context menu item on images, opening TinEye's URL-based
+  reverse search in a new tab — see
+  [Reverse Image Search (TinEye)](reverse-image-search). Modeled on the
+  `tineye-chrome` reference extension's context-menu approach. Along the
+  way, adding a new `IDC_*` context-menu command surfaced a real crash: any
+  custom command ID outside the renderer/extension "custom command" ranges
+  needs an entry in `render_view_context_menu.cc`'s `GetIdcToUmaMap()`, or
+  `RecordUsedItem()` hits a `NOTREACHED()` the moment the item is clicked —
+  fixed by following the existing `ENABLE_SPLIT_VIEW` item's precedent.
+- **Mail client HTML rendering fixed**: the `chrome://mail` HTML message
+  body iframe (`chrome-untrusted://mail-body/`) had been failing to
+  navigate at all since v1.9.9, committing as a blocked `about:blank`
+  instead of loading the message. The fix needed the iframe's `sandbox`
+  attribute to include `allow-same-origin` (matched with a corrected
+  `postMessage()` target origin, no longer `'*'`) — without it the frame
+  has an opaque origin, which leaves Chromium's
+  `ChildProcessSecurityPolicyImpl::CanRequestURL` scheme check with nothing
+  to fall back to but the parent `chrome://mail` process's own scheme lock,
+  which doesn't match `chrome-untrusted:`. This was on top of two earlier
+  CSP fixes (v1.9.6–1.9.9) that were necessary but not, on their own,
+  sufficient. See [Mail Client (IMAP)](mail-client) for full details.
 
 ### 1.9.12 — 2026-09-07
 

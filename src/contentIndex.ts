@@ -854,6 +854,7 @@ const internalContent: ContentNode[] = [
             { title: "Super Drag", path: "features/custom-browser/super-drag" },
             { title: "Enhanced Scroll Animations", path: "features/custom-browser/enhanced-scroll-animations" },
             { title: "Typed Input History", path: "features/custom-browser/typed-input-history" },
+            { title: "Reverse Image Search (TinEye)", path: "features/custom-browser/reverse-image-search" },
         ]
     },
     {

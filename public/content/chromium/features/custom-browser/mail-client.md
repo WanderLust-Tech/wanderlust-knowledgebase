@@ -7,7 +7,7 @@ dedicated-thread bridge libtorrent required, so this builds on
 `network::mojom::NetworkContext` instead. Foundation work started
 v1.8.56 (2026-08-25); as of v1.8.58 it's a working background-synced
 inbox with a message list and body reading (plain text solid, HTML
-rendering still being debugged).
+rendering fixed as of v1.9.13 — see below).
 
 Gated by `BUILDFLAG(ENABLE_MAIL_CLIENT)`.
 
@@ -48,24 +48,32 @@ Gated by `BUILDFLAG(ENABLE_MAIL_CLIENT)`.
     `chrome-untrusted://` page. The page's CSP blocks all injected
     `<script>`/`onXXX=` execution regardless of message content;
     remote images are blocked by default (tracking-pixel privacy leak)
-    with a per-message "Load images" opt-in. **Currently still being
-    debugged** — as of v1.9.9 the iframe still fails to navigate at
-    all, committing as `about:blank#blocked` instead of loading the
-    message body. Two real CSP gaps were found and fixed along the way
-    (`mail_body_ui.cc` had no `img-src` override at all, blocking every
-    image even with "Load images" on; `mail_ui.cc` had no `child-src`
-    override, so the parent page couldn't embed *any* iframe, WebUI or
-    not — both necessary, neither sufficient on its own). The working
-    theory is that the iframe's `sandbox="allow-scripts"` (no
-    `allow-same-origin`) leaves it with an opaque origin that can't get
-    its own `chrome-untrusted:`-locked process, so Chromium's
-    `ChildProcessSecurityPolicyImpl::CanRequestURL` scheme check fails
-    against the parent's `chrome:`-locked process instead — but adding
-    `allow-same-origin` back (plus a matching `postMessage` target
-    origin) did **not** fix it, so that theory is at best incomplete.
-    Parked pending further investigation (e.g. verbose logging to
-    surface the actual `FilterURL` block reason) rather than more blind
-    sandbox-flag attempts.
+    with a per-message "Load images" opt-in. **Fixed as of v1.9.13** —
+    from v1.9.9 through v1.9.12 the iframe failed to navigate at all,
+    committing as `about:blank#blocked` instead of loading the message
+    body. Three things were needed together, none sufficient alone:
+    `mail_body_ui.cc` needed an `img-src` CSP override (it had none,
+    blocking every image even with "Load images" on), `mail_ui.cc`
+    needed a `child-src` override (it had none, so the parent page
+    couldn't embed *any* iframe, WebUI or not), and — the piece that
+    actually fixed the navigation failure — the iframe's `sandbox`
+    attribute needed `allow-same-origin` added back
+    (`sandbox="allow-scripts allow-same-origin"`), with the
+    `postMessage()` call's target origin changed from `'*'` to the
+    frame's real `chrome-untrusted://mail-body/` origin to match.
+    Without `allow-same-origin` the frame has an opaque origin, which
+    leaves `ChildProcessSecurityPolicyImpl::CanRequestURL`
+    (`content/browser/child_process_security_policy_impl.cc`) with
+    nothing but the parent `chrome://mail` process's own scheme lock to
+    fall back to — and that doesn't match `chrome-untrusted:`, so the
+    navigation gets committed as a blocked `about:blank` instead. An
+    earlier attempt at adding `allow-same-origin` (before the
+    `child-src` CSP fix existed) hit the same failure for the other,
+    unrelated reason, which is why it looked like a dead end at the
+    time. `receiver.js`'s own `event.origin === 'chrome://mail'` check
+    on the receiving end is unaffected — it was, and remains, the real
+    security boundary; targeting the real origin is defense in depth,
+    not a new checkpoint.
 
 ---
 
@@ -136,10 +144,11 @@ ImapFetchResponse (UID + raw content) ──┬─→ MailHeaderParser (RFC 5322
                                   sequenced task runner -- mirrors RSSDatabase/RSSBackend)
 
 HTML body rendering (chrome-untrusted://mail-body/):
-App.tsx embeds a sandboxed <iframe sandbox="allow-scripts"> pointed at the untrusted
-page, then postMessage()s {html, allowImages} to it once loaded (target origin '*' --
-the frame has no allow-same-origin, so no addressable real origin; the receiving side's
-own event.origin check against 'chrome://mail' is the actual validation). receiver.js
+App.tsx embeds a sandboxed <iframe sandbox="allow-scripts allow-same-origin"> pointed
+at the untrusted page, then postMessage()s {html, allowImages} to it once loaded
+(target origin is the frame's real chrome-untrusted://mail-body/ origin, now that
+allow-same-origin gives it one -- the receiving side's own event.origin check against
+'chrome://mail' remains the actual validation, this is defense in depth). receiver.js
 (plain JS, no bundler) sets the content via a Trusted Types policy and strips <img> src
 attributes unless images are allowed. MailBodyUIConfig (custom/browser/ui/webui/mail_body/)
 registers the page with content::kChromeUIUntrustedScheme, a CSP with no 'unsafe-inline'
@@ -194,8 +203,6 @@ for fast iteration.
 
 ## Known limitations
 
-- **HTML rendering is still being debugged** — see "Current status"
-  above. Treat it as not-yet-confirmed-working.
 - Links inside a rendered HTML email are inert — the sandboxed iframe
   has no `allow-top-navigation`/`allow-popups`, so clicking one does
   nothing. Opening links in a real tab (with URL validation) is a
