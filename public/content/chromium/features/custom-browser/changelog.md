@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.14)
+## Versioned releases (1.7.25 → 1.9.15)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -21,6 +21,37 @@ this entry bundles all three under one release instead of three. 1.8.0 and
 1.9.0 each bundle a whole Chromium rebase plus its own build-fix cleanup,
 for the same reason. 1.9.13 is a similar bundle: a mail-client fix landed
 without its own version bump, picked up by the next commit's bump instead.
+
+### 1.9.15 — 2026-09-10
+
+Adds [Menu Backdrop Material (Windows 11 Acrylic)](menu-backdrop-material)
+— an opt-in Settings toggle that applies the same DWM "transient window"
+material native Windows 11 flyouts and right-click menus use to the
+browser's own popup context menus. Inspired by looking at the third-party
+TranslucentFlyouts project's approach, reimplemented natively against
+Chromium's own source instead of via API hooking, since this fork owns the
+code directly.
+
+- The DWM call alone (`DwmSetWindowAttribute(DWMWA_SYSTEMBACKDROP_TYPE)`)
+  had no visible effect at first — that material only shows through
+  unpainted/translucent pixels, and Chromium's menu background paints
+  fully opaque by default. Fixed by also repainting the background at
+  ~92% opacity when the feature is active, letting the material show
+  through subtly.
+- That background paint lives in `ui/views`, a foundational component with
+  no access to chrome-level prefs and — confirmed via the actual link
+  graph — a genuinely separate DLL from `chrome.dll` in this fork's
+  component build. Solved with a tiny, dependency-free shared flag
+  compiled into `ui/views` itself (`VIEWS_EXPORT`'d) rather than having
+  `ui/views` reach into chrome-level code directly, which wouldn't even
+  link.
+- The DWM call itself is applied via a one-shot `WidgetObserver`, since
+  `Widget::Init()` returns before the menu's real native HWND exists.
+- The background-paint fix initially landed in the wrong function —
+  Windows menus with the modern default rounded corners actually go
+  through a different code path (`CreateBubbleBorder()`) than the one
+  first patched (`CreateDefaultBorder()`); moved once traced through.
+- Requires Windows 11 22H2+ (build 22621); no-ops cleanly everywhere else.
 
 ### 1.9.14 — 2026-09-09
 

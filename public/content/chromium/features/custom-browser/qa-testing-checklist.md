@@ -392,6 +392,21 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: the Others settings page with the boss key checkbox checked and the shortcut-capture field showing a recorded combination.*
 
+### Menu Backdrop Material (Windows 11 Acrylic)
+
+**What it is:** Applies the same DWM "transient window" backdrop material native Windows 11 flyouts and right-click menus use to the browser's own popup context menus — a translucent, blurred background instead of a flat opaque one.
+**Where to find it:** Settings → Appearance → "Window effects" → "Modern acrylic material for context menus".
+**Default state:** Disabled by default (`custom.menu_backdrop_material.enabled`, a local-state pref, defaults `false`). Requires Windows 11 22H2 or later (build 22621+) — the toggle is visible on any platform but only has a visible effect there.
+
+- [ ] On Windows 11 22H2+, turn the toggle on in Settings → Appearance, then right-click a page — **Expected:** the context menu shows a translucent/blurred background instead of a flat solid color.
+- [ ] Turn the toggle off, right-click a page again — **Expected:** the menu returns to its normal fully-opaque background.
+- [ ] Try both light and dark theme with the toggle on — **Expected:** the translucent effect is visible and legible in both (text remains readable against the blurred backdrop).
+- [ ] Open a submenu (e.g. hover a menu item with an arrow) — **Expected:** the submenu also shows the translucent effect, not just the top-level menu.
+- [ ] On Windows 10 (or any pre-22H2 Windows 11 build) with the toggle on — **Expected:** no crash; menus render normally (fully opaque), since the underlying DWM API isn't available.
+- [ ] On macOS/Linux, confirm the Settings toggle is still present and can be switched on/off — **Expected:** no crash or visible effect either way (Windows-only feature).
+
+📷 *Screenshot suggestion: a right-click context menu on Windows 11 showing the translucent acrylic background against a colorful page underneath.*
+
 ---
 
 ## Input & Interaction

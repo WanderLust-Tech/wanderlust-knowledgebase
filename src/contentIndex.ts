@@ -839,6 +839,7 @@ const internalContent: ContentNode[] = [
             { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
             { title: "Split View", path: "architecture/split-view" },
             { title: "Shareable Theme JSON", path: "features/custom-browser/shareable-theme-json" },
+            { title: "Menu Backdrop Material (Windows 11 Acrylic)", path: "features/custom-browser/menu-backdrop-material" },
             { title: "Boss Key", path: "features/custom-browser/boss-key" },
             { title: "Close & Quit Confirmation", path: "features/custom-browser/close-confirmation" },
             { title: "Screenshot / Page Capture", path: "features/custom-browser/screenshot-capture" },
