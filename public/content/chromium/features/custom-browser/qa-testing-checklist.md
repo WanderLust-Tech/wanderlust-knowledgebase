@@ -1195,6 +1195,20 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: tile grid showing a mix of auto most-visited and any custom-added tile.*
 
+### Dial-Style Top Sites Tiles
+
+**What it is:** An opt-in alternate rendering for the top-sites tile grid — instead of a favicon, each tile shows a colorful, typographic breakdown of the domain (ported from the Toolbar Dial browser extension) via `pathfinder-ui`'s `DomainTile` component. Also the first time the previously-unused, `TilesAPI`-backed dynamic `Tiles` component has actually been rendered on the NTP.
+**Where to find it:** NTP Settings sidebar → Content (Full layout's drag-reorder list) → enable "Top sites (dial)", then pick a tile style. Renders automatically (favicon style by default) in Hub layout's top bar.
+**Default state:** Off by default in Full layout ("Dynamic top sites" toggle unchecked); tile style defaults to favicon.
+
+- [ ] In Full layout's NTP Settings, enable "Top sites (dial)" in the Content drag-reorder list — **Expected:** A new top-sites tile section appears on the NTP (in addition to the existing static tiles), populated with real top-sites data.
+- [ ] With "Top sites (dial)" enabled, switch the style picker to "Dial tiles" — **Expected:** Tiles switch from favicon-based to colorful tiles with a stylized domain name (e.g. large "GOOGLE" text) instead of a favicon.
+- [ ] Compare a known brand (e.g. google.com) against an unfamiliar domain — **Expected:** The known brand gets a recognizable brand color; the unfamiliar domain gets a color too, and reloading the NTP shows the exact same color again (not a new random one each time).
+- [ ] Drag the "Top sites (dial)" row to a different position in the Content list — **Expected:** Section reorders on the NTP accordingly, same as other draggable sections.
+- [ ] Switch to Hub layout — **Expected:** The dynamic top-sites tile grid renders in the top bar alongside the existing static tiles, without errors.
+
+📷 *Screenshot suggestion: side-by-side of the same top sites in favicon style vs. dial style.*
+
 ### Search Box & Autocomplete
 
 **What it is:** An embedded search/omnibox-style box on the NTP that provides live autocomplete suggestions (via `window.custom.autocomplete` / `AutocompleteAPI`) sourced from the browser's real `AutocompleteController`, not a static suggestion list.
@@ -1244,6 +1258,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Open NTP Settings and switch to each available layout in turn (Full, Glass, Focus, Hub) — **Expected:** NTP body re-renders in the corresponding layout without errors; tiles/search/bookmarks still populated with real data in each.
 - [ ] Switch layout, then open a new tab — **Expected:** Chosen layout persists as the default for new tabs.
 - [ ] In Glass layout, check the weather/RecentSessions carousel tab — **Expected:** Carousel navigation works and shows live content.
+- [ ] As of v1.9.16: switch to the new "Dial" layout — **Expected:** NTP body re-renders as a speed-dial bookmark grid without errors (see the dedicated Dial Layout section below for detailed steps).
 
 📷 *Screenshot suggestion: one screenshot per layout flavor for visual reference.*
 
@@ -1288,6 +1303,20 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Toggle "Show bookmarks" off in NTP Settings (Full layout) — **Expected:** Bookmarks section disappears from the NTP; toggling on restores it.
 
 📷 *Screenshot suggestion: bookmarks panel showing at least one nested sub-folder expanded.*
+
+### Dial Layout
+
+**What it is:** A 7th NTP layout flavor: a dedicated speed-dial bookmark grid (ported from the Toolbar Dial browser extension) showing bookmarks and folders as large colorful `DomainTile` tiles, with folder drill-down and a back button, over a wallpaper background.
+**Where to find it:** NTP Settings sidebar → layout selector → "Dial".
+**Default state:** Off by default (not the default layout); selectable like any other flavor.
+
+- [ ] Switch to "Dial" layout — **Expected:** NTP renders a search bar over a wallpaper background, followed by a grid of colorful tiles for the browser's bookmark folders and top-level bookmarks.
+- [ ] Click a folder tile — **Expected:** Grid updates to show that folder's bookmarks/sub-folders; a "back" pill button with the folder's name appears above the grid.
+- [ ] Click the back button — **Expected:** Returns to the previous grid level (root, or the parent folder).
+- [ ] Click a bookmark tile — **Expected:** Navigates to that bookmark's URL.
+- [ ] Add/rename/remove a bookmark or folder in the browser's Bookmark Manager, then revisit the Dial layout — **Expected:** Grid reflects the change (live-updated, not stale).
+
+📷 *Screenshot suggestion: Dial layout root grid, plus one screenshot showing a folder drilled into with the back button visible.*
 
 ### Hub Layout — Bookmark Bar & Folders
 

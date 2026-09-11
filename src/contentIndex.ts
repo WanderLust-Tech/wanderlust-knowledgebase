@@ -916,6 +916,7 @@ const internalContent: ContentNode[] = [
             { title: "Remote New Tab Page System", path: "features/custom-browser/remote-ntp-documentation" },
             { title: "NTP Bookmarks API", path: "features/custom-browser/ntp/ntp-bookmarks-api" },
             { title: "NTP Feature Roadmap", path: "features/custom-browser/ntp/ntp-feature-roadmap" },
+            { title: "Speed-Dial Tiles & Dial Layout", path: "features/custom-browser/dial-tiles" },
         ]
     },
     {

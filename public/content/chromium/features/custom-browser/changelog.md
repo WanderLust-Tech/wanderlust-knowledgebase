@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.15)
+## Versioned releases (1.7.25 → 1.9.16)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -21,6 +21,36 @@ this entry bundles all three under one release instead of three. 1.8.0 and
 1.9.0 each bundle a whole Chromium rebase plus its own build-fix cleanup,
 for the same reason. 1.9.13 is a similar bundle: a mail-client fix landed
 without its own version bump, picked up by the next commit's bump instead.
+1.9.16 bundles similarly: a DEPS pin bump, the new Dial layout/tiles
+feature, and a build-vendoring fix landed as separate commits sharing one
+version bump.
+
+### 1.9.16 — 2026-09-11
+
+Adds [Dial-Style Tiles & Dial Layout](dial-tiles) — a speed-dial-style New
+Tab Page experience ported from the third-party Toolbar Dial browser
+extension: a new `DomainTile` component (in `pathfinder-ui`) renders
+bookmarks as large, colorful tiles with a stylized typographic breakdown
+of the domain instead of a favicon, plus a brand-new 7th NTP layout
+flavor ("Dial") built entirely around it.
+
+- New "Dial" layout flavor: a dedicated speed-dial bookmark grid with
+  folder drill-down and a back button, built on the new `DomainTile`
+  component.
+- The existing Full layout's top-sites grid gained an opt-in "Top sites
+  (dial)" section — the first time the previously-unused, `TilesAPI`-
+  backed dynamic `Tiles` component has actually been rendered anywhere —
+  with a favicon/dial tile-style picker.
+- Hub layout also now renders the dynamic top-sites grid alongside its
+  existing static tiles.
+- Known brands get a curated tile color; unknown domains get a
+  deterministic hash-based color instead of true randomness, so the same
+  domain always looks the same across reloads.
+- Fixed a broken vendoring path found along the way: remote_ntp's
+  `browser-api` dependency was a local-only `file:../browser_api`
+  reference that only resolved on a developer's own machine, not inside
+  the browser's vendored `third_party/remote_ntp` tree — added
+  `browser_api` as its own DEPS entry to fix it.
 
 ### 1.9.15 — 2026-09-10
 
