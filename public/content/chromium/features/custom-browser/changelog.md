@@ -51,6 +51,12 @@ flavor ("Dial") built entirely around it.
   reference that only resolved on a developer's own machine, not inside
   the browser's vendored `third_party/remote_ntp` tree — added
   `browser_api` as its own DEPS entry to fix it.
+- Fixed the dial-style top-sites tiles overlapping each other: the shared
+  `TilesWrapper` grid forced a fixed 5-column layout regardless of tile
+  width, which was fine for the small favicon tiles but overflowed once
+  the fixed-210px `DomainTile` didn't fit a column. Dial style now uses a
+  `repeat(auto-fill, 210px)` grid instead, sized to the tile's actual
+  width; favicon style (and `StaticTiles`) is unchanged.
 
 ### 1.9.15 — 2026-09-10
 

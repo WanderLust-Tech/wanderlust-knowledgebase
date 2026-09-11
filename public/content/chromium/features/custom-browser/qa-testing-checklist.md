@@ -1206,6 +1206,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Compare a known brand (e.g. google.com) against an unfamiliar domain — **Expected:** The known brand gets a recognizable brand color; the unfamiliar domain gets a color too, and reloading the NTP shows the exact same color again (not a new random one each time).
 - [ ] Drag the "Top sites (dial)" row to a different position in the Content list — **Expected:** Section reorders on the NTP accordingly, same as other draggable sections.
 - [ ] Switch to Hub layout — **Expected:** The dynamic top-sites tile grid renders in the top bar alongside the existing static tiles, without errors.
+- [ ] As of v1.9.16: with "Dial tiles" selected and enough tiles to fill multiple rows, check a narrower browser window as well as a wide one — **Expected:** Tiles are laid out in a grid sized to their actual width, with no visual overlap between adjacent tiles at any width (previously a fixed 5-column grid caused tiles to overlap once a column was narrower than a tile).
 
 📷 *Screenshot suggestion: side-by-side of the same top sites in favicon style vs. dial style.*
 
