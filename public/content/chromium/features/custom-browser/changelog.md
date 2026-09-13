@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.16)
+## Versioned releases (1.7.25 → 1.9.17)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -24,6 +24,32 @@ without its own version bump, picked up by the next commit's bump instead.
 1.9.16 bundles similarly: a DEPS pin bump, the new Dial layout/tiles
 feature, and a build-vendoring fix landed as separate commits sharing one
 version bump.
+
+### 1.9.17 — 2026-09-13
+
+Internal groundwork for an upcoming DANE + DNSSEC certificate-verification
+feature (advisory-only by design — it will surface as a Page Info
+indicator and will never change whether a page loads or gets blocked). This
+commit is pure backend scaffolding: nothing here is wired into certificate
+verification, Settings, or any other user-reachable surface yet, so there's
+nothing to test manually in this release.
+
+- A raw DNS record fetcher (`src/custom/net/dane/dane_dns_fetcher.*`) issues
+  TLSA/DNSKEY/DS/RRSIG queries directly through Chromium's existing
+  `DnsTransactionFactory`, bypassing the restricted `net::DnsQueryType` enum
+  (which doesn't cover those record types). Required three small upstream
+  accessor patches (`HostResolver`, `ContextHostResolver`,
+  `HostResolverManager`) but no new IPC surface or process — the fetcher
+  runs in-process alongside the network service, the same place a future
+  `CertVerifier` decorator will live.
+- A from-scratch DNSSEC chain-of-trust validator
+  (`net/dane/dnssec_validator.*`): RFC 4034 canonical-form RRset
+  serialization, RSASHA256/ECDSAP256SHA256 signature verification via
+  BoringSSL (no new crypto dependency), and DS-digest matching, pinned to
+  the current IANA root trust anchors (`net/dane/root_trust_anchor.h`,
+  refreshable via a new `tools/update_dnssec_root_anchor.py`).
+- RFC 6698 TLSA record matching (`net/dane/dane_matcher.*`) against served
+  certificate bytes.
 
 ### 1.9.16 — 2026-09-11
 
