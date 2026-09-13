@@ -1207,6 +1207,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Drag the "Top sites (dial)" row to a different position in the Content list — **Expected:** Section reorders on the NTP accordingly, same as other draggable sections.
 - [ ] Switch to Hub layout — **Expected:** The dynamic top-sites tile grid renders in the top bar alongside the existing static tiles, without errors.
 - [ ] As of v1.9.16: with "Dial tiles" selected and enough tiles to fill multiple rows, check a narrower browser window as well as a wide one — **Expected:** Tiles are laid out in a grid sized to their actual width, with no visual overlap between adjacent tiles at any width (previously a fixed 5-column grid caused tiles to overlap once a column was narrower than a tile).
+- [ ] As of v1.9.16: on a fresh profile (or with default settings restored), enable "Top sites (dial)" in Full layout — **Expected:** The dial top-sites section appears directly above the static Wanderlust Pages tiles by default, not below them.
 
 📷 *Screenshot suggestion: side-by-side of the same top sites in favicon style vs. dial style.*
 
@@ -1279,15 +1280,20 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 ### Wallpaper Customization
 
-**What it is:** Background wallpaper picker with Default / Bing / Unsplash / Colour sources, plus blur and brightness sliders and Unsplash topic chips.
-**Where to find it:** NTP Settings sidebar → wallpaper/background section.
-**Default state:** Enabled by default.
+**What it is:** Background wallpaper picker with Default / Bing / Unsplash / Colour sources (plus a Custom uploaded-image source in the Wallpaper layout's own picker), blur and brightness sliders, and Unsplash topic chips.
+**Where to find it:** NTP Settings sidebar → wallpaper/background section (Full, Glass, Hub, Wallpaper, Focus layouts). The Wallpaper layout's own gear-icon picker additionally offers "Custom" (upload your own image).
+**Default state:** Enabled by default; source defaults to "Default" everywhere.
 
 - [ ] Open NTP Settings and switch wallpaper source to "Colour" — **Expected:** Background becomes a flat color; a color picker appears.
 - [ ] Switch to "Unsplash" and pick a topic chip — **Expected:** Background image updates to match the selected topic.
 - [ ] Adjust the blur slider — **Expected:** Background blur visibly increases/decreases in real time.
 - [ ] Adjust the brightness slider — **Expected:** Background dims/brightens in real time.
 - [ ] Reload the NTP — **Expected:** Chosen wallpaper source, image, blur, and brightness all persist.
+- [ ] As of v1.9.16: switch to Focus, Glass, Hub, or Dial layout and set the wallpaper source to Bing or Unsplash from NTP Settings — **Expected:** The layout's background actually shows a Bing/Unsplash photo (previously these layouts silently ignored anything but the Colour source and always fell back to a static random image).
+- [ ] As of v1.9.16: switch to Full layout and adjust the blur/brightness sliders — **Expected:** The Full layout's background responds to blur/brightness for the first time (previously unsupported there).
+- [ ] As of v1.9.16: in the Wallpaper layout, open its own gear-icon settings panel and switch the source to "Custom" — **Expected:** An image upload control appears; after picking an image file, it becomes the background immediately and persists after reloading that NTP tab.
+- [ ] As of v1.9.16: with a Custom image set in the Wallpaper layout, open the NTP Settings sidebar — **Expected:** No "Custom" option appears there (it's only settable from the Wallpaper layout's own picker); the other four sources still work normally from the sidebar.
+- [ ] As of v1.9.16: open the NTP Settings sidebar's wallpaper picker on each layout that shows one — **Expected:** Source buttons, topic chips, color input, and blur/brightness sliders look and behave the same as before (now backed by a shared component internally; no visual or functional regression expected).
 
 📷 *Screenshot suggestion: same NTP with two different wallpaper sources for comparison.*
 

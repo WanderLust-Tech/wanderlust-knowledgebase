@@ -917,6 +917,7 @@ const internalContent: ContentNode[] = [
             { title: "NTP Bookmarks API", path: "features/custom-browser/ntp/ntp-bookmarks-api" },
             { title: "NTP Feature Roadmap", path: "features/custom-browser/ntp/ntp-feature-roadmap" },
             { title: "Speed-Dial Tiles & Dial Layout", path: "features/custom-browser/dial-tiles" },
+            { title: "Wallpaper Customization Consolidation", path: "features/custom-browser/wallpaper-customization" },
         ]
     },
     {

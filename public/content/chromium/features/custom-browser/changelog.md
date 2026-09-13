@@ -57,6 +57,33 @@ flavor ("Dial") built entirely around it.
   the fixed-210px `DomainTile` didn't fit a column. Dial style now uses a
   `repeat(auto-fill, 210px)` grid instead, sized to the tile's actual
   width; favicon style (and `StaticTiles`) is unchanged.
+- Reordered the Full layout's default content sections so the new dial
+  top-sites section sits directly above the static Wanderlust Pages
+  tiles instead of below them.
+- Adds [Wallpaper Customization Consolidation](wallpaper-customization) —
+  a shared `useWallpaper` hook (`remote_ntp`) and `WallpaperPicker`
+  component (`pathfinder-ui`) replace six near-duplicate copies of the
+  wallpaper-settings/Bing/Unsplash logic that used to be scattered across
+  every NTP layout and the settings sidebar.
+  - Focus, Glass, Hub, and Dial layouts previously only understood the
+    Colour wallpaper source (anything else silently fell back to a
+    static random photo) — they now support Bing and Unsplash like the
+    dedicated Wallpaper layout always did.
+  - New "Custom" wallpaper source: upload an image from the Wallpaper
+    layout's own settings panel, stored locally via IndexedDB (not
+    embedded in synced settings, to avoid bloating that JSON blob). Only
+    settable from the Wallpaper layout itself — the native settings
+    sidebar runs in a different origin and can't share that storage.
+  - The Wallpaper layout's own wallpaper-source default is now
+    `'default'`, matching every other layout (it was quietly defaulting
+    to `'bing'` before).
+  - The Full layout (`NewTab.tsx`) was converted from a class component
+    to a function component to use the new hook, and gained
+    blur/brightness wallpaper effects for the first time in the process.
+  - The NTP settings sidebar's wallpaper picker now renders the same
+    shared `WallpaperPicker` component (via a new `@pf/WallpaperPicker`
+    esbuild alias) instead of its own separately hand-rolled copy of the
+    same UI.
 
 ### 1.9.15 — 2026-09-10
 
