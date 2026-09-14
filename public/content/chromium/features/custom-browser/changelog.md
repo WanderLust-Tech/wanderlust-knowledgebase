@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.20)
+## Versioned releases (1.7.25 → 1.9.21)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -24,6 +24,34 @@ without its own version bump, picked up by the next commit's bump instead.
 1.9.16 bundles similarly: a DEPS pin bump, the new Dial layout/tiles
 feature, and a build-vendoring fix landed as separate commits sharing one
 version bump.
+
+### 1.9.21 — 2026-09-14
+
+Makes [Reader Mode](reader-mode-integration) actually work. It was
+previously a non-functional stub — `StartDistillation()` faked success
+after a fixed delay with a hardcoded placeholder string, and nothing was
+ever injected into the page — discovered while investigating whether to
+port Firefox's off-main-thread Readability.js extraction (turned out there
+was no existing extraction to move off-thread at all; see
+[Firefox_Feature_Port_Analysis.md](../../../analysis/Firefox_Feature_Port_Analysis.md)
+section 5 for that investigation).
+
+- `CustomReaderModeManager::StartDistillation` now calls Chromium's own
+  `DistillCurrentPageAndViewIfSuccessful()`, which distills the current
+  tab in place (no hidden WebContents needed) and navigates to the
+  already-built `chrome-distiller://` viewer on success.
+- `ExitReaderMode()` now goes back to the original article instead of
+  reloading, since distillation is a real navigation now.
+- Patches `components/dom_distiller/core/dom_distiller_features.cc` so
+  `IsDomDistillerEnabled()` also returns true under this fork's own
+  `BUILDFLAG(ENABLE_READER_MODE)` — otherwise the viewer never registers,
+  since it normally requires a `--enable-dom-distiller` command-line
+  switch that's off by default.
+- The existing `reader-mode-integration.md` article and its QA checklist
+  section significantly overstated the pre-v1.9.21 implementation
+  (described CSS injection, a content-analysis cache, and "complete DOM
+  distiller integration" that never existed) — both have been rewritten
+  to match actual behavior, not just amended.
 
 ### 1.9.20 — 2026-09-14
 

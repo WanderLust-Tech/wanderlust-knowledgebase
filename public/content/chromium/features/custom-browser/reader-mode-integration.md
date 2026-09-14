@@ -1,536 +1,147 @@
 # Reader Mode Integration
 
-## Overview
+**Correction (v1.9.21, 2026-09-14):** this article previously described a
+much more complete implementation than actually existed — fictional CSS
+injection, a `ReaderModeCache`, a `ContentAnalysisConfig` heuristic tuner,
+and a "Migration from Original Patch" section claiming ✅ full DOM
+distiller integration, none of which was ever real. Before this version,
+`StartDistillation()` faked success after a fixed delay with a hardcoded
+placeholder string (`"<h1>Distilled Content</h1><p>Article content would
+appear here...</p>"`), and `ApplyReaderModeStyles()` only logged a
+character count — no CSS or content ever reached the page. This rewrite
+describes what's actually implemented as of v1.9.21, not what was
+originally aspirational.
 
-The Reader Mode Integration system provides automatic article detection, content distillation, and reader-friendly formatting. This modernizes web content consumption with a clean, distraction-free reading experience integrated directly into the Custom Browser.
+## What it is
 
-## Architecture
+A toolbar button that distills the current article-style page using
+Chromium's own `components/dom_distiller` and navigates to its
+already-built `chrome-distiller://` viewer — the real "Reader Mode"
+Chrome itself would have, just not enabled by default upstream. Manual
+trigger only: automatic per-page detection exists in the code but is off
+by default and, separately, not actually wired to fire (see Known
+limitations).
 
-- **Location**: `src/custom/chrome/browser/features/custom_reader_mode_manager.*`
-- **Pattern**: Singleton with WebContentsObserver for navigation and content monitoring
-- **Integration**: DOM distiller components, content analysis, and browser command system
+## Where to find it
 
-## Features
+The **Reader Mode toolbar button** (`reader_mode_button.cc`) is the real,
+working entry point — click to enter, click again to exit. A right-click
+**context-menu item** also exists but is currently a no-op (see Known
+limitations) — don't rely on it.
 
-### Core Capabilities
-- ✅ **Automatic Article Detection**: Smart content analysis to identify readable articles
-- ✅ **Content Distillation**: Extract and format article content for optimal readability
-- ✅ **Reader Mode State Management**: Per-tab reader mode states and transitions
-- ✅ **Browser Command Integration**: Command system support (Command ID: 35083)
-- ✅ **Enhanced Readability**: Clean, distraction-free reading interface with custom styling
+| Where | What |
+|---|---|
+| [`custom_browser_config.gni`](../src/custom/custom_browser_config.gni) | `custom_enable_reader_mode = true`, `custom_reader_mode_distillation = true`, `custom_reader_mode_auto_detect = false` (all defaults) |
+| Toolbar button | [`ui/views/toolbar/reader_mode_button.cc`](../src/custom/browser/ui/views/toolbar/reader_mode_button.cc) — calls `ToggleReaderMode()`, observes state/availability to update its own visibility and tooltip |
+| Command ID | `kPageDistill = 35083` (`IDC_PAGE_DISTILL` from the original, pre-rewrite patch) |
+| Manager | [`chrome/browser/features/custom_reader_mode_manager.{cc,h}`](../src/custom/chrome/browser/features/custom_reader_mode_manager.cc) — a bare process-wide singleton (`base::Singleton`), not per-tab despite inheriting `WebContentsObserver` |
 
-### Reader Mode States
-- **Not Available**: Content not suitable for reader mode
-- **Available**: Article content detected, reader mode can be activated
-- **Active**: Reader mode currently enabled with distilled content
-- **Distilling**: Content extraction and processing in progress
-- **Error**: Distillation failed or encountered error
+## How it works
 
-### Command Integration
-- **Command 35083**: Distill Page / Enter Reader Mode (matching original patch)
-
-## Configuration
-
-### Build-time Configuration (`custom_browser_config.gni`)
-```gn
-# Reader Mode Integration
-custom_enable_reader_mode = true
-custom_reader_mode_distillation = true
-custom_reader_mode_auto_detect = false
+```
+Toolbar button click
+   │
+   ▼
+CustomReaderModeManager::ToggleReaderMode(web_contents)
+   │
+   ├── state == kAvailable → DistillPage(web_contents)
+   │     │
+   │     ▼
+   │     StartDistillation(web_contents)
+   │     │
+   │     ▼
+   │     DistillCurrentPageAndViewIfSuccessful(web_contents, callback)
+   │       (chrome/browser/dom_distiller/tab_utils.h -- real upstream
+   │        Chromium code, unmodified)
+   │       - Wraps the *existing* WebContents (SourcePageHandleWebContents)
+   │         -- no hidden/second WebContents needed for the current tab
+   │       - DomDistillerService (always real; not gated by any flag)
+   │         extracts the article
+   │       - On success, navigates this same WebContents to
+   │         chrome-distiller://<url>/... to display it -- a normal,
+   │         back-navigable entry
+   │     │
+   │     ▼
+   │     OnDistillationCompleted(web_contents, bool success)
+   │       - Sets ReaderModeState::kActive or kError
+   │       - Notifies observers (the toolbar button updates)
+   │
+   └── state == kActive → ExitReaderMode(web_contents)
+         - NavigationController::GoBack() if possible (distillation was a
+           real navigation now, so this returns to the original article --
+           falls back to Reload() if there's no back entry)
 ```
 
-### Compile-time Defines
+The distilled HTML itself never passes through `CustomReaderModeManager`
+at all — the navigation to the viewer *is* the display. This is simpler
+than it looks: `DistillCurrentPageAndViewIfSuccessful` already does
+everything (extraction + viewer navigation) in one call; nothing here
+duplicates or wraps dom_distiller's own logic.
+
+### Enabling the viewer
+
+Chromium's `chrome-distiller://` viewer (`DomDistillerViewerSource`) is
+real, already-registered infrastructure — not something built for this
+feature. It's normally gated behind `IsDomDistillerEnabled()`, which by
+default only checks for a `--enable-dom-distiller` command-line switch
+(off by default upstream). A small patch to
+`components/dom_distiller/core/dom_distiller_features.cc` makes it also
+return `true` under this fork's own `BUILDFLAG(ENABLE_READER_MODE)`, so
+the viewer registers without needing a hidden command-line flag just for
+a built-in feature:
+
 ```cpp
-#define ENABLE_READER_MODE 1
-#define CUSTOM_READER_MODE_DISTILLATION 1
-#define CUSTOM_READER_MODE_AUTO_DETECT 1  // Optional
-```
-
-### Command ID Definitions
-```cpp
-enum CommandIds {
-  kPageDistill = 35083,  // IDC_PAGE_DISTILL from original patch
-};
-```
-
-## API Reference
-
-### CustomReaderModeManager Class
-
-#### Initialization
-```cpp
-// Get singleton instance
-CustomReaderModeManager* manager = CustomReaderModeManager::GetInstance();
-
-// Initialize (called automatically during browser startup)
-manager->Initialize();
-```
-
-#### Observer Pattern
-```cpp
-// Observer interface for reader mode events
-class MyReaderModeObserver : public CustomReaderModeManager::Observer {
-public:
-  void OnReaderModeAvailabilityChanged(content::WebContents* web_contents,
-                                       bool available) override {
-    // Update UI to show/hide reader mode button
-  }
-  
-  void OnReaderModeStateChanged(content::WebContents* web_contents,
-                                ReaderModeState state) override {
-    // Update UI based on reader mode state
-  }
-  
-  void OnDistillationCompleted(content::WebContents* web_contents,
-                               bool success) override {
-    // Handle distillation completion
-  }
-};
-
-// Register observer
-MyReaderModeObserver* observer = new MyReaderModeObserver();
-manager->AddObserver(observer);
-```
-
-#### Reader Mode Control
-```cpp
-// Check if reader mode is available for current page
-bool available = manager->IsReaderModeAvailable(web_contents->GetLastCommittedURL());
-
-// Get current reader mode state
-ReaderModeState state = manager->GetReaderModeState(web_contents);
-
-// Distill current page
-manager->DistillPage(web_contents);
-
-// Exit reader mode
-manager->ExitReaderMode(web_contents);
-
-// Toggle reader mode
-manager->ToggleReaderMode(web_contents);
-```
-
-#### Content Analysis
-```cpp
-// Check if URL is suitable for reader mode
-GURL url("https://example.com/article");
-bool suitable = manager->IsSuitableForReaderMode(url);
-
-// Check feature enablement
-bool enabled = manager->IsReaderModeEnabled();
-bool auto_detect = manager->IsAutoDetectionEnabled();
-bool distillation = manager->IsDistillationEnabled();
-```
-
-#### Command Integration
-```cpp
-// Execute reader mode command
-bool handled = manager->ExecuteCommand(35083, web_contents);
-
-// Check command support
-bool supported = manager->IsCommandSupported(35083);
-
-// Get command label for UI
-std::u16string label = manager->GetCommandLabel(35083);
-// Returns: "Enter Reader Mode"
-```
-
-### Reader Mode State Enumeration
-```cpp
-enum class ReaderModeState {
-  kNotAvailable = 0,  // Content not suitable for reader mode
-  kAvailable = 1,     // Article detected, can enter reader mode
-  kActive = 2,        // Reader mode currently active
-  kDistilling = 3,    // Content extraction in progress
-  kError = 4,         // Distillation failed
-};
-```
-
-## Content Analysis and Detection
-
-### Article Detection Algorithm
-```cpp
-bool IsSuitableForReaderMode(const GURL& url) const {
-  // Basic URL validation
-  if (!url.is_valid() || !url.SchemeIsHTTPOrHTTPS()) {
-    return false;
-  }
-  
-  // Check for excluded URL patterns
-  const char* excluded_patterns[] = {
-    "chrome://", "chrome-extension://", "about:",
-    "data:", "javascript:", "mailto:"
-  };
-  
-  std::string url_spec = url.spec();
-  for (const char* pattern : excluded_patterns) {
-    if (url_spec.find(pattern) == 0) {
-      return false;
-    }
-  }
-  
+bool IsDomDistillerEnabled() {
+#if BUILDFLAG(ENABLE_READER_MODE)
   return true;
+#else
+  return base::CommandLine::ForCurrentProcess()->HasSwitch(
+      switches::kEnableDomDistiller);
+#endif
 }
 ```
 
-### Content Structure Analysis
-```cpp
-bool IsArticleContent(content::WebContents* web_contents) const {
-  // Analyze page structure for article indicators:
-  // - Presence of <article> tags
-  // - Content length and paragraph structure
-  // - Heading hierarchy (H1, H2, etc.)
-  // - Text-to-HTML ratio
-  // - Presence of navigation elements vs content
-  
-  return AnalyzePageStructure(web_contents);
-}
-```
+Two older, unrelated cosmetic patches already touched adjacent files
+(`dom_distiller_viewer.js`/`dom_distiller_viewer_source.cc` — CSP/font-URL
+tweaks) — those confirmed the viewer pipeline was buildable well before
+this fix; this is the first patch that actually turns it on.
 
-### Auto-Detection System
-```cpp
-void CheckReaderModeAvailability(content::WebContents* web_contents) {
-  if (!IsAutoDetectionEnabled()) {
-    return;
-  }
-  
-  GURL url = web_contents->GetLastCommittedURL();
-  bool is_suitable = IsSuitableForReaderMode(url);
-  
-  if (is_suitable && IsArticleContent(web_contents)) {
-    SetReaderModeState(web_contents, ReaderModeState::kAvailable);
-    
-    // Notify observers that reader mode is available
-    for (Observer& observer : observers_) {
-      observer.OnReaderModeAvailabilityChanged(web_contents, true);
-    }
-  }
-}
-```
+## File map
 
-## Distillation Process
+| Path | Purpose |
+|---|---|
+| `custom/chrome/browser/features/custom_reader_mode_manager.{h,cc}` | The manager — state tracking, command handling, calls into `DistillCurrentPageAndViewIfSuccessful` |
+| `custom/browser/ui/views/toolbar/reader_mode_button.cc` | The real, working UI entry point |
+| `chrome/browser/dom_distiller/tab_utils.{h,cc}` (unmodified upstream) | `DistillCurrentPageAndViewIfSuccessful` and friends — the actual extraction+viewer-navigation logic |
+| `components/dom_distiller/core/dom_distiller_features.cc` (patched) | `IsDomDistillerEnabled()` — the one line gating whether the viewer registers at all |
+| `chrome-browser-ui-browser_command_controller.cc.patch` | Wires `IDC_PAGE_DISTILL` → `CustomReaderModeManager::GetInstance()->DistillPage(web_contents)` |
+| `chrome-browser-renderer_context_menu-render_view_context_menu.cc.patch` | Adds a "Read Mode" context-menu item — currently a no-op, see Known limitations |
 
-### Content Extraction
-```cpp
-void StartDistillation(content::WebContents* web_contents) {
-  if (!web_contents || !IsDistillationEnabled()) {
-    return;
-  }
-  
-  SetReaderModeState(web_contents, ReaderModeState::kDistilling);
-  
-  // In a real implementation, this would integrate with dom_distiller
-  // For this framework, we simulate the distillation process
-  DistillationRequest request;
-  request.url = web_contents->GetLastCommittedURL();
-  request.callback = base::BindOnce(&CustomReaderModeManager::OnDistillationCompleted,
-                                    weak_factory_.GetWeakPtr(), 
-                                    web_contents);
-  
-  distiller_->DistillPage(request);
-}
-```
+## Known limitations
 
-### Distillation Callbacks
-```cpp
-void OnDistillationCompleted(content::WebContents* web_contents,
-                             bool success,
-                             const std::string& distilled_content) {
-  if (!web_contents) {
-    return;
-  }
-  
-  if (success) {
-    SetReaderModeState(web_contents, ReaderModeState::kActive);
-    ApplyReaderModeStyles(web_contents, distilled_content);
-  } else {
-    SetReaderModeState(web_contents, ReaderModeState::kError);
-  }
-  
-  // Notify observers
-  for (Observer& observer : observers_) {
-    observer.OnDistillationCompleted(web_contents, success);
-  }
-}
-```
-
-### Content Styling
-```cpp
-void ApplyReaderModeStyles(content::WebContents* web_contents,
-                           const std::string& distilled_content) {
-  if (!web_contents) {
-    return;
-  }
-  
-  // Inject reader mode CSS and replace content
-  std::string reader_css = R"(
-    body { 
-      font-family: Georgia, serif;
-      line-height: 1.6;
-      max-width: 700px;
-      margin: 0 auto;
-      padding: 20px;
-      background: #f9f9f9;
-    }
-    
-    .reader-content {
-      background: white;
-      padding: 40px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-  )";
-  
-  std::string reader_html = base::StringPrintf(
-      "<div class='reader-content'>%s</div>", 
-      distilled_content.c_str());
-  
-  // Execute JavaScript to apply reader mode
-  web_contents->GetMainFrame()->ExecuteJavaScript(
-      base::UTF8ToUTF16(base::StringPrintf(
-          "document.head.insertAdjacentHTML('beforeend', '<style>%s</style>');"
-          "document.body.innerHTML = '%s';",
-          reader_css.c_str(), 
-          reader_html.c_str())));
-}
-```
-
-## Integration with Original Patch
-
-### Original Patch Command
-The original patch added the reader mode command to `chrome_command_ids.h`:
-```cpp
-// Original patch approach
-#define IDC_PAGE_DISTILL                35083
-// Additional reader mode commands...
-```
-
-### Modern Implementation
-The modernized approach uses the Custom Reader Mode Manager:
-```cpp
-// Modern command handling in browser command controller
-bool BrowserCommandController::ExecuteCommandWithDisposition(
-    int id, WindowOpenDisposition disposition, base::TimeTicks time_stamp) {
-  
-  CustomReaderModeManager* reader_manager = 
-      CustomReaderModeManager::GetInstance();
-      
-  if (reader_manager->IsCommandSupported(id)) {
-    return reader_manager->ExecuteCommand(id, GetActiveWebContents());
-  }
-  
-  // Fall back to default command handling
-  return DefaultCommandHandler::ExecuteCommand(id, disposition, time_stamp);
-}
-```
-
-## WebContents Observer Integration
-
-### Navigation Monitoring
-```cpp
-void DidFinishNavigation(content::NavigationHandle* navigation_handle) override {
-  if (!IsReaderModeEnabled() || !navigation_handle->IsInMainFrame() ||
-      !navigation_handle->HasCommitted()) {
-    return;
-  }
-  
-  content::WebContents* web_contents = navigation_handle->GetWebContents();
-  GURL url = navigation_handle->GetURL();
-  
-  // Reset reader mode state for new navigation
-  SetReaderModeState(web_contents, ReaderModeState::kNotAvailable);
-  
-  // Check if new page is suitable for reader mode
-  if (IsSuitableForReaderMode(url)) {
-    SetReaderModeState(web_contents, ReaderModeState::kAvailable);
-    
-    // Notify observers
-    for (Observer& observer : observers_) {
-      observer.OnReaderModeAvailabilityChanged(web_contents, true);
-    }
-  }
-}
-```
-
-### Content Load Monitoring
-```cpp
-void DocumentOnLoadCompletedInMainFrame(
-    content::RenderFrameHost* render_frame_host) override {
-    
-  if (!IsAutoDetectionEnabled()) {
-    return;
-  }
-  
-  content::WebContents* web_contents = 
-      content::WebContents::FromRenderFrameHost(render_frame_host);
-  
-  if (web_contents) {
-    // Check if page is suitable after full content load
-    CheckReaderModeAvailability(web_contents);
-  }
-}
-```
-
-## User Interface Integration
-
-### Toolbar Button Integration
-```cpp
-// Example toolbar button for reader mode
-class ReaderModeButton : public ToolbarButton {
-public:
-  void UpdateButtonState(content::WebContents* web_contents) {
-    CustomReaderModeManager* manager = CustomReaderModeManager::GetInstance();
-    ReaderModeState state = manager->GetReaderModeState(web_contents);
-    
-    switch (state) {
-      case ReaderModeState::kAvailable:
-        SetEnabled(true);
-        SetIcon(kReaderModeIcon);
-        SetTooltipText("Enter Reader Mode");
-        break;
-        
-      case ReaderModeState::kActive:
-        SetEnabled(true);
-        SetIcon(kReaderModeActiveIcon);
-        SetTooltipText("Exit Reader Mode");
-        break;
-        
-      case ReaderModeState::kDistilling:
-        SetEnabled(false);
-        SetIcon(kReaderModeLoadingIcon);
-        SetTooltipText("Processing...");
-        break;
-        
-      default:
-        SetEnabled(false);
-        SetVisible(false);
-        break;
-    }
-  }
-};
-```
-
-### Context Menu Integration
-```cpp
-void AddReaderModeToContextMenu(RenderViewContextMenu* menu) {
-  CustomReaderModeManager* manager = CustomReaderModeManager::GetInstance();
-  content::WebContents* web_contents = menu->source_web_contents();
-  
-  if (!manager->IsReaderModeEnabled()) {
-    return;
-  }
-  
-  ReaderModeState state = manager->GetReaderModeState(web_contents);
-  
-  switch (state) {
-    case ReaderModeState::kAvailable:
-      menu->AddMenuItem(IDC_PAGE_DISTILL, "Enter Reader Mode");
-      break;
-      
-    case ReaderModeState::kActive:
-      menu->AddMenuItem(IDC_EXIT_READER_MODE, "Exit Reader Mode");
-      break;
-      
-    default:
-      break;
-  }
-}
-```
-
-## Performance Considerations
-
-### Efficient Content Analysis
-- **Lazy Analysis**: Content analysis only when explicitly requested or auto-detection enabled
-- **Cached Results**: Reader mode suitability cached per URL to avoid repeated analysis
-- **Asynchronous Processing**: Content distillation runs asynchronously to avoid blocking UI
-- **Memory Management**: Distilled content cleaned up when no longer needed
-
-### Resource Optimization
-```cpp
-class ReaderModeCache {
-private:
-  // Cache reader mode suitability results
-  std::map<GURL, bool> suitability_cache_;
-  std::map<GURL, std::string> distilled_content_cache_;
-  
-public:
-  bool IsCached(const GURL& url) const {
-    return suitability_cache_.find(url) != suitability_cache_.end();
-  }
-  
-  void CacheSuitability(const GURL& url, bool suitable) {
-    suitability_cache_[url] = suitable;
-  }
-  
-  void CacheDistilledContent(const GURL& url, const std::string& content) {
-    // Implement size-limited cache with LRU eviction
-    if (distilled_content_cache_.size() > kMaxCacheSize) {
-      EvictLeastRecentlyUsed();
-    }
-    distilled_content_cache_[url] = content;
-  }
-};
-```
-
-## Development Workflow
-
-### Testing Reader Mode
-```bash
-# Build with reader mode enabled
-npm run build
-
-# Test reader mode functionality:
-# 1. Navigate to article pages (news sites, blogs, etc.)
-# 2. Verify reader mode availability detection
-# 3. Test distillation process
-# 4. Verify reader mode styling and content extraction
-# 5. Test state transitions (available -> distilling -> active)
-```
-
-### Content Analysis Tuning
-```cpp
-// Adjust article detection parameters
-struct ContentAnalysisConfig {
-  size_t min_text_length = 500;
-  double min_text_to_html_ratio = 0.25;
-  size_t required_paragraph_count = 3;
-  bool require_article_tag = false;
-  bool require_heading_structure = true;
-};
-
-void TuneContentDetection(const ContentAnalysisConfig& config) {
-  content_analysis_config_ = config;
-  
-  // Apply new parameters to content analysis algorithm
-  UpdateContentAnalysisRules();
-}
-```
-
-## Migration from Original Patch
-
-### Original Approach Limitations
-- ❌ Only provided command ID without full implementation
-- ❌ No content analysis or auto-detection
-- ❌ No integration with DOM distiller components
-- ❌ No state management for reader mode sessions
-
-### Modern Solution Benefits
-- ✅ Complete reader mode implementation with content analysis
-- ✅ Automatic article detection and reader mode availability
-- ✅ Full integration with Chromium's DOM distiller system
-- ✅ Professional state management and observer patterns
-- ✅ Extensible architecture for future enhancements
-
-## Related Components
-
-- **Feature Flag Management**: Controls reader mode feature enablement
-- **DOM Distiller Integration**: Content extraction and processing engine
-- **WebContents Observer System**: Navigation and content monitoring
-- **Browser Command System**: Command integration for user actions
-
-## See Also
-
-- [Feature Flag Management System](feature-flag-management.md)
-- [Content Analysis Architecture](../architecture/content-analysis.md)
-- [Browser Command Integration](../development-guide/browser-commands.md)
-- [WebContents Observer Patterns](../development-guide/webcontents-observers.md)
+- **The context-menu "Read Mode" item does nothing.** It calls
+  `ExecCommandWebSite(3)`, which is a `// TODO: ToggleDistilledView
+  function no longer exists in Chromium` stub in the patch itself — a
+  pre-existing broken entry point, not touched by this fix. Use the
+  toolbar button instead.
+- **Auto-detection is off by default, and wouldn't actually fire even if
+  turned on.** `CustomReaderModeManager` is a bare singleton that never
+  calls `Observe()` on any `WebContents` — so `DidFinishNavigation`/
+  `DocumentOnLoadCompletedInPrimaryMainFrame` (the methods that would
+  drive auto-detection) are dead code regardless of the
+  `custom_reader_mode_auto_detect` build flag. Not a regression from this
+  fix — this was already true, just newly relevant to call out now that
+  the manual path actually works.
+- **`IsArticleContent()` still always returns `true`.** No real
+  distillability heuristic runs. `tab_utils.h` exposes a ready-made real
+  one — `RunReadabilityHeuristicsOnWebContents(web_contents, callback)`,
+  the same check upstream Chrome's own reader-mode UI uses — but it's
+  async and this method is currently synchronous. Moot for the default
+  config anyway, since auto-detection (the only caller) is off and
+  non-functional per the point above; a real follow-up would need to fix
+  both together.
+- **No in-place restyling.** Distillation always navigates to
+  `chrome-distiller://...` rather than reformatting the page in place —
+  this matches how upstream Chrome's own "Distill page" feature behaves,
+  but is a real behavior difference from what earlier documentation (and
+  the QA checklist, before this correction) described.

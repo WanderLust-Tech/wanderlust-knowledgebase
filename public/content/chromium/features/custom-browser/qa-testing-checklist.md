@@ -1066,18 +1066,17 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 ### Reader Mode Integration
 
-**What it is:** Distraction-free "reader mode" that detects article-like pages and re-renders their content in a clean, distilled, serif-font reading layout.
-**Where to find it:** Right-click context menu → **"Enter Reader Mode"** (shown when the manager reports the page as available) / **"Exit Reader Mode"** when active; internally mapped to browser command ID **35083** (Distill Page).
-**Default state:** Enabled by default (`custom_enable_reader_mode = true`), but **automatic detection is disabled by default** (`custom_reader_mode_auto_detect = false`) — reader mode must be manually triggered rather than auto-suggested while browsing.
+**What it is:** As of v1.9.21, a working "reader mode" that distills the current article using Chromium's own `dom_distiller` and navigates to its `chrome-distiller://` viewer. Before v1.9.21 this was a non-functional stub (faked success after a delay, injected nothing) — corrected here, not just extended; see [Reader Mode Integration](reader-mode-integration) for the full write-up including what changed.
+**Where to find it:** The **Reader Mode toolbar button** — click to enter, click again to exit. A right-click context-menu "Read Mode" item also exists but is a known no-op (broken pre-existing stub, not part of the v1.9.21 fix) — don't test against it.
+**Default state:** Enabled by default (`custom_enable_reader_mode = true`). Automatic detection is disabled by default (`custom_reader_mode_auto_detect = false`) and, separately, not actually wired to fire even if turned on (see the article's Known limitations) — reader mode is manual-only regardless.
 
-- [ ] Navigate to a clearly article-style page (news article, blog post) — **Expected:** Since auto-detect is off by default, no automatic prompt appears; manually invoke the reader-mode command/context-menu item to check availability.
-- [ ] Right-click on the article page and select **"Enter Reader Mode"** (or trigger command 35083) — **Expected:** Brief "Distilling" state, then content is replaced with the clean reader layout (centered column, serif font, white content card).
-- [ ] Right-click again while in reader mode — **Expected:** Menu now offers **"Exit Reader Mode"**; selecting it returns the page to normal rendering.
-- [ ] Try triggering reader mode on a non-article page (e.g. a search results page, a `chrome://` page, or a page with mostly navigation/no article body) — **Expected:** Command is unavailable/greyed out, or reports "Not Available" — no distillation attempted on excluded schemes (`chrome://`, `about:`, `data:`, etc).
-- [ ] Trigger reader mode on a page likely to fail distillation (e.g. a very sparse or malformed page) — **Expected:** State moves to "Error" and the UI fails gracefully rather than showing broken/garbled content.
-- [ ] (Edge, requires a build with auto-detect flipped on) Navigate to several article pages in a row — **Expected:** Reader-mode availability is automatically flagged per page without manual triggering.
+- [ ] As of v1.9.21: navigate to a real article page (a news site or blog post) and click the Reader Mode toolbar button — **Expected:** the tab navigates to a `chrome-distiller://...` URL showing the extracted article content, not the original page reformatted in place.
+- [ ] As of v1.9.21: with Reader Mode active, click the toolbar button again (or use its "exit" affordance) — **Expected:** the tab goes back to the original article URL (browser back-navigation), not a reload of the distilled view.
+- [ ] As of v1.9.21: trigger Reader Mode on a `chrome://` page or other excluded scheme — **Expected:** the button is unavailable; no navigation attempted.
+- [ ] As of v1.9.21: trigger Reader Mode on a page distillation can't meaningfully extract from (e.g. a mostly-navigation page with little article text) — **Expected:** either a low-quality distilled result or a failure state, but no browser crash and no garbled output.
+- [ ] Confirm the context-menu "Read Mode" item is still a no-op — **Expected:** known issue, not fixed by v1.9.21; use the toolbar button.
 
-📷 *Screenshot suggestion: before/after of the same article page — normal view vs. active reader mode's distilled layout.*
+📷 *Screenshot suggestion: the toolbar button next to the resulting `chrome-distiller://` page showing the extracted article.*
 
 ### Most Visited Panel
 
@@ -1521,7 +1520,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 **Default state:** Per the fork's default config — Tab Hover Cards **disabled**, Reader Mode **enabled**, Enhanced Scrolling **enabled**, JavaScript Controls **enabled**, Download Options (enhanced) **enabled**.
 
 - [ ] Hover over a tab in the tab strip for 1+ second — **Expected:** no hover-preview card appears (hover cards disabled by default).
-- [ ] Open `chrome://reader` — **Expected:** page loads normally (Reader Mode enabled by default); does not show a "feature disabled" message.
+- [ ] On an article page, check for the Reader Mode toolbar button — **Expected:** present and clickable (Reader Mode enabled by default); see the dedicated "Reader Mode Integration" section above for full behavior, not to be confused with `chrome://reader` (the unrelated RSS feed reader).
 - [ ] Scroll a long page with mouse wheel / trackpad — **Expected:** smooth/animated scroll behavior rather than an instant jump (Enhanced Scrolling enabled).
 - [ ] Locate the JavaScript content controls in Settings → Privacy — **Expected:** advanced per-site JS controls are present and toggleable.
 - [ ] Open the downloads UI (`chrome://downloads` / download shelf) — **Expected:** enhanced download options/management controls beyond stock Chromium are visible.
