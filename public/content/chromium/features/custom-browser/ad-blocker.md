@@ -131,7 +131,8 @@ to empty state).
 | File | Purpose |
 |---|---|
 | [`net/blockers/ad_block_throttle.{cc,h}`](../src/custom/browser/net/blockers/ad_block_throttle.cc) | URLLoaderThrottle. Calls the engine first, then the hardcoded fallback. PostTasks block records to UI thread, then `CancelWithError` |
-| [`net/blockers/ad_block_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/ad_block_tab_helper.cc) | `WebContentsUserData<AdBlockTabHelper>` + `WebContentsObserver`. Stores `[{url, destination, time}]` for the current page load; resets on primary-main-frame committed navigations |
+| [`net/blockers/ad_block_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/ad_block_tab_helper.cc) | `WebContentsUserData<AdBlockTabHelper>` + `WebContentsObserver`. Stores `[{url, destination, time, shim_name}]` for the current page load; resets on primary-main-frame committed navigations. `RecordBlocked()` also injects a compat shim's script (v1.9.19, see below) into the page's main frame when one matched |
+| [`net/blockers/tracker_shims.{cc,h}`](../src/custom/browser/net/blockers/tracker_shims.cc) | v1.9.19. Small hand-curated table (host substring → human-readable name → self-contained IIFE) of SmartBlock-style compat shims — see below |
 | [`net/blockers/blockers_worker.{cc,h}`](../src/custom/browser/net/blockers/blockers_worker.cc) | Bridge between Chromium types (`network::mojom::RequestDestination`) and the engine (`FilterOption`). Process-wide singleton via `BlockersWorker::Get()`. Lazy `parse()` of the bundled rule list under `base::Lock` |
 | [`net/blockers/bundled_filter_rules.{cc,h}`](../src/custom/browser/net/blockers/bundled_filter_rules.cc) | Compiled-in ABP-format rule list. Generated from the real EasyList + EasyPrivacy feeds via `download_easylist.py` (`npm run update_easylist`) — regenerated 2026-07-31, ~3.7 MB of real filter text |
 | [`net/blockers/cosmetic_filter_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/cosmetic_filter_tab_helper.cc) | `WebContentsUserData` + `WebContentsObserver`. On every committed primary-frame navigation, fetches the engine's element-hiding CSS from `BlockersWorker::GetCosmeticStylesheet()` and injects it via `ExecuteJavaScript` into the page's `<head>` |
@@ -263,6 +264,45 @@ binary (`serialize()`/`deserialize()`) cache format — v1 caches raw text;
 `AdBlockClient` already has unused `serialize()`/`deserialize()` primitives
 that would avoid re-parsing ~3.7+ MB of text on every startup, left as a
 future perf follow-up rather than required for this feature.
+
+## Compat shims (SmartBlock-style, v1.9.19)
+
+Blocking a tracker script outright can leave page code that references its
+global API throwing on the next user interaction — a "Like" button's
+`onclick` calling `FB.ui()`, or an inline `gtag('event', ...)` call fired
+later from a click handler — since the global the blocked script would have
+defined never gets created. Same problem Firefox's SmartBlock
+(`browser/extensions/webcompat/shims/`) solves; see
+[Firefox_Feature_Port_Analysis.md](../../../analysis/Firefox_Feature_Port_Analysis.md)
+section 2.2 for the port analysis this implements.
+
+`AdBlockThrottle::WillStartRequest` looks up the about-to-be-blocked host in
+`tracker_shims.h`'s small table (Facebook SDK, Google Analytics/Tag
+Manager, comScore, chosen to match Firefox's own highest-impact shims)
+alongside the existing engine/fallback block decision. If it matches, the
+shim's name and script ride along on the same `PostTask`-to-UI call that
+already records the block for the toolbar bubble, and
+`AdBlockTabHelper::RecordBlocked` — which already does an identical
+`ExecuteJavaScript` call for cosmetic-filter CSS in `DidFinishLoad` — injects
+the shim into the page's main frame right away. Each shim script is a
+self-contained, idempotent IIFE (guards against re-running if the same
+tracker is blocked more than once on one page, and against clobbering a
+real implementation that might have loaded through some other path) that
+stubs just enough of the tracker's API surface (`window.FB`, `window.ga`/
+`gtag`/`dataLayer`, `window.COMSCORE`/`_comscore`) with no-ops/harmless
+failure callbacks.
+
+**Deliberately not** Firefox's actual mechanism: SmartBlock redirects the
+blocked network request itself to a local resource, so the `<script>`
+tag's own `load`/`error` events fire exactly as if the real script had
+loaded. This fork's version instead injects reactively into the page after
+the block decision, which needs no changes to the request/response path or
+any CSP/site-isolation handling — but means a page that calls the
+tracker's API *synchronously*, immediately after its own blocked
+`<script>` tag (rather than from a later click handler or async callback,
+the near-universal real-world pattern for these SDKs) won't be covered.
+Accepted trade-off: good enough for the realistic failure mode at a
+fraction of the engineering cost and risk.
 
 ## Threading
 

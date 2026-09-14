@@ -91,6 +91,73 @@ flagged as reused when upstream wouldn't flag it. A minor false-positive
 edge case, not incorrect for the common case (actual credential reuse across
 unrelated sites).
 
+## Checkup: local breach-alert correlation (v1.9.20, 2026-09-14)
+
+`customGetPasswordCheckup`'s response gained a third array,
+`breached: [...]`, alongside `weak`/`reused` — computed in the same
+`OnPasswordsForCheckupReceived` pass, still entirely local/synchronous, no
+network call and no sign-in dependency. This closes the practical gap left
+by the network leak check above always dead-ending in
+`signed_out`/`token_error`: it gives this fork a *working* breach signal
+today, the way Firefox Monitor does it (see
+[Firefox_Feature_Port_Analysis.md](../../../analysis/Firefox_Feature_Port_Analysis.md)
+section 3.3), rather than only a correctly-wired-but-inert Google-dependent
+one.
+
+**New service: `BreachListService`** (`custom/browser/net/breach_list_service.{h,cc}`) —
+a process-wide singleton modeled closely on `FilterListUpdateService`/
+`AdBlockListUpdater` (see ad-blocker.md's "Background auto-refresh"
+section): periodically fetches `https://haveibeenpwned.com/api/v3/breaches`
+— the openly published full breach list, no API key, no per-account or
+per-email lookup — over a plain `SimpleURLLoader` GET, keeps only the most
+recent breach per domain (sufficient for a binary "does this password
+predate the site's most recent known breach" check, since predating the
+most recent breach means predating every earlier one too), hot-swaps the
+result in memory, and caches a condensed form to disk
+(`WanderLustBreachCache.json` in the user-data directory) so a restart
+doesn't need to wait on the network again. Gated by a `PasswordBreachCheck`
+feature flag (on by default, wired into `CustomFeatureManager` exactly like
+`FilterListAutoRefresh`) and the `custom.password_breach_check.enabled`
+local-state pref (on by default, no settings UI toggle yet — see Known
+limitations).
+
+**Correlation**, in `CustomPasswordManagerHandler::OnPasswordsForCheckupReceived`:
+for each saved credential, extract its eTLD+1 via
+`net::registry_controlled_domains::GetDomainAndRegistry` (same header
+already used elsewhere in this fork, e.g. `custom_stp_util.cc`), look it up
+in `BreachListService::FindBreachForDomain()`, and flag the credential if
+`date_password_modified` (falling back to `date_created` if unset) predates
+that domain's most recent known breach date. No password, username, or
+email is ever used to look anything up over the network — only the site's
+registrable domain is compared against an already-downloaded public
+dataset that's identical for every user.
+
+**Frontend** (`custom_password_manager/App.tsx`): a new "Potentially
+exposed" section (amber, deliberately distinct from the network check's red
+"Leaked" section below it) shows the breach name and date per flagged
+credential, with an explicit caption distinguishing the two: this check
+means "this site had a known breach after you last changed this password,"
+not "your exact password was confirmed leaked" — the confirmed case is what
+the (currently inert) network leak check below would show if it could
+reach Google's service.
+
+**Known limitations:**
+- No settings UI toggle for `custom.password_breach_check.enabled` yet —
+  only reachable via the raw pref today, unlike the ad blocker's parallel
+  "Automatically update filter lists" toggle.
+- Breach data isn't per-profile (same public dataset for every profile on
+  the machine), matching `BreachListService` being a process-wide singleton
+  like `BlockersWorker`.
+- HIBP's `Domain` field is used as-is (lower-cased) as the correlation key
+  rather than being independently re-derived as an eTLD+1 — in practice
+  HIBP's own domains are already registrable-domain-shaped (e.g.
+  `adobe.com`), so this hasn't been observed to cause mismatches, but isn't
+  a guarantee for every entry in the dataset.
+- No cryptographic integrity check on the fetched breach data beyond HTTPS
+  transport trust and the same "sanity gate" pattern the ad blocker's filter
+  list refresh uses (a minimum plausible entry count) — matches this fork's
+  existing posture for its other background-refreshed datasets.
+
 ## Checkup: network leak check (BulkLeakCheckService)
 
 `chrome.send('customStartLeakCheck')` / `chrome.send('customStopLeakCheck')`,

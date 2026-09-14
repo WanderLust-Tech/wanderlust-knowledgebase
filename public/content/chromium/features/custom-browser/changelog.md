@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.18)
+## Versioned releases (1.7.25 → 1.9.20)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -24,6 +24,40 @@ without its own version bump, picked up by the next commit's bump instead.
 1.9.16 bundles similarly: a DEPS pin bump, the new Dial layout/tiles
 feature, and a build-vendoring fix landed as separate commits sharing one
 version bump.
+
+### 1.9.20 — 2026-09-14
+
+Adds local password breach-alert correlation to the [password manager's
+checkup](password-manager-view-edit-checkup) — see that article's new
+"Checkup: local breach-alert correlation" section for the full write-up.
+Gives this fork a *working* breach signal today, independent of the
+existing network leak check (which always dead-ends in
+`signed_out`/`token_error` since it needs Google OAuth credentials this
+fork doesn't have configured).
+
+- New `BreachListService`, modeled on the ad blocker's own
+  `FilterListUpdateService`/`AdBlockListUpdater`: periodically fetches the
+  public Have I Been Pwned breach list (no API key, no per-account lookup),
+  keeps the most recent breach per domain, caches to disk, hot-swaps in
+  memory.
+- `CustomPasswordManagerHandler` correlates each saved credential's eTLD+1
+  and last-password-changed date against it, entirely on-device — no
+  password, username, or email ever touches the network.
+- New "Potentially exposed" section in the password manager UI, worded to
+  not overstate confidence relative to a confirmed leak.
+
+### 1.9.19 — 2026-09-13
+
+Adds [SmartBlock-style compat shims](ad-blocker) to the ad blocker — see
+that article's new "Compat shims" section for the full write-up. Blocking a
+tracker script could leave page code that references its global API (a
+Like button's `onclick`, an inline `gtag(...)` call) throwing on the next
+user interaction; a small curated table of shims (Facebook SDK, Google
+Analytics/Tag Manager, comScore) now gets injected into the page the moment
+a matching tracker is blocked, reusing the exact `ExecuteJavaScript` path
+the ad blocker already uses for cosmetic-filter CSS. Same idea as Firefox's
+SmartBlock, adapted to this codebase's existing hooks rather than
+Firefox's network-level resource substitution.
 
 ### 1.9.18 — 2026-09-13
 

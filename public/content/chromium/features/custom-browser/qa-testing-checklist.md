@@ -526,6 +526,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] As of v1.8.26: force a background refresh (temporarily shrink `custom.filter_list_refresh.interval_hours`, or delete `WanderLustAdBlockCache.txt` and restart) — **Expected:** a fetch to `easylist.to` occurs, `WanderLustAdBlockCache.txt` appears under the user-data dir, and `BlockersWorker` picks up the new rules without a restart (verify by blocking a host only present in the freshly fetched list, not the bundled snapshot).
 - [ ] As of v1.8.26: restart the browser after a successful refresh — **Expected:** the ad blocker loads from `WanderLustAdBlockCache.txt` on startup rather than the bundled `bundled_filter_rules.cc` snapshot (check via `VLOG(1)` output or a deliberately stale bundled marker rule).
 - [ ] As of v1.8.26: feed the updater a truncated/near-empty response (e.g. a local test server, or briefly lower the sanity threshold) — **Expected:** the fetch is rejected, a `LOG(WARNING)` fires, and the existing engine/cache is left untouched.
+- [ ] As of v1.9.19: visit a page embedding the Facebook SDK, Google Analytics/Tag Manager, or comScore (e.g. a page with a Like button, or `gtag`/`ga` calls in a click handler) with the ad blocker on — **Expected:** the tracker's script is blocked as before, but interacting with the page afterward (clicking the Like button, triggering an event-tracking call) does not throw a JavaScript console error — `window.FB`/`window.ga`/`window.gtag`/`window.COMSCORE` exist as harmless stubs instead of being undefined.
 
 📷 *Screenshot suggestion: the omnibox ad-block badge plus its opened bubble showing a list of blocked hosts.*
 
@@ -1561,19 +1562,22 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: a revealed password row alongside the Add/Edit modal.*
 
-### Password Manager — Checkup (weak/reused + leak check)
+### Password Manager — Checkup (weak/reused + breach alerts + leak check)
 
-**What it is:** Two independent checkup mechanisms: an instant local weak/reused-password scan (no network), and a real network-based leaked-password check via `BulkLeakCheckService`.
+**What it is:** Three checkup mechanisms: an instant local weak/reused-password scan (no network), local breach-alert correlation against a periodically-downloaded public breach dataset (as of v1.9.20, no network call at checkup time, no password/username/email ever transmitted), and a real network-based leaked-password check via `BulkLeakCheckService`.
 **Where to find it:** `chrome://settings` → **Passwords** → Password checkup section (or `chrome://password-manager`).
 **Default state:** Enabled by default. The network leak-check **will not surface real results** in this build — it requires a signed-in Google account with a real OAuth client, which this de-googled fork doesn't have configured; expect the UI to sit in a signed-out/token-error state.
 
-- [ ] Open the Password checkup section — **Expected:** local weak/reused results appear near-instantly (no spinner/network wait) — a "totalChecked" count plus lists of weak and reused passwords.
+- [ ] Open the Password checkup section — **Expected:** local weak/reused/breach results appear near-instantly (no spinner/network wait) — a "totalChecked" count plus lists of weak, reused, and potentially-exposed passwords.
 - [ ] Save two identical passwords for two unrelated sites, then re-run the local checkup — **Expected:** both are flagged as "reused".
 - [ ] Save an obviously weak password (e.g., `1234`) — **Expected:** it's flagged as "weak" after the local check.
+- [ ] As of v1.9.20: save a credential for a domain known to be in the Have I Been Pwned breach dataset (e.g. `adobe.com`) with the saved-password date set earlier than that domain's most recent known breach — **Expected:** it appears under "Potentially exposed" with the breach name and date shown; the caption text clearly distinguishes this from a confirmed leak (does not say the password was leaked, only that the site was breached after the password was last set).
+- [ ] As of v1.9.20: change that same credential's password (so `date_password_modified` is now after the breach date) and re-run the checkup — **Expected:** it no longer appears under "Potentially exposed".
+- [ ] As of v1.9.20: with no network access, restart the browser and open the checkup section (after at least one prior successful breach-data fetch) — **Expected:** breach correlation still works from the on-disk cache (`WanderLustBreachCache.json` in the user-data directory) — confirms the check itself makes no network call at checkup time, only the periodic background refresh does.
 - [ ] Click **Start** on the network leak check — **Expected:** progress streams in (pending count updates); given no OAuth credentials are configured, expect it to land in a signed-out or token-error state rather than `kIdle`/results — verify the UI clearly labels this state rather than silently hanging or crashing.
 - [ ] Click **Stop** mid-check — **Expected:** the check halts cleanly, no crash, state resets.
 
-📷 *Screenshot suggestion: the checkup section showing local weak/reused results plus the leak-check's signed-out/error state label.*
+📷 *Screenshot suggestion: the checkup section showing local weak/reused/potentially-exposed results plus the leak-check's signed-out/error state label.*
 
 ---
 
