@@ -10,6 +10,9 @@ pieces so far:
   group in Settings require the PIN. Added v1.8.42 (2026-08-20).
 - **Website Restrictions** — a domain blocklist/allowlist plus forced
   SafeSearch and YouTube Restricted Mode. Added v1.8.43 (2026-08-21).
+- **Secure DNS interaction** — enabling Website Restrictions also forces
+  Secure DNS off, so DNS-over-HTTPS can't resolve around it. Added v1.9.18
+  (2026-09-13).
 
 ---
 
@@ -125,6 +128,61 @@ behind being enabled).
 
 ---
 
+## Secure DNS: forced off while restrictions are active
+
+Added v1.9.18. Chromium already refuses to enable Secure DNS (DNS-over-HTTPS)
+when it detects OS-level parental controls
+(`StubResolverConfigReader::ShouldDisableDohForParentalControls()`, Windows
+Family Safety only) — but that check has no idea Website Restrictions
+exists. Left alone, a restricted profile with Secure DNS in the default
+"automatic" mode could quietly resolve straight past whatever network-level
+filtering a parent relies on, since DoH doesn't care what a local/router
+DNS filter would have blocked.
+
+`ParentalControlsService` closes that gap by mirroring its own active state
+into a new local-state pref,
+`custom.parental_controls.disable_secure_dns` — `true` whenever
+restrictions are both enabled and not in `"off"` mode. A `PrefChangeRegistrar`
+recomputes it on construction and whenever `kParentalControlsEnabled` or
+`kParentalControlsRestrictionMode` changes, so it's always current whether
+that change comes from the settings UI, sync, or anything else. A single
+patched line in `ShouldDisableDohForParentalControls()` checks this pref
+alongside the existing Windows check:
+
+```cpp
+bool StubResolverConfigReader::ShouldDisableDohForParentalControls() {
+  if (parental_controls_testing_override_.has_value())
+    return parental_controls_testing_override_.value();
+
+  if (local_state_->GetBoolean(prefs::kSecureDnsParentalControlsOverride))
+    return true;
+#if BUILDFLAG(IS_WIN)
+  return ShouldDisableDohForWindowsParentalControls();
+#else
+  return false;
+#endif
+}
+```
+
+This reuses Chromium's existing `SecureDnsConfig::ManagementMode::
+kDisabledParentalControls` path end to end, so `chrome://settings/security`
+shows the same built-in "This setting is disabled because parental controls
+are on" message Chromium already uses for its own OS-level check — no new
+UI string, no new management-mode plumbing. When the pref flips, a call to
+`StubResolverConfigReader::UpdateNetworkService()` forces an immediate
+recheck, so a live toggle of Website Restrictions takes effect without
+restarting the browser.
+
+**Scoping note:** Secure DNS mode is itself a machine-wide (`local_state`)
+setting in Chromium, not per-profile, so this mirror is deliberately
+last-writer-wins across profiles rather than a true cross-profile OR — the
+last profile to report a change decides the machine-wide value. This
+matches an existing Chromium inconsistency (its own `ShouldDisableDohForManaged()`
+check isn't per-profile either) rather than introducing a new one, and is
+correct for the common single-profile case.
+
+---
+
 ## Forced SafeSearch and YouTube Restricted Mode
 
 No new C++ at all for this half. Chromium already has fully-working,
@@ -187,6 +245,7 @@ same as every other settings toggle):
 | `custom.parental_controls.restriction_domains` | string (JSON array) | The domain list |
 | `settings.force_google_safesearch` | bool | Vanilla Chromium pref, reused as-is |
 | `settings.force_youtube_restrict` | int | Vanilla Chromium pref, reused as-is |
+| `custom.parental_controls.disable_secure_dns` | bool (local state) | Mirror of "restrictions actively enforcing," read by `StubResolverConfigReader` |
 
 ---
 
@@ -203,6 +262,8 @@ same as every other settings toggle):
 | `custom/browser/parental_controls/parental_controls_throttle.{h,cc}` | `URLLoaderThrottle` enforcing Website Restrictions |
 | `custom/browser/custom_content_browser_client.cc` | Registers the throttle in `CreateURLLoaderThrottles()` |
 | `custom/components/custom_settings/components/WebsiteRestrictionsSection.tsx` | Domain list + SafeSearch/YouTube UI, rendered inside `ParentalControlsPage.tsx`'s `ManageCard` |
+| `custom/browser/parental_controls/parental_controls_doh_bridge.{h,cc}` | Mirrors active-restrictions state into local state; pokes `StubResolverConfigReader` on change |
+| `chrome/browser/net/stub_resolver_config_reader.cc` (patched) | `ShouldDisableDohForParentalControls()` checks the mirrored pref |
 
 ---
 
@@ -220,6 +281,9 @@ same as every other settings toggle):
   call) are not blocked, only its own pages/iframes.
 - The 10-minute unlock window is a fixed constant (`kIdleTimeout`), not
   user-configurable.
+- The Secure DNS override (v1.9.18) is machine-wide, not per-profile — in
+  a multi-profile setup, the last profile to change its restrictions
+  decides the shared value, same as the single global PIN above.
 - Not integrated with the separate `ContentPolicyManager`/
   `ContentPolicyThrottle` power-user URL-filter engine (Settings →
   Security & Privacy) by design — mixing simple parent-facing domain

@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.17)
+## Versioned releases (1.7.25 → 1.9.18)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -24,6 +24,31 @@ without its own version bump, picked up by the next commit's bump instead.
 1.9.16 bundles similarly: a DEPS pin bump, the new Dial layout/tiles
 feature, and a build-vendoring fix landed as separate commits sharing one
 version bump.
+
+### 1.9.18 — 2026-09-13
+
+Closes a gap between [Parental Controls](parental-controls)' Website
+Restrictions and Chromium's own Secure DNS: enabling Website Restrictions
+now also forces Secure DNS (DNS-over-HTTPS) off, the same way Chromium
+already forces it off for OS-level (Windows Family Safety) parental
+controls — otherwise a restricted browser left in the default "automatic"
+DoH mode could resolve straight past whatever network-level filtering a
+parent relies on.
+
+- `ParentalControlsService` mirrors whether restrictions are actively
+  enforcing (`enabled && mode != "off"`) into a new local-state pref
+  (`custom.parental_controls.disable_secure_dns`) via a
+  `PrefChangeRegistrar`, updated on construction and on any relevant pref
+  change.
+- One patched line in `StubResolverConfigReader::ShouldDisableDohForParentalControls()`
+  (`chrome/browser/net/stub_resolver_config_reader.cc`) checks that pref
+  alongside the existing Windows-only check, reusing Chromium's existing
+  `SecureDnsConfig::ManagementMode::kDisabledParentalControls` path end to
+  end — no new UI, no new management-mode plumbing.
+- Deliberately last-writer-wins across profiles rather than a true
+  cross-profile OR: Secure DNS mode is itself a machine-wide local-state
+  setting in Chromium already (not per-profile), so this doesn't introduce
+  a new inconsistency, just matches the existing one.
 
 ### 1.9.17 — 2026-09-13
 

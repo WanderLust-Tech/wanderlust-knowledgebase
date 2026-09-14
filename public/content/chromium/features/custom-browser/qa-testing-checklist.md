@@ -871,6 +871,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Enable "YouTube Restricted Mode" (Moderate or Strict) and browse YouTube — **Expected:** restricted-mode behavior applies.
 - [ ] As of v1.8.44: with a blocklist/allowlist configured, disable Parental Controls entirely (current PIN required) — **Expected:** previously-blocked sites now load normally — this used to silently keep enforcing the domain list even after the whole feature was turned off.
 - [ ] Re-enable Parental Controls with a new PIN after having disabled it with a domain list configured — **Expected:** restriction mode comes back as "Off," not silently re-armed with the old list (disabling resets the mode).
+- [ ] As of v1.9.18: with Website Restrictions in blocklist or allowlist mode (not "Off"), open `chrome://settings/security` and check the Secure DNS setting — **Expected:** Secure DNS is off and shows "This setting is disabled because parental controls are on"; switching restriction mode back to "Off" re-enables the normal Secure DNS controls without restarting the browser.
 
 📷 *Screenshot suggestion: the PIN prompt interrupting a history-delete attempt, next to the Website Restrictions section showing a configured blocklist.*
 
