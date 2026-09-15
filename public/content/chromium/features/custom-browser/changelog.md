@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.21)
+## Versioned releases (1.7.25 → 1.9.22)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -24,6 +24,30 @@ without its own version bump, picked up by the next commit's bump instead.
 1.9.16 bundles similarly: a DEPS pin bump, the new Dial layout/tiles
 feature, and a build-vendoring fix landed as separate commits sharing one
 version bump.
+
+### 1.9.22 — 2026-09-15
+
+Adds [Minimal Browsing Mode](minimal-browsing-mode), a persistent Settings
+toggle that hides the toolbar and bookmark bar while keeping the tab strip
+visible — discovered while reviewing a third-party Chromium fork's
+embeddable-browser-as-DLL SDK for portable ideas (see
+[CCP_Tangram_Feature_Port_Analysis.md](../../../analysis/CCP_Tangram_Feature_Port_Analysis.md)),
+whose "subwindow mode" achieved a similar visual result but for a very
+different purpose (hosting the browser as a child window inside a native
+app).
+
+- `BrowserView::IsToolbarVisible()` and `IsBookmarkBarVisible()` now
+  return `false` when `prefs::kMinimalBrowsingMode` is set, via a new
+  `IsMinimalBrowsingModeEnabled()` helper — a single centralized check,
+  unlike the source project's dozen scattered `WS_CHILD` checks.
+- Tab strip layout is untouched; unlike Zen Mode, there's no
+  hover-to-reveal — the chrome just stays hidden until the toggle is
+  switched off.
+- Takes effect live via the existing pref-change-registrar →
+  `InvalidateLayout()` pattern already used by Compact Layout, no restart
+  needed.
+- New "Minimal browsing mode" toggle added to Settings → Appearance →
+  Layout, alongside Compact Layout and Zen Mode.
 
 ### 1.9.21 — 2026-09-14
 

@@ -407,6 +407,21 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: a right-click context menu on Windows 11 showing the translucent acrylic background against a colorful page underneath.*
 
+### Minimal Browsing Mode
+
+**What it is:** Permanently hides the toolbar and bookmark bar while keeping the tab strip visible — unlike Zen Mode, there is no hover-to-reveal.
+**Where to find it:** Settings → Appearance → Layout → "Minimal browsing mode".
+**Default state:** Disabled by default (`toolbar.minimal_browsing_mode`, defaults `false`).
+
+- [ ] Turn on "Minimal browsing mode" in Settings → Appearance → Layout — **Expected:** the toolbar (address bar, back/forward, extensions) and bookmark bar disappear immediately with no restart needed; the tab strip stays visible and usable.
+- [ ] With the toggle on, move the cursor to the top of the window — **Expected:** nothing reappears (unlike Zen Mode, there is no hover-to-reveal).
+- [ ] With the toggle on, open a new tab / switch between tabs — **Expected:** the tab strip continues to work normally; toolbar and bookmark bar remain hidden.
+- [ ] Turn the toggle off again — **Expected:** the toolbar and bookmark bar (if previously shown) reappear immediately.
+- [ ] Enable both "Minimal browsing mode" and "Zen mode" together — **Expected:** no crash; toolbar/bookmark bar stay hidden (an untested combination, but it shouldn't produce a broken layout).
+- [ ] Enable "Compact layout" together with "Minimal browsing mode" — **Expected:** no crash; toolbar remains hidden regardless of the compact-row layout.
+
+📷 *Screenshot suggestion: browser window with Minimal Browsing Mode on — toolbar and bookmark bar hidden, tab strip alone at the top.*
+
 ---
 
 ## Input & Interaction
