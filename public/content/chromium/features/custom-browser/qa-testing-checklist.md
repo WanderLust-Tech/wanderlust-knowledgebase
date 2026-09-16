@@ -852,6 +852,17 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: the profile menu with no Guest entry, next to `chrome://settings/help` showing the Chromium version row.*
 
+### Certificate Selector Dialog
+
+**What it is:** A visual enlargement of Chromium's built-in TLS client-certificate selector dialog (500×150 → 800×300) plus a new "Validity" column, so certificate subject/issuer/validity details aren't truncated illegibly at the stock small size.
+**Where to find it:** Only appears when a site requests a TLS client certificate for mutual-TLS/corporate authentication — most users will never see it in normal browsing. `chrome/browser/ui/views/certificate_selector.cc`, `BUILDFLAG(CUSTOM_BROWSER)`-guarded.
+**Default state:** Always the larger size/extra column in custom-browser builds — no toggle.
+
+- [ ] Navigate to a site configured to request a client certificate (or trigger via a corporate/test mTLS endpoint) — **Expected:** the certificate selector dialog appears sized approximately 800×300, not the stock 500×150.
+- [ ] Check the dialog's certificate list columns — **Expected:** a "Validity" column is present alongside the existing subject/issuer columns, showing each certificate's validity period.
+
+📷 *Screenshot suggestion: the certificate selector dialog at its enlarged size, with the Validity column visible.*
+
 ### Timezone Override (Anti-Fingerprinting)
 
 **What it is:** A per-profile runtime override of the reported system timezone. When set, it rebinds the OS `TimeZoneMonitor` service to report a chosen IANA timezone ID (e.g. `"America/New_York"`) instead of the host machine's real one, updating ICU and notifying all renderers — affecting `Intl.DateTimeFormat().resolvedOptions().timeZone`, `Date().toString()`, and `getTimezoneOffset()` site-wide. An empty override reverts to the host system timezone.

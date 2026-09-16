@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.9.22)
+## Versioned releases (1.7.25 → 1.10.0)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -23,7 +23,52 @@ for the same reason. 1.9.13 is a similar bundle: a mail-client fix landed
 without its own version bump, picked up by the next commit's bump instead.
 1.9.16 bundles similarly: a DEPS pin bump, the new Dial layout/tiles
 feature, and a build-vendoring fix landed as separate commits sharing one
-version bump.
+version bump. 1.10.0 follows the 1.8.0/1.9.0 pattern again: the Chromium
+143 sync commit and its own patch-rebase/build-fix commit share one
+version bump — and, like those two, it bumps the fork's Chromium-rebase
+counter (the middle field) rather than the trailing patch count, since a
+Chromium milestone change happened.
+
+### 1.10.0 — 2026-09-16
+
+Rebases the fork's entire patch stack onto Chromium 143.0.7499.194 (from
+142.0.7444.177). No user-facing feature changes — this release is entirely
+rebase/build-infrastructure work. See
+[Chromium 142 → 143 migration notes](version-updates/chromium-142-to-143-migration)
+for the full write-up.
+
+- **Chromium 143 patch rebase**: all 86 failed/rejected patches resolved
+  (16 stale-`.rej` already-applied, 70 genuinely rebased — context
+  shifts, 7 files relocated by upstream including `browser_view_layout`'s
+  split into a new `frame/layout/` subdirectory with an Old/Impl
+  architecture split, 2 patches retired as obsolete).
+- A subsequent full-build pass (not just `apply_patches`) surfaced ~20
+  further fix cycles, over half of them bugs with nothing to do with the
+  version bump: a systemic gap across `custom/` where roughly 50 call
+  sites had never been adapted to `GURL` accessors returning
+  `string_view` or to `base::JSONReader::Read` requiring an explicit
+  `options` argument (both long-standing Chromium facts, suggesting much
+  of `custom/` had never been through a full successful build before), a
+  `BrowserView`/`BrowserWindow` cross-file gap that left `BrowserView`
+  abstract, and several genuinely pre-existing bugs only now reachable —
+  including a literally truncated patch file for
+  `platform_util_win.cc`, and `custom_main_delegate.cc` never having
+  been wired into the Windows `chrome_dll` build target at all.
+- Bumped `custom_chromium_base_version` (142.0.7444.177 → 143.0.7499.194).
+
+### 1.9.23 — 2026-09-15
+
+Enlarges the certificate-selector dialog (500×150 → 800×300, both
+`BUILDFLAG(CUSTOM_BROWSER)`-guarded) and adds a Validity column, ported
+from a Chromium-Gost feature review — the only finding from that fork
+worth porting after ruling out GOST TLS cryptography as out of scope for
+this project's audience and sandbox model (see
+[Chromium_Gost_Feature_Port_Analysis.md](../../../analysis/Chromium_Gost_Feature_Port_Analysis.md)).
+
+- New `IDS_CERT_SELECTOR_VALIDITY_COLUMN` string resource for the added
+  column header.
+- The dialog only appears when a site requests a TLS client certificate
+  (mutual-TLS/corporate auth scenarios) — most users will never see it.
 
 ### 1.9.22 — 2026-09-15
 
