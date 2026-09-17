@@ -312,6 +312,18 @@
 
 📷 *Screenshot suggestion: `chrome://settings/containers` page with two containers configured, plus the "New tab in container ▸" submenu.*
 
+### Bottom Bar
+
+**What it is:** A persistent container docked to the bottom of the browser window (`BottomContainerView`/`BottombarView`), hosting other custom features — the Custom Download Shelf, the Privacy Shield button, and the Mail toolbar button all live inside it. Gated by `BUILDFLAG(BOTTOM_BAR)`.
+**Where to find it:** Visible at the bottom edge of any normal browser window whenever at least one bottombar-hosted feature is active.
+**Default state:** Always present (`BOTTOM_BAR` is compiled in by default); its visible height is 0 when nothing inside it needs to show.
+
+- [ ] Open a normal (tabbed) browser window and trigger any bottombar-hosted feature (start a download, or open the Privacy Shield bubble) — **Expected:** the bar renders flush against the bottom edge of the window, full width, with no gap or overlap against the page content above it.
+- [ ] Resize the window (both wider/narrower and shorter/taller) — **Expected:** the bar stays pinned to the bottom edge and spans the full width at every size.
+- [ ] As of v1.11.0: open a normal browser window on a fresh build after a Chromium rebase — **Expected:** the bar is positioned at the bottom of the window, not floating elsewhere or overlapping other UI (a rebase that flips `features::kTabbedBrowserUseNewLayout` on by default previously left the bar completely unpositioned, since its layout code only existed in the layout implementation that flag bypasses).
+
+📷 *Screenshot suggestion: a window with the download shelf visible inside the bottom bar, confirming it's flush with the window's bottom edge.*
+
 ### Custom Download Shelf
 
 **What it is:** Replaces Chrome's download bubble (the small popup near the toolbar) with a bottom shelf bar showing active/recent downloads, with extra per-item commands: hide, delete from list, delete file from disk.

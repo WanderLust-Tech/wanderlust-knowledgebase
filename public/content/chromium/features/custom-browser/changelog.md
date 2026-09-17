@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.10.0)
+## Versioned releases (1.7.25 → 1.11.0)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -23,11 +23,48 @@ for the same reason. 1.9.13 is a similar bundle: a mail-client fix landed
 without its own version bump, picked up by the next commit's bump instead.
 1.9.16 bundles similarly: a DEPS pin bump, the new Dial layout/tiles
 feature, and a build-vendoring fix landed as separate commits sharing one
-version bump. 1.10.0 follows the 1.8.0/1.9.0 pattern again: the Chromium
-143 sync commit and its own patch-rebase/build-fix commit share one
-version bump — and, like those two, it bumps the fork's Chromium-rebase
+version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
+Chromium sync commit and its own patch-rebase/build-fix commit share one
+version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
 Chromium milestone change happened.
+
+### 1.11.0 — 2026-09-17
+
+Rebases the fork's entire patch stack onto Chromium 144.0.7559.135 (from
+143.0.7499.194). No new user-facing features — this release is entirely
+rebase/build-infrastructure work, plus fixes for two runtime regressions
+the rebase itself introduced. See
+[Chromium 143 → 144 migration notes](version-updates/chromium-143-to-144-migration)
+for the full write-up.
+
+- **Chromium 144 patch rebase**: all failed/rejected patches resolved (a
+  90%-heuristic pass flagged 14 as already-applied; hunk-by-hunk
+  verification confirmed only 5 genuinely were, the other 9 went back
+  into the real rebase queue). 3 patches retired as obsolete (upstream
+  deleted the "Tab Scrolling" feature and the ChromeOS-only
+  `scalable_iph` code this fork never compiled anyway).
+- A subsequent full-build pass surfaced a long build-fix tail: Skia
+  hiding its direct `SkPath` mutation API behind
+  `SK_HIDE_PATH_EDIT_METHODS` (5 files migrated to `SkPathBuilder`), a
+  libtorrent/BoringSSL header-ordering clash that broke every file
+  touching SHA/RAND, 8 grit resource-ID gaps (plus a real discovery
+  about how `update_resource_ids`' ID-reassignment pass actually works),
+  and a `chrome_paks.gni` duplicate-`.pak`-listing bug that broke the
+  final resource repack step.
+- Two regressions only a running build could catch, both fixed: a
+  startup crash from `chrome://management` and `chrome://password-manager`
+  each registering their `WebUIConfig` twice (upstream's registration was
+  missing the `!ENABLE_CUSTOM_WEBUI` guard every sibling custom-page
+  replacement already has), and the bottom bar no longer being positioned
+  at the bottom of the window (Chromium 144 enabled
+  `features::kTabbedBrowserUseNewLayout` by default, routing every normal
+  browser window through a new layout implementation the fork's bottom-bar
+  code had never been ported to).
+- Re-encountered (and this time wrote a reusable skill for) the recurring
+  depot_tools `StrEnum` `ImportError` — an upstream `.vpython3` spec
+  regression that has now broken two consecutive rebases in a row.
+- Bumped `custom_chromium_base_version` (143.0.7499.194 → 144.0.7559.135).
 
 ### 1.10.0 — 2026-09-16
 
