@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.0)
+## Versioned releases (1.7.25 → 1.11.1)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -28,6 +28,29 @@ Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
 Chromium milestone change happened.
+
+### 1.11.1 — 2026-09-19
+
+Fixes Sidebar, Vertical Tabs, and Split View all going completely unlaid-out
+(sidebar invisible, vertical tab bar and split view likewise) on Chromium
+144 builds — the same `features::kTabbedBrowserUseNewLayout`-flip root
+cause as the bottom bar fix folded into 1.11.0, for a fork layout function
+(`BrowserViewLayoutImplOld::CustomLayoutContainers`) that hadn't been
+audited against the new layout implementation yet. See
+[Chromium 143 → 144 migration notes](version-updates/chromium-143-to-144-migration)
+(§6.2 and the "Known Remaining Issues" table) for background.
+
+- Ported the whole coupled function — Sidebar, Vertical Tabs, and Split
+  View share width-balancing math and a single "is this a non-fullscreen
+  normal window" condition, so they had to move together — into
+  `BrowserViewTabbedLayoutImpl::CalculateProposedLayout`, adapted to its
+  declarative `ProposedLayout`/`AddChild` builder style.
+- Preserves a pre-existing, non-regression quirk faithfully: whenever any
+  of these three fork features are active on a normal window, Chromium's
+  own native side panel (reading list, etc.) gets no layout space at all
+  — that's how the old implementation always behaved, not something this
+  fix changed.
+- `BUILD` counter increments (not a rebase — same Chromium 144 base).
 
 ### 1.11.0 — 2026-09-17
 
