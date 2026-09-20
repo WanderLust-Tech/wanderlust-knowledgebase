@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.2)
+## Versioned releases (1.7.25 → 1.11.3)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -29,28 +29,44 @@ version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
 Chromium milestone change happened.
 
-### 1.11.2 — 2026-09-20
+### 1.11.3 — 2026-09-20
 
-Fixes a black gap in the top-right corner of the window whenever Vertical
-Tabs is on — a follow-up to 1.11.1's Sidebar/Vertical-Tabs/Split-View
-layout port, same Chromium 144 rebase, different symptom of the same
-underlying gap in that audit.
+The real fix for the black gap in the top-right corner of the window
+whenever Vertical Tabs is on — 1.11.2 shipped a same-day attempt at this
+that turned out not to fix it; this entry replaces that diagnosis with
+the confirmed root cause and fix, verified working at runtime.
 
-- `BrowserViewTabbedLayoutImpl::GetTabStripType()` reports
+- 1.11.2 assumed `BrowserViewTabbedLayoutImpl::GetTabStripType()` reports
   `TabStripType::kVertical` whenever this fork's own vertical tabs are
-  showing, but the code that clears `needs_exclusion` for that mode is
-  gated on upstream's own `vertical_tab_strip_container` being parented —
-  a view this fork never populates, since its own `VerticalTabBar`
-  (ported in 1.11.1) plays that role instead. With `needs_exclusion`
-  never cleared, the toolbar fell through to `GetBoundsWithExclusion()`,
-  narrowing itself to leave room for caption buttons it didn't actually
-  need — this fork's frame draws minimize/maximize/close in their own row
-  above the toolbar, not inline with it — leaving that reserved margin
-  entirely unpainted.
-- Clears `needs_exclusion` whenever `tab_strip_type` is `kVertical` and
-  upstream's own container isn't parented, matching how the
-  `kHorizontal`/`kWebUi` cases already behave.
+  showing. It doesn't: that method is driven entirely by upstream's own
+  `kVerticalTabs` feature flag, which this fork never enables, so the
+  condition it added was always false — a no-op, matching the "had no
+  effect" report.
+- The actual cause: when this fork's own vertical tab bar is enabled,
+  `BrowserView` reparents `tab_strip_region_view_` directly under its
+  `VerticalTabBar` (ported in 1.11.1) instead of under `browser_view`.
+  `BrowserViewLayoutImpl::IsParentedTo()` checks direct parentage only, so
+  the "horizontal tab strip" layout block — the only place that clears
+  `needs_exclusion` in this code path — never runs in that state. With
+  `needs_exclusion` staying true, the toolbar fell through to
+  `GetBoundsWithExclusion()`, narrowing itself to leave room for caption
+  buttons it didn't actually need — this fork's frame draws
+  minimize/maximize/close in their own row above the toolbar, not inline
+  with it — leaving that reserved margin entirely unpainted.
+- Clears `needs_exclusion` directly off
+  `views().vertical_tab_bar->GetVisible()`, the same signal this file
+  already uses elsewhere (in the 1.11.1 port) to detect the fork's
+  vertical tab bar, instead of the unrelated `kVertical`/
+  `GetTabStripType()` check.
 - `BUILD` counter increments (not a rebase — same Chromium 144 base).
+
+### 1.11.2 — 2026-09-20 (superseded by 1.11.3, did not fix the bug)
+
+Attempted to fix the same top-right corner gap described in 1.11.3, on the
+mistaken assumption that `GetTabStripType()` returns `TabStripType::kVertical`
+for this fork's own vertical tabs. It doesn't — see 1.11.3 for the actual
+root cause and fix. Left in the version history rather than removed, since
+it was a real shipped build.
 
 ### 1.11.1 — 2026-09-19
 
