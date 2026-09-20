@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.1)
+## Versioned releases (1.7.25 → 1.11.2)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -28,6 +28,29 @@ Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
 Chromium milestone change happened.
+
+### 1.11.2 — 2026-09-20
+
+Fixes a black gap in the top-right corner of the window whenever Vertical
+Tabs is on — a follow-up to 1.11.1's Sidebar/Vertical-Tabs/Split-View
+layout port, same Chromium 144 rebase, different symptom of the same
+underlying gap in that audit.
+
+- `BrowserViewTabbedLayoutImpl::GetTabStripType()` reports
+  `TabStripType::kVertical` whenever this fork's own vertical tabs are
+  showing, but the code that clears `needs_exclusion` for that mode is
+  gated on upstream's own `vertical_tab_strip_container` being parented —
+  a view this fork never populates, since its own `VerticalTabBar`
+  (ported in 1.11.1) plays that role instead. With `needs_exclusion`
+  never cleared, the toolbar fell through to `GetBoundsWithExclusion()`,
+  narrowing itself to leave room for caption buttons it didn't actually
+  need — this fork's frame draws minimize/maximize/close in their own row
+  above the toolbar, not inline with it — leaving that reserved margin
+  entirely unpainted.
+- Clears `needs_exclusion` whenever `tab_strip_type` is `kVertical` and
+  upstream's own container isn't parented, matching how the
+  `kHorizontal`/`kWebUi` cases already behave.
+- `BUILD` counter increments (not a rebase — same Chromium 144 base).
 
 ### 1.11.1 — 2026-09-19
 
