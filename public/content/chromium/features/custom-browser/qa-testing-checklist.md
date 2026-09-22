@@ -1204,6 +1204,8 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Turn the Settings toggle off, then reload a page with video — **Expected:** no button appears on hover anywhere on the page.
 - [ ] Turn the toggle back on and reload — **Expected:** the button returns.
 - [ ] As of v1.9.9: open any `chrome://` or `chrome-untrusted://` page (e.g. `chrome://reader`, `chrome://mail`) with DevTools console open — **Expected:** no "Failed to set the 'innerHTML' property ... TrustedHTML" error appears (previously this feature injected its button-setup script into every page's primary main frame unconditionally, including WebUI pages with no video to attach to, crashing under their Trusted Types CSP every time).
+- [ ] As of v1.11.5: hover a video on a site with its own player controls overlaid near the video's top-right corner (e.g. a settings/fullscreen icon in roughly the same spot this button appears), then move the cursor from the video toward the button, passing over that overlay along the way — **Expected:** the button stays visible the whole time and doesn't disappear before the cursor reaches it (previously the button's hide-timer was started by the video's own `mouseleave` firing the instant the cursor crossed onto the site's overlay, even though it never visually left the video).
+- [ ] As of v1.11.5: browse normally across several page navigations with DevTools console open — **Expected:** no `Cannot read properties of null (reading 'appendChild')` error appears (previously `document.documentElement` could transiently be null right around when a navigation committed, crashing the button's setup script).
 
 📷 *Screenshot suggestion: the floating PiP button overlaid on the corner of a playing video.*
 

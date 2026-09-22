@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.4)
+## Versioned releases (1.7.25 → 1.11.5)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -28,6 +28,29 @@ Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
 Chromium milestone change happened.
+
+### 1.11.5 — 2026-09-22
+
+Fixes two bugs in the [Picture-in-Picture Button](picture-in-picture-button)'s
+injected floating hover button, both surfaced by user reports.
+
+- The button's 250ms hide countdown used to be started by a native
+  `mouseleave` event firing on the `<video>` element itself. Many sites
+  overlay their own player controls directly on top of `<video>` — often
+  in the same top-right corner this button occupies — and the instant the
+  cursor crosses onto that overlay, the browser's hit testing makes the
+  overlay (not the video) the event target, firing `mouseleave` on the
+  video even though the cursor never visually left it. That started the
+  countdown early, so the button could vanish before the user's cursor
+  actually reached it. Replaced with a `document`-level `mousemove`
+  listener that checks real cursor coordinates against the video's and
+  button's actual screen rects (with a small proximity margin), which
+  doesn't depend on which DOM element the browser thinks is topmost.
+- Fixed a real `Cannot read properties of null (reading 'appendChild')`
+  crash: `document.documentElement` can transiently be `null` right
+  around when a navigation commits, and the injected script assumed it
+  was already available. The script's setup now retries via a zero-delay
+  `setTimeout` until `documentElement` exists instead of assuming so.
 
 ### 1.11.4 — 2026-09-21
 
