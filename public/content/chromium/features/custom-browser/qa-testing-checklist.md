@@ -266,6 +266,7 @@
 - [ ] Switch the display to a HiDPI scale factor (e.g. Windows display scaling at 200%) and relaunch/move the browser window onto that display — **Expected:** logo still renders as a single crisp icon, not tiled into a repeating grid and not blurry.
 - [ ] Resize the browser window and try both compact/comfortable density settings if available — **Expected:** logo stays proportionally sized to the tab strip's current height in every case, never clipped or oversized.
 - [ ] As of v1.8.59: repeat the HiDPI check above — **Expected:** logo no longer tiles into a visible 2x2 grid (previously the `default_200_percent` logo assets were duplicates of the 100% versions, so a HiDPI compositor sampled a 1x texture into a 2x quad) and no longer goes stale-sized depending on when the window's tab strip height settled after launch.
+- [ ] As of v1.11.4: on a fresh build after a Chromium rebase, open a normal browser window with the horizontal tab strip showing — **Expected:** the logo appears at the top-left corner as always (a rebase that switched this fork's layout code to `BrowserViewTabbedLayoutImpl` previously left the logo un-laid-out and effectively invisible, since it was parented to a container whose coordinate space no longer covered the tab strip's row).
 
 📷 *Screenshot suggestion: the tab strip logo at 100% scaling next to the same window on a 200% HiDPI display.*
 

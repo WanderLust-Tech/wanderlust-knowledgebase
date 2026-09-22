@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.3)
+## Versioned releases (1.7.25 → 1.11.4)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -28,6 +28,27 @@ Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
 Chromium milestone change happened.
+
+### 1.11.4 — 2026-09-21
+
+Fixes the [Tab Strip Logo](qa-testing-checklist#tab-strip-logo) going
+missing from the top-left of the tab strip after the Chromium 144 rebase —
+another `BrowserViewTabbedLayoutImpl` coverage gap in the same family as
+1.11.1 and 1.11.3.
+
+- `title_logo_view_` was parented to `top_container_` at construction, but
+  `BrowserViewTabbedLayoutImpl`'s `top_container` now starts its own local
+  coordinate space *below* the tab strip's row — unlike the old layout
+  implementation, where `top_container` spanned the full tab-strip-and-below
+  region and the two coordinate frames lined up. With no way to place the
+  logo inside that row from `top_container`'s frame, it simply never got
+  laid out (effectively zero-size).
+- Reparented `title_logo_view_` directly to `browser_view`, matching
+  `tab_strip_region_view_`, and ported the old layout's logo sizing/
+  positioning — recomputed every layout pass, since the tab strip's height
+  isn't final at `Init()` time — into `BrowserViewTabbedLayoutImpl`'s
+  horizontal tab strip block.
+- `BUILD` counter increments (not a rebase — same Chromium 144 base).
 
 ### 1.11.3 — 2026-09-20
 
