@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.5)
+## Versioned releases (1.7.25 → 1.11.6)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,7 +27,58 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened.
+Chromium milestone change happened. 1.11.6 bundles similarly to 1.9.13: a
+feature commit landed without its own version bump and the next commit's
+bump picked it up.
+
+### 1.11.6 — 2026-10-12
+
+Adds the new [Domain Mirror](domain-mirror) feature, fixes a way
+[Smart Proxy Routing](smart-proxy-routing) could break all browsing and adds
+an "ask" mode to it, and puts the [Mail Client](mail-client)'s unread count
+on the Windows taskbar button.
+
+- **Domain Mirror.** User-defined "when I open site A, go to site B instead"
+  redirects, managed at Settings → Privacy and security → Domain Mirror. A
+  rule covers the source domain and its subdomains, preserves the subdomain
+  prefix, path and query, and is applied by a navigation throttle *before*
+  any request reaches the original site (the original navigation is cancelled
+  and the mirror opened as a fresh navigation, so parental controls, content
+  policy and ad blocking all evaluate the real destination). Matching is on
+  whole domain labels, POST navigations are never rewritten, and loops, chains
+  and cycles between rules are rejected when a rule is added — treating
+  disabled rules as enabled, so re-enabling one later can't create a loop.
+  After a redirect an infobar offers **Open original**, which pauses that rule
+  for the rest of the browser session. Always compiled in; a no-op until a
+  rule exists.
+- **Smart Proxy Routing: rule validation.** Rule patterns and proxy strings
+  were pasted into the generated PAC script unescaped, and the PAC is applied
+  with `pac_mandatory=true`, so a single rule containing a quote produced an
+  invalid script and blocked *all* browsing until it was deleted. Rules are now
+  validated on add/edit (the settings page shows the reason), the generator
+  re-validates and JSON-quotes everything it emits, and the add/update message
+  handlers no longer dereference missing fields.
+- **Smart Proxy Routing: bare `host:port` and `HTTP`.** The settings page
+  suggested typing a plain `host:port`, but Chromium's PAC parser rejects
+  that (and an `HTTP` keyword) and silently falls back to DIRECT, so such
+  rules never routed. A bare `host:port` is now written as
+  `PROXY host:port` and `HTTP` is mapped to `PROXY`.
+- **Smart Proxy Routing: Ask mode.** Each rule now has a mode: *Always* (the
+  previous behaviour) or *Ask*. An ask rule is not in the PAC; when a matching
+  site fails with a connectivity error (reset, refused, timeout, DNS failure…)
+  a bar offers "Try again through your proxy?". Accepting grants the proxy for
+  that registrable domain and its subdomains and reloads. The grant is
+  in-memory and ends when the tab that granted it closes or routing is turned
+  off. No prompt in Incognito. Ask rules don't count toward the status
+  bubble's active-rule count.
+- **Mail: Windows taskbar badge.** The total unread count is shown as a badge
+  on the browser's taskbar button (capped at 99+, on by default), using the
+  same overlay helper as the Badging API. An opt-in setting also flashes the
+  taskbar button on new mail while the window is in the background. Both are
+  toggled under Settings → Mail accounts → Taskbar.
+- Vanilla Chromium touched: `components/infobars/core/infobar_delegate.h`
+  (two new infobar identifiers) and `chrome/browser/ui/tab_helpers.cc`
+  (attaches the proxy-assist tab helper).
 
 ### 1.11.5 — 2026-09-22
 

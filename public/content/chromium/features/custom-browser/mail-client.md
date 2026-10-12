@@ -93,6 +93,10 @@ Gated by `BUILDFLAG(ENABLE_MAIL_CLIENT)`.
 - `custom.mail.sync_interval_seconds` — background poll interval,
   default 300.
 - `toolbar.show_mail_button` — mail toolbar button visibility.
+- `custom.mail.taskbar_badge` — show the unread count as a badge on the
+  Windows taskbar button; default on (v1.11.6).
+- `custom.mail.taskbar_flash` — flash the taskbar button on new mail while
+  the window is in the background; default off (v1.11.6).
 
 ---
 
@@ -200,6 +204,24 @@ v1.8.58), deliberately kept out of the monolithic `unit_tests` binary
 for fast iteration.
 
 ---
+
+## Taskbar badge and flash (Windows, v1.11.6)
+
+The total unread count is also drawn on the browser's **taskbar button** as a
+badge (capped at "99+"), using the same overlay helper the Badging API uses
+(`taskbar::DrawTaskbarDecorationString`). It lives in `MailToolbarButton`,
+which exists in every browser window even when the toolbar button itself is
+hidden, so the badge works regardless of `toolbar.show_mail_button`.
+
+- Toggled by Settings → Mail accounts → **Taskbar**
+  (`custom.mail.taskbar_badge`, default on). Turning it off clears the badge.
+- An optional **flash** (`custom.mail.taskbar_flash`, default off) flashes the
+  taskbar button when new mail arrives while the window is not active, until
+  it is brought to the foreground.
+- With several browser windows open, each window badges (and flashes) its own
+  taskbar button. Anything else that redraws the taskbar decoration — such as a
+  profile-avatar change — clears the badge until the unread count next
+  changes. Windows only; there is no macOS dock badge.
 
 ## Known limitations
 

@@ -88,12 +88,71 @@ ProxyRoutingRule {
   pattern: string   // domain glob, e.g. "*.corp.example.com"
   proxy:   string   // "PROXY host:port" or "DIRECT"
   enabled: bool     // per-rule toggle; disabled rules are excluded from PAC
+  mode:    "always" | "ask"   // absent in rules saved before v1.11.6 = always
 }
 ```
 
 Stored as a `base::Value::List` of dicts under the pref key
-`custom.proxy_routing_rules`. `ProxyRoutingRule::ToValue()` /
+`custom.proxy_routing.rules`. `ProxyRoutingRule::ToValue()` /
 `ProxyRoutingRule::FromValue()` handle serialization.
+
+## Rule modes: Always and Ask
+
+Each rule has a `mode`:
+
+| Mode | Behaviour |
+|---|---|
+| `always` (default) | The rule is in the PAC; matching hosts always use its proxy. This is how every rule behaved before modes existed. |
+| `ask` | The rule is **not** in the PAC. When a main-frame navigation to a matching host fails with a connectivity error, a confirm infobar offers "Use proxy". Accepting adds a *grant* for the site's registrable domain (and its subdomains) and reloads. |
+
+There is no "never" mode — disable the rule instead.
+
+A catch-all `*` pattern with mode `ask` gives "offer a proxy whenever any site
+can't be reached". Pair it with a real proxy in the rule's *Proxy* field
+(`DIRECT` rules are ignored for ask mode).
+
+### Grants
+
+Grants live in memory in `ProxyRoutingManager` (never persisted) and are
+emitted at the top of the PAC:
+
+```javascript
+function FindProxyForURL(url, host) {
+  if (host == "blocked.example" || shExpMatch(host, "*.blocked.example")) return "PROXY 10.0.0.1:8080";
+  if (shExpMatch(host, "*.corp.example.com")) return "PROXY 10.0.0.1:8080";
+  return "DIRECT";
+}
+```
+
+A grant is dropped when the tab that granted it closes, when routing is
+disabled, or when the browser restarts. Because the proxy configuration is
+profile-wide, the grant applies to *every* tab for that domain while it exists.
+Incognito windows never show the prompt.
+
+### Validation
+
+`ProxyRoutingManager::AddRule`/`UpdateRule` return `false` (changing nothing)
+for an invalid rule, and the settings page shows the reason:
+
+- **Pattern** — 1–253 chars from `A-Z a-z 0-9 . _ - * ?`.
+- **Proxy** — `DIRECT`; `host:port` (normalised to `PROXY host:port`, because a
+  bare `host:port` is not a valid PAC return value); or
+  `PROXY|HTTPS|SOCKS|SOCKS4|SOCKS5 host:port` (`HTTP` is accepted and rewritten to `PROXY`); up to 4 entries separated
+  by `;` (e.g. `PROXY a:8080; DIRECT`). `host` is a DNS name, IPv4 address or
+  `[IPv6]`; port 1–65535.
+
+The PAC generator re-validates and JSON-quotes everything it emits, so rules
+that were stored by an older build are skipped rather than breaking the script.
+
+### Tests
+
+`proxy_routing_unittests` (pure logic: validation, rule serialisation, PAC
+generation, host matching):
+
+```
+autoninja -C out/Debug proxy_routing_unittests
+out\Debug\proxy_routing_unittests.exe
+```
 
 ## JS ↔ C++ message protocol
 
@@ -110,8 +169,8 @@ Stored as a `base::Value::List` of dicts under the pref key
 | Direction | Message | Payload | Notes |
 |---|---|---|---|
 | JS → C++ | `proxyRoutingGetRules` | — | Returns `ProxyRoutingRule[]` |
-| JS → C++ | `proxyRoutingAddRule` | `{pattern, proxy}` | Generates a UUID `id`, appends, regenerates PAC |
-| JS → C++ | `proxyRoutingUpdateRule` | `{id, pattern, proxy, enabled}` | Replaces the matching rule by `id`, regenerates PAC |
+| JS → C++ | `proxyRoutingAddRule` | `{pattern, proxy, mode, enabled}` | Validates, generates a UUID `id`, appends, regenerates PAC. On rejection fires `proxyRoutingRuleError` (string) instead of `proxyRoutingRulesChanged` |
+| JS → C++ | `proxyRoutingUpdateRule` | `{id, pattern, proxy, mode, enabled}` | Replaces the matching rule by `id`, regenerates PAC |
 | JS → C++ | `proxyRoutingDeleteRule` | `{id}` | Removes the rule, regenerates PAC |
 | JS → C++ | `proxyRoutingReorderRules` | `{ids[]}` | Reorders rules to match the given ID list; PAC order affects match priority |
 
@@ -123,6 +182,11 @@ Stored as a `base::Value::List` of dicts under the pref key
 |---|---|
 | [`browser/net/proxy_routing_manager.{cc,h}`](../src/custom/browser/net/proxy_routing_manager.cc) | `KeyedService`. Stores rules + enabled state. PAC generation. Observer list (`base::ObserverList<Observer>`). `RegisterProfilePrefs()` |
 | [`browser/net/proxy_routing_manager_factory.{cc,h}`](../src/custom/browser/net/proxy_routing_manager_factory.cc) | `BrowserContextKeyedServiceFactory`. `GetForProfile()` creates lazily (use in constructors/setup). `GetForProfileIfExists()` returns null without creating — safe to call during teardown or from reactive paths like `UpdateIcon()`. `GetBrowserContextToUse()` redirects OTR profiles to their parent via `GetBrowserContextRedirectedInIncognito`. |
+| [`browser/net/proxy_routing_rule.{cc,h}`](../src/custom/browser/net/proxy_routing_rule.cc) | Pure (base-only). `ProxyRoutingRule` + `ProxyRoutingMode` and their (de)serialisation |
+| [`browser/net/proxy_pac_generator.{cc,h}`](../src/custom/browser/net/proxy_pac_generator.cc) | Pure. The only place PAC text is built; skips invalid rules and JSON-quotes everything. `ProxyPatternMatchesHost()` for ask-mode matching |
+| [`browser/net/proxy_routing_validation.{cc,h}`](../src/custom/browser/net/proxy_routing_validation.cc) | Pure. Pattern/proxy validation and proxy normalisation |
+| [`browser/proxy_assist/proxy_assist_tab_helper.{cc,h}`](../src/custom/browser/proxy_assist/proxy_assist_tab_helper.cc) | Watches for failed main-frame loads and offers the proxy for ask-mode rules |
+| [`browser/proxy_assist/proxy_assist_infobar_delegate.{cc,h}`](../src/custom/browser/proxy_assist/proxy_assist_infobar_delegate.cc) | The "Can't connect to X. Try again through your proxy?" infobar |
 
 ### C++ Views layer
 

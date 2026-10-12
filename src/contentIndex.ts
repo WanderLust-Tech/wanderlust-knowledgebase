@@ -875,6 +875,7 @@ const internalContent: ContentNode[] = [
             { title: "Site Injection", path: "features/custom-browser/site-injection" },
             { title: "UA Overrides", path: "features/custom-browser/ua-overrides" },
             { title: "Scheme Aliases", path: "features/custom-browser/scheme-aliases" },
+            { title: "Domain Mirror", path: "features/custom-browser/domain-mirror" },
             { title: "Security & Privacy Features", path: "features/custom-browser/security-privacy-features" },
             { title: "Timezone Override", path: "features/custom-browser/timezone-override" },
             { title: "Parental Controls", path: "features/custom-browser/parental-controls" },

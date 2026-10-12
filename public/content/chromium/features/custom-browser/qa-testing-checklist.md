@@ -815,6 +815,23 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 
 📷 *Screenshot suggestion: the address bar showing `wanderlust://prefs` having just redirected to the settings page.*
 
+### Domain Mirror
+
+**What it is:** User-defined "when I open site A, go to site B instead" redirects (for example to a mirror or alternative front-end of a site that is blocked or slow). A rule covers the source domain and its subdomains, keeps the path and query, and is applied before any request is sent to the original site. After a redirect a bar offers **Open original**.
+**Where to find it:** Settings → Privacy and security → **Domain Mirror** (`chrome://custom-settings/domain-mirror`). Rules are stored in the `custom.domain_mirror.rules` pref; the notification toggle is `custom.domain_mirror.show_notice`. See [Domain Mirror](domain-mirror).
+**Default state:** Always compiled in (no build flag); a no-op until at least one rule is added. The redirect notification bar is on by default.
+
+- [ ] Open Settings → Privacy and security → Domain Mirror, click **+ Add redirect**, enter `example.com` → `example.org` and Save — **Expected:** the rule appears in the list immediately, no restart needed.
+- [ ] Open `https://www.example.com/some/path?q=1` — **Expected:** the tab lands on `https://www.example.org/some/path?q=1` (subdomain, path and query are carried over) and a bar reads "Redirected www.example.com to www.example.org." with **Open original** and **Dismiss** buttons.
+- [ ] Click **Open original** — **Expected:** the original `www.example.com` page loads, and opening it again during the same browser session is no longer redirected. Restart the browser and open it once more — **Expected:** the redirect applies again.
+- [ ] Open `https://notexample.com/` — **Expected:** not redirected (matching is on whole domain labels, not a text suffix).
+- [ ] Switch a rule's toggle off — **Expected:** `example.com` is no longer redirected. Switch it back on — **Expected:** redirecting resumes.
+- [ ] Turn off **Tell me when a page was redirected**, then repeat the `www.example.com` visit — **Expected:** the redirect still happens but no bar appears.
+- [ ] Try adding invalid rules: a source of `localhost`; a destination of `https://example.org/x`; the loop `a.test` → `a.test`; and the chain `a.test` → `b.test` followed by `b.test` → `c.test` — **Expected:** each is rejected with a red message above the list and nothing is saved.
+- [ ] Open `https://example.com` in an Incognito window — **Expected:** the same redirect applies.
+
+📷 *Screenshot suggestion: the Domain Mirror settings page with a rule listed, next to the "Redirected … to …" bar on the mirror page.*
+
 ### De-Googling & Privacy-Safe Defaults
 
 **What it is:** A set of build-time and runtime measures reducing data flow to Google — pruned/redirected telemetry endpoints, disabled Privacy Sandbox / Optimization Guide feature flags, and privacy-favorable pref defaults (HTTPS-Only/First mode, 3rd-party cookie blocking, Secure DNS, WebRTC IP restriction).
@@ -954,6 +971,14 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Toggle routing off from the bubble — **Expected:** Icon reverts to inactive; net-internals shows `mode: SYSTEM`.
 - [ ] Disable the rule via its per-rule toggle in settings (without disabling routing globally) — **Expected:** PAC regenerates without that clause; traffic to the domain goes direct again.
 - [ ] Edge case: configure a manual proxy in Proxy Settings first, then enable Smart Proxy Routing — **Expected:** A warning is shown, since routing will overwrite the manual proxy config with the generated PAC.
+- [ ] As of v1.11.6: add a rule whose pattern contains a double quote, e.g. `bad"host` — **Expected:** it is rejected with a red message and not saved, and browsing keeps working (previously a script-breaking rule could block every page).
+- [ ] As of v1.11.6: add a rule `*.httpbin.org` with the proxy typed as plain `127.0.0.1:8888` (no `PROXY` prefix) and turn routing on — **Expected:** it is accepted, `chrome://net-internals/#proxy` shows `return "PROXY 127.0.0.1:8888"` for that pattern, and traffic to the domain goes through the proxy (a bare `host:port` previously went direct without any error).
+- [ ] As of v1.11.6: edit a rule's proxy to `HTTP 127.0.0.1:8888` — **Expected:** it is accepted and appears in the generated PAC as `PROXY 127.0.0.1:8888`.
+- [ ] As of v1.11.6: add a rule `*.example.com` with a working proxy and set **When to use the proxy** to *Ask me when a matching site can't be reached*, with routing on — **Expected:** the PAC at `chrome://net-internals/#proxy` has no clause for that rule, and the status bubble's active-rule count does not include it.
+- [ ] As of v1.11.6: with that ask-mode rule in place, open `https://does-not-exist.example.com/` (a name that does not resolve) — **Expected:** the error page appears together with a bar "Can't connect to does-not-exist.example.com. Try again through your proxy?" with **Use proxy** and **Not now** buttons.
+- [ ] As of v1.11.6: click **Use proxy** — **Expected:** the page reloads after a moment, and the PAC now contains a temporary clause for `example.com` and its subdomains.
+- [ ] As of v1.11.6: close the tab where you clicked **Use proxy** — **Expected:** the temporary `example.com` clause disappears from the PAC (the permission only lasts while that tab is open).
+- [ ] As of v1.11.6: repeat the unreachable-site visit with routing switched off, and again in an Incognito window — **Expected:** no proxy bar appears in either case.
 
 📷 *Screenshot suggestion: The toolbar globe icon in both active and inactive states side by side, plus the status bubble showing rule count.*
 
@@ -992,6 +1017,9 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] As of v1.8.58: open a plain-text message — **Expected:** the body renders directly and is readable.
 - [ ] As of v1.8.58: open an HTML message — **Expected:** the body renders inside the message pane with remote images blocked by default and a "Load images" button that reveals them on click.
 - [ ] As of v1.9.13: open an HTML message and confirm the body actually renders instead of a blank pane — **Expected:** the `chrome-untrusted://mail-body/` iframe navigates and displays the message content; previously (v1.9.9–v1.9.12) it failed to navigate at all, committing as a blocked `about:blank`.
+- [ ] As of v1.11.6 (Windows): with unread mail in a configured account, look at the browser's taskbar button — **Expected:** a numeric badge shows the total unread count (shown as 99+ above 99). It updates after a sync or after reading messages in `chrome://mail`, and disappears when the count reaches 0.
+- [ ] As of v1.11.6 (Windows): in Settings → Mail accounts → Taskbar, turn off **Show unread count on the taskbar icon** — **Expected:** the badge clears immediately; turning it back on restores it.
+- [ ] As of v1.11.6 (Windows): turn on **Flash the taskbar icon on new mail**, switch to another application, then send a message to the account — **Expected:** after the next sync the browser's taskbar button flashes until you bring the window to the foreground. With the toggle off (the default) it does not flash.
 
 📷 *Screenshot suggestion: chrome://mail showing a synced inbox with an open HTML message.*
 
