@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.7)
+## Versioned releases (1.7.25 → 1.11.8)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,9 +27,42 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened. 1.11.6 and 1.11.7 bundle similarly to 1.9.13:
-each is a feature commit that landed without its own version bump, picked up
-by the separate bump commit that follows it.
+Chromium milestone change happened. 1.11.6, 1.11.7 and 1.11.8 bundle similarly to
+1.9.13: each is a feature commit that landed without its own version bump,
+picked up by the separate bump commit that follows it.
+
+### 1.11.8 — 2026-10-12
+
+You can now choose what the browser does when a `.torrent` file finishes
+downloading, instead of the [BitTorrent client](bittorrent-client) always
+taking it over. The default is unchanged.
+
+- Before this, every completed `.torrent` download was handled one way: it was
+  added to the built-in client, removed from the downloads list, **deleted from
+  disk**, and the tab it came from was sent to `chrome://bittorrent`. The only
+  way out was switching the whole client off, which also disabled magnet links
+  and the manager page — so a file could not be kept, shared, or handed to
+  another client such as qBittorrent. The idea comes from the choice dialog in
+  BitPop's browser.
+- A new setting, Settings → BitTorrent → "When a .torrent file finishes
+  downloading", offers four actions: **Add to the built-in client** (the
+  default, behaving exactly as before), **Ask me each time**, **Open with the
+  default application**, and **Just keep the file**. A second option, "Switch to
+  the BitTorrent page after adding", controls the tab navigation.
+- **Ask** shows a bar in the tab with Add to BitTorrent, Keep file and an Open
+  with default app link. Nothing is removed or deleted until you answer; closing
+  the bar or the tab counts as Keep, and the bar survives navigating to another
+  page. If you remove the file while the bar is up, accepting does nothing.
+- With the client switched off a `.torrent` download is never touched, whatever
+  the setting says, and Ask with no tab to show the bar in keeps the file rather
+  than deleting it unasked.
+- If the browser is itself the registered `.torrent` handler, "open with the
+  default application" hands the file straight back to it and it is added
+  anyway; the settings page says so.
+- The decision logic is a small standalone unit with its own tests; the
+  interceptor just carries out the plan it returns.
+- Vanilla Chromium touched: `components/infobars/core/infobar_delegate.h` (one
+  new infobar identifier).
 
 ### 1.11.7 — 2026-10-12
 

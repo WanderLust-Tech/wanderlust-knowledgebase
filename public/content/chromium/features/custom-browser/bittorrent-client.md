@@ -46,8 +46,10 @@ MagnetNavigationThrottle  (content::NavigationThrottle)
 
 TorrentDownloadInterceptor  (DownloadManager::Observer + DownloadItem::Observer)
    Watches every profile download for application/x-bittorrent MIME or
-   .torrent extension.  On COMPLETE: AddTorrentFile(), removes shelf entry,
-   deletes the temporary .torrent file, redirects tab to chrome://bittorrent.
+   .torrent extension.  On COMPLETE it follows bittorrent.torrent_file_action
+   (v1.11.8). The default, "add", is the original behaviour: AddTorrentFile(),
+   removes shelf entry, deletes the temporary .torrent file, redirects tab to
+   chrome://bittorrent (if bittorrent.open_manager_on_add).
 
 BittorrentService  (KeyedService, per-profile)
    │  AddMagnetLink(uri)  ──► TorrentEngine::AddMagnetLink()
@@ -161,6 +163,41 @@ Three messages are registered in **both** `BittorrentHandler` (for
 | `kCompleted` | Seeding stopped |
 | `kError` | Engine reported an unrecoverable error |
 
+## .torrent completion action (v1.11.8)
+
+Until v1.11.8 every completed `.torrent` download was handled one way: added to
+the engine, removed from the downloads list, **deleted from disk**, and the
+originating tab sent to `chrome://bittorrent`. The only opt-out was turning the
+whole client off (which also disables magnet handling and the manager page).
+`bittorrent.torrent_file_action` now chooses:
+
+| Value | What happens |
+|---|---|
+| `add` (default) | Exactly the previous behaviour: add to the engine, remove the download entry, delete the file, navigate the tab if `bittorrent.open_manager_on_add` |
+| `ask` | An infobar in the originating tab: **Add to BitTorrent** / **Keep file** / link **Open with default app**. Nothing is removed or deleted until the user answers |
+| `open_default` | Open with the operating system's default application; nothing removed or deleted |
+| `keep` | Leave it as an ordinary download |
+
+Rules worth knowing:
+
+- With the client disabled (`bittorrent.enabled` off) a `.torrent` download is
+  never touched, whatever the action says.
+- `ask` with no originating tab (it was closed) keeps the file; it never deletes
+  unasked.
+- The prompt belongs to the file, not the page: it stays through navigation, and
+  closing it or the tab counts as *Keep*. Accepting re-checks that the file still
+  exists, because it may have been removed while the bar was showing.
+- If the browser is the registered `.torrent` handler (the file association
+  below), "open with the default application" hands the file straight back as a
+  `file://*.torrent` navigation, which `MagnetNavigationThrottle` adds to the
+  engine — so `open_default` then behaves much like `add`, minus the deletion.
+- The choice is made by a pure function (`PlanForCompletedTorrent`) with its own
+  unit tests; `TorrentDownloadInterceptor` carries out the resulting plan.
+  Removing the download entry and opening the file are deferred out of the
+  download-notification callback.
+- The infobar needed a new identifier in
+  `components/infobars/core/infobar_delegate.h` (a vanilla-Chromium patch).
+
 ## Preferences
 
 | Pref key | Type | Default | Description |
@@ -173,6 +210,8 @@ Three messages are registered in **both** `BittorrentHandler` (for
 | `bittorrent.max_upload_kbps` | int | `0` | Upload cap in KiB/s; `0` = unlimited |
 | `bittorrent.max_connections` | int | `200` | Global peer connection limit |
 | `bittorrent.download_path` | string | `""` | Save directory; empty → `<Profile>/Torrents` |
+| `bittorrent.torrent_file_action` | string | `"add"` | What to do when a `.torrent` download completes: `add`, `ask`, `open_default`, `keep` (unrecognised → `add`) |
+| `bittorrent.open_manager_on_add` | bool | `true` | After adding a `.torrent`, load `chrome://bittorrent` in the tab it came from |
 
 Constants in [`custom_pref_names.h`](../src/custom/common/custom_pref_names.h).
 Registered by `BittorrentServiceFactory::RegisterProfilePrefs` via
@@ -187,6 +226,7 @@ Registered by `BittorrentServiceFactory::RegisterProfilePrefs` via
 | Section | Controls |
 |---|---|
 | **General** | Master enable/disable toggle |
+| **When a .torrent file finishes downloading** | Action select (add / ask / open default / keep) with a one-line explanation of the selected action, and a "Switch to the BitTorrent page after adding" toggle |
 | **File association** | Shows current OS default status; **Set as default** / **Remove** buttons that call `btSetDefaultTorrentHandler` / `btUnregisterTorrentHandler` |
 | **Protocol** | DHT, PEX, MSE/PE encryption toggles |
 | **Bandwidth** | Max download / upload KiB/s number inputs (0 = unlimited) |
@@ -251,7 +291,9 @@ inside a `<template is="dom-if">` when the master toggle is on.
 | [`browser/bittorrent/bittorrent_service.{cc,h}`](../src/custom/browser/bittorrent/bittorrent_service.h) | `KeyedService` — owns engine, sessions, pref config |
 | [`browser/bittorrent/bittorrent_service_factory.{cc,h}`](../src/custom/browser/bittorrent/bittorrent_service_factory.h) | Factory + pref registration |
 | [`browser/bittorrent/magnet_navigation_throttle.{cc,h}`](../src/custom/browser/bittorrent/magnet_navigation_throttle.h) | Intercepts `magnet:` URIs **and** `file://*.torrent` navigations |
-| [`browser/bittorrent/torrent_download_interceptor.{cc,h}`](../src/custom/browser/bittorrent/torrent_download_interceptor.h) | `DownloadManager::Observer` — routes completed `.torrent` downloads |
+| [`browser/bittorrent/torrent_download_interceptor.{cc,h}`](../src/custom/browser/bittorrent/torrent_download_interceptor.h) | `DownloadManager::Observer` — carries out the `.torrent` completion plan (add / ask / open default / keep) |
+| [`browser/bittorrent/torrent_file_action.{cc,h}`](../src/custom/browser/bittorrent/torrent_file_action.h) | Pure decision logic for the completion action; unit-tested (`torrent_file_action_unittests`) |
+| [`browser/bittorrent/torrent_file_infobar_delegate.{cc,h}`](../src/custom/browser/bittorrent/torrent_file_infobar_delegate.h) | The "Torrent file … downloaded." infobar for the `ask` action |
 | [`browser/bittorrent/torrent_file_handler.{cc,h}`](../src/custom/browser/bittorrent/torrent_file_handler.h) | Windows registry `.torrent` file association (HKCU, no elevation) |
 | [`browser/ui/views/toolbar/bittorrent_button.{cc,h}`](../src/custom/browser/ui/views/toolbar/bittorrent_button.h) | Top toolbar button; pref-driven visibility; opens `chrome://bittorrent` |
 | [`browser/ui/views/bottombar/bottombar_view.{cc,h}`](../src/custom/browser/ui/views/bottombar/bottombar_view.h) | Bottom bar button (`bittorrent_button_`); `ShowSingletonTab` to `chrome://bittorrent` |
