@@ -223,6 +223,33 @@ hidden, so the badge works regardless of `toolbar.show_mail_button`.
   profile-avatar change — clears the badge until the unread count next
   changes. Windows only; there is no macOS dock badge.
 
+## Sync after wake and reconnect (v1.11.7)
+
+Besides the fixed-interval poll, the sync service runs **one extra sync** after
+the machine resumes from sleep or the network comes back after being down.
+Without it, a wake or reconnect left mail up to one or two poll intervals
+(about 5–10 minutes by default) stale, because the poll timer pauses during
+suspend and an offline sweep is simply retried one interval later.
+
+- **Trigger:** a resume notification, or an offline → online transition (Wi-Fi
+  to Ethernet and similar online → online changes do not count). Several events
+  from one wake are coalesced into one sync that runs after a 10-second delay so
+  the network stack is up.
+- **Rate limit:** at most one triggered sync per three minutes, measured from
+  the last sweep that reached a server. This exists because a flapping
+  connection fires network-change notifications repeatedly, and unthrottled
+  reconnect-triggered IMAP logins can look like abuse to the mail provider. A
+  sweep that failed offline is not counted, so it cannot delay the catch-up
+  sync. Time is wall-clock, since the monotonic clock can stand still during
+  suspend.
+- **Skipped when** a sweep is already running or no accounts are configured.
+- **Scope:** mail only; no setting. The RSS, filter-list and breach-list pollers
+  are unchanged.
+- **Code:** `browser/mail/sync_trigger_gate.{h,cc}` is pure and unit-tested
+  (`sync_trigger_gate_unittest.cc`); `MailSyncService` owns a private
+  `WakeObserver` that forwards `base::PowerSuspendObserver::OnResume` and
+  `NetworkChangeNotifier` events to it.
+
 ## Known limitations
 
 - Links inside a rendered HTML email are inert — the sandboxed iframe

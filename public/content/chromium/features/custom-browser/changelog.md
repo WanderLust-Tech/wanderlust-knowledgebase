@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.6)
+## Versioned releases (1.7.25 → 1.11.7)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,9 +27,38 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened. 1.11.6 bundles similarly to 1.9.13: a
-feature commit landed without its own version bump and the next commit's
-bump picked it up.
+Chromium milestone change happened. 1.11.6 and 1.11.7 bundle similarly to 1.9.13:
+each is a feature commit that landed without its own version bump, picked up
+by the separate bump commit that follows it.
+
+### 1.11.7 — 2026-10-12
+
+The [Mail Client](mail-client) now syncs once shortly after the computer wakes
+from sleep or the network comes back, instead of leaving the unread badge and
+notifications stale until the next scheduled poll.
+
+- Before this the mail poller was a single fixed-interval timer (default 300 s)
+  with no knowledge of sleep or connectivity. A failed or offline sweep was
+  skipped silently and retried one interval later, and the timer pauses during
+  suspend, so after a wake or reconnect mail could be one or two poll intervals
+  (roughly 5–10 minutes by default) out of date.
+- A resume from sleep, or an offline → online transition, now schedules one
+  extra sync after a 10-second delay (so the network stack is ready); several
+  events from one wake are coalesced into that single sync.
+- Triggered syncs are limited to one per three minutes. A flapping connection
+  fires network-change notifications repeatedly, and unthrottled
+  reconnect-triggered IMAP logins can look like abuse and get an account
+  rate-limited or locked by the provider.
+- Only a sweep that actually reached a server counts toward that spacing, so a
+  sweep that failed because the network was down cannot suppress the catch-up
+  sync that follows when it returns. Spacing is measured in wall-clock time
+  because the monotonic clock can stand still while the machine is suspended.
+- Mail only: the RSS, filter-list and breach-list pollers are unchanged (long
+  intervals, nothing user-visible depends on them). The regular poll timer is
+  unchanged.
+- The decision logic lives in a small standalone `SyncTriggerGate` with its own
+  unit tests; the service only wires power-resume and network-change
+  notifications to it.
 
 ### 1.11.6 — 2026-10-12
 
