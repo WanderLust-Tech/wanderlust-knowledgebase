@@ -17,7 +17,7 @@ Gated by `BUILDFLAG(ENABLE_PRIVACY_SHIELD)`. Controlled by `enable_privacy_shiel
 ## What it does
 
 The Privacy Shield button (shield icon) lives in the bottombar alongside the
-existing custom toolbar buttons. Clicking it opens a 360×400 px bubble panel
+existing custom toolbar buttons. Clicking it opens a 360×460 px bubble panel
 showing seven feature rows, each with a label, a one-line description, and an
 on/off toggle. Below the toggles a five-cell stats strip shows live per-tab
 counts for the current page:
@@ -87,6 +87,38 @@ hand-written wildcard that still matches keeps applying.
 
 ---
 
+## All-time totals (v1.11.10)
+
+Below the per-tab stats strip, an **"All time · since <date>"** strip shows four
+persisted counters: **Ads blocked, Params stripped, Referrers, Pings blocked**.
+They are the running sum of what the per-tab strip counts (which resets on every
+navigation), kept in the profile and updated live while the bubble is open.
+
+- **Local only** — nothing is sent anywhere.
+- **Incognito and guest windows are never counted**, so private browsing leaves
+  no trace in the totals, not even an anonymous number.
+- **Reset** (shown once something has been counted) zeroes all four and restarts
+  the "since" date, which is set by the first event counted afterwards. Using it
+  from an incognito window resets the regular profile's totals.
+- "Trackers on page" is not in the totals: it is a per-site observation from the
+  tracking dashboard, not an event the browser performs.
+- Counters stop at 2,147,483,647 instead of wrapping.
+- **On the New Tab Page:** the Focus and Glass layouts show the same totals as a
+  quiet one-liner ("🛡️ 12,345 blocked · since Oct 14", breakdown in the tooltip).
+  It appears only once something has been counted, and New Tab settings → "Show
+  blocked-ads total" turns it off. The browser pushes the totals once each time the
+  page opens (not live).
+
+| Pref | Meaning |
+|---|---|
+| `custom.privacy_stats.lifetime.ads_blocked` | Ad/tracker requests cancelled by the Ad Blocker |
+| `custom.privacy_stats.lifetime.params_stripped` | Tracking URL parameters removed by URL Purify |
+| `custom.privacy_stats.lifetime.referrers_stripped` | `Referer` headers stripped |
+| `custom.privacy_stats.lifetime.pings_blocked` | `<a ping>` / `sendBeacon` requests cancelled |
+| `custom.privacy_stats.lifetime.since` | Time of the first counted event (empty until then) |
+
+---
+
 ## Architecture
 
 ```
@@ -96,7 +128,7 @@ PrivacyShieldButton (ToolbarButton subclass)
 │  Destructor closes the bubble if it is still open.
 │
 └─► PrivacyShieldBubble (BubbleDialogDelegateView)
-      360×400 px, TOP_RIGHT anchor, no title bar / close button.
+      360×460 px, TOP_RIGHT anchor, no title bar / close button.
       Hosts views::WebView loading chrome://privacy-shield.
       RegisterWindowClosingCallback → clears button's bubble_ pointer.
 │
@@ -167,6 +199,9 @@ window.chrome.send('privacyShieldSetFeature', [feature: string, enabled: bool])
 // override, null clears it.
 window.chrome.send('privacyShieldSetSiteAdBlock', [enabled: boolean | null])
 
+// JS → C++ (fire-and-forget). Zeroes the persisted all-time totals.
+window.chrome.send('privacyShieldResetLifetimeStats', [])
+
 // C++ → JS (pushed whenever any of the 7 prefs changes)
 cr.addWebUIListener('privacyShieldStatusChanged', (status: ShieldStatus) => {})
 
@@ -190,6 +225,12 @@ interface ShieldStatus {
   siteHost:            string;   // '' => the row is hidden
   siteAdBlock:         boolean;  // effective state for siteHost
   siteAdBlockOverride: 'on' | 'off' | 'inherit';
+  // Persisted all-time totals (v1.11.10)
+  lifetime: {
+    adsBlocked: number; paramsStripped: number;
+    referrersStripped: number; pingsBlocked: number;
+    sinceMs: number;   // 0 => nothing counted yet
+  };
 }
 ```
 

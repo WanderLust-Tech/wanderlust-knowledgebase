@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.9)
+## Versioned releases (1.7.25 → 1.11.10)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,9 +27,41 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8 and 1.11.9 bundle similarly to
+Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9 and 1.11.10 bundle similarly to
 1.9.13: each is a feature commit that landed without its own version bump,
 picked up by the separate bump commit that follows it.
+
+### 1.11.10 — 2026-10-14
+
+The [Privacy Shield](privacy-shield) bubble now keeps running all-time totals of
+what the browser has blocked for you, and the New Tab Page can show them.
+
+- Until now the bubble's stats strip was per page and reset on every navigation.
+  A new **All time** strip underneath it shows four persisted counters — **ads
+  blocked, tracking parameters stripped, referrers stripped, pings blocked** —
+  with a "since" date that starts at the first thing counted. **Reset** zeroes
+  them and restarts the date.
+- The totals are local to your profile and are never sent anywhere. Incognito and
+  guest windows are never counted, so private browsing leaves no number behind.
+  Each counter stops at 2,147,483,647 rather than wrapping. They increment at the
+  same places as the per-tab counts, so the two cannot drift apart. The bubble is
+  460 px tall (was 400) to fit the strip.
+- On the New Tab Page, the Focus and Glass layouts show a one-line "🛡️ N blocked ·
+  since <date>" under the weather, with the four-way breakdown in the tooltip. It
+  stays hidden until something has been counted, and **New Tab settings → Show
+  blocked-ads total** turns it off. The browser sends the totals once each time the
+  page opens (not live), through a new message that the page reads from
+  `window.custom.settings`. The page needs its bundle rebuilt and redeployed to
+  show it.
+- The logic is a small standalone unit with its own tests (9 tests in
+  `lifetime_stats_unittests`). Its build targets are listed unconditionally because
+  the Ad Blocker and Privacy Guard helpers that feed it are gated by different build
+  flags.
+- Also fixed since 1.11.9: the "·" separators in the new per-site row had been
+  saved with the wrong text encoding (three raw `0xB7` bytes instead of `U+00B7`),
+  caught before release; the separator now renders correctly.
+- No vanilla Chromium files were touched. Compile, unit tests and type checks were
+  done; the bubble strip and the New Tab line still need a look in a running build.
 
 ### 1.11.9 — 2026-10-13
 

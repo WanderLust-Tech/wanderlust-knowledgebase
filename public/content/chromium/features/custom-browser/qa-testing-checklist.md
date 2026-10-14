@@ -591,7 +591,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 ### Privacy Shield (unified toolbar panel)
 
 **What it is:** A single toolbar shield-icon button that surfaces on/off toggles for seven privacy features (Ad Blocker, Force Private Mode, Strip Referrer, Block Ping/Beacon, Disable WebGL, Session Cookies, Connection Control) plus live per-tab stats, without visiting Settings.
-**Where to find it:** Shield icon in the bottombar → click to open the 360×400px bubble. Bubble visibility itself is controlled by pref `custom.toolbar.show_privacy_shield_button` (default shown).
+**Where to find it:** Shield icon in the bottombar → click to open the 360×460px bubble. Bubble visibility itself is controlled by pref `custom.toolbar.show_privacy_shield_button` (default shown).
 **Default state:** Enabled by default. Gated by `BUILDFLAG(ENABLE_PRIVACY_SHIELD)` (`enable_privacy_shield = true`).
 
 - [ ] Click the shield icon — **Expected:** as of v1.8.49, bubble opens showing seven toggle rows and a 5-cell stats strip (Ads blocked / Params stripped / Referrers stripped / Pings blocked / Trackers on page) — previously six toggles and four stats.
@@ -606,6 +606,15 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] As of v1.11.9: turn ad blocking off for one site and then open a different site, and also the same site under a different host name (for example www.example.com versus example.com) — **Expected:** only the exact host you changed is affected; the other site and the other host name still follow the global setting.
 - [ ] As of v1.11.9: set an override for a site, close and reopen the browser, open that site and click the shield icon — **Expected:** the override is still there.
 - [ ] As of v1.11.9: click the shield icon while on a chrome:// page (for example chrome://settings) and while in an incognito window — **Expected:** the "Ad blocking on this site" row is not shown; the seven toggles and the stats strip still work.
+- [ ] As of v1.11.10: on a page where the per-site "Ad blocking on this site" row is shown, read its second line — **Expected:** it reads the host name, then a proper middle dot, then the status (for example "example.com · follows the Ad Blocker setting"), with no stray or garbled character.
+- [ ] As of v1.11.10: on a profile where nothing has been blocked yet (or right after Reset), open the Privacy Shield bubble — **Expected:** below the per-tab stats strip an "All time" strip reads "nothing counted yet" with four zero counters (Ads blocked, Params stripped, Referrers, Pings blocked) and no Reset link; the bubble is taller than in v1.11.9 and nothing is cut off.
+- [ ] As of v1.11.10: browse a page where the bubble's per-tab "Ads blocked" count is non-zero, then reopen the bubble — **Expected:** the "All time" strip now reads "since" followed by today's date, shows an Ads blocked total at least as large as the per-tab count, and a Reset link appears.
+- [ ] As of v1.11.10: with a non-zero All time total, navigate to a different page and reopen the bubble — **Expected:** the per-tab strip starts again from its new page's counts while the All time totals keep their value and only grow.
+- [ ] As of v1.11.10: note the All time Ads blocked total, close and reopen the browser, then reopen the bubble — **Expected:** the totals are unchanged.
+- [ ] As of v1.11.10: note the All time totals, open an incognito window, browse a page that has ads and trackers, then reopen the bubble in a normal window — **Expected:** the All time totals have not changed (private browsing is never counted).
+- [ ] As of v1.11.10: click Reset in the All time strip — **Expected:** all four totals return to 0, the strip reads "nothing counted yet" and the Reset link disappears; browsing a page with ads afterwards starts counting again with a new "since" date.
+- [ ] As of v1.11.10: in a build that includes the updated New Tab Page bundle, switch the layout to Focus or Glass (New Tab settings in the sidebar), make sure something has been blocked, and open a new tab — **Expected:** a quiet line under the weather reads "N blocked · since <date>" with a shield icon, and hovering it shows the four-way breakdown and a note that it is local to this device and excludes private windows.
+- [ ] As of v1.11.10: with that line showing, turn off "Show blocked-ads total" in the sidebar New Tab settings — **Expected:** the line disappears from the open new tab; turning it back on brings it back. The line never appears in the other layouts and does not appear at all while nothing has been counted.
 
 📷 *Screenshot suggestion: the open Privacy Shield bubble with several toggles on and non-zero stats.*
 
