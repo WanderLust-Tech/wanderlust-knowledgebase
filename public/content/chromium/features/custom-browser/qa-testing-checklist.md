@@ -591,7 +591,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 ### Privacy Shield (unified toolbar panel)
 
 **What it is:** A single toolbar shield-icon button that surfaces on/off toggles for seven privacy features (Ad Blocker, Force Private Mode, Strip Referrer, Block Ping/Beacon, Disable WebGL, Session Cookies, Connection Control) plus live per-tab stats, without visiting Settings.
-**Where to find it:** Shield icon in the bottombar → click to open the 360×340px bubble. Bubble visibility itself is controlled by pref `custom.toolbar.show_privacy_shield_button` (default shown).
+**Where to find it:** Shield icon in the bottombar → click to open the 360×400px bubble. Bubble visibility itself is controlled by pref `custom.toolbar.show_privacy_shield_button` (default shown).
 **Default state:** Enabled by default. Gated by `BUILDFLAG(ENABLE_PRIVACY_SHIELD)` (`enable_privacy_shield = true`).
 
 - [ ] Click the shield icon — **Expected:** as of v1.8.49, bubble opens showing seven toggle rows and a 5-cell stats strip (Ads blocked / Params stripped / Referrers stripped / Pings blocked / Trackers on page) — previously six toggles and four stats.
@@ -599,6 +599,13 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Visit a page that triggers ad blocks and tracker requests — **Expected:** the stats strip numbers update live while the bubble is open.
 - [ ] Click the footer link — **Expected:** navigates to `chrome://settings/privacy`.
 - [ ] Toggle "Show Privacy Shield button" off (if exposed) — **Expected:** the toolbar button disappears without restart.
+- [ ] As of v1.11.9: open any ordinary https website and click the shield icon — **Expected:** the bubble is taller than before and, above the seven toggles, shows an "Ad blocking on this site" row with the page's host name; its toggle matches the global Ad Blocker switch and the text says it follows the Ad Blocker setting; nothing is cut off.
+- [ ] As of v1.11.9: on a page that normally shows a non-zero "Ads blocked" count, switch the "Ad blocking on this site" toggle off — **Expected:** the row changes to "off for this site", a "Use default" link and "Reload the page to apply." appear, and the global Ad Blocker toggle is unchanged; after reloading the page the "Ads blocked" count stays at 0 and the ad-block icon does not appear in the address bar.
+- [ ] As of v1.11.9: after turning ad blocking off for a site, click "Use default" and reload — **Expected:** the row goes back to following the Ad Blocker setting, the toggle matches the global switch again, and ads on that site are blocked as before.
+- [ ] As of v1.11.9: switch the global Ad Blocker toggle off, then switch the per-site toggle on for one site and reload it — **Expected:** that site has its ads blocked while a different website you open still shows everything unblocked.
+- [ ] As of v1.11.9: turn ad blocking off for one site and then open a different site, and also the same site under a different host name (for example www.example.com versus example.com) — **Expected:** only the exact host you changed is affected; the other site and the other host name still follow the global setting.
+- [ ] As of v1.11.9: set an override for a site, close and reopen the browser, open that site and click the shield icon — **Expected:** the override is still there.
+- [ ] As of v1.11.9: click the shield icon while on a chrome:// page (for example chrome://settings) and while in an incognito window — **Expected:** the "Ad blocking on this site" row is not shown; the seven toggles and the stats strip still work.
 
 📷 *Screenshot suggestion: the open Privacy Shield bubble with several toggles on and non-zero stats.*
 

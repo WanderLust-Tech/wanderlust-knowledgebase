@@ -17,7 +17,7 @@ Gated by `BUILDFLAG(ENABLE_PRIVACY_SHIELD)`. Controlled by `enable_privacy_shiel
 ## What it does
 
 The Privacy Shield button (shield icon) lives in the bottombar alongside the
-existing custom toolbar buttons. Clicking it opens a 360×340 px bubble panel
+existing custom toolbar buttons. Clicking it opens a 360×400 px bubble panel
 showing seven feature rows, each with a label, a one-line description, and an
 on/off toggle. Below the toggles a five-cell stats strip shows live per-tab
 counts for the current page:
@@ -56,6 +56,37 @@ immediately (both sides observe the same prefs via `PrefChangeRegistrar`).
 
 ---
 
+## Per-site ad blocking (v1.11.9)
+
+When the active tab is an `http(s)` page, a row at the top of the bubble reads
+**"Ad blocking on this site"**, shows the page's host, and has a toggle for the
+*effective* state on that host:
+
+- Switching it sets an override for **exactly that host** — on *or* off,
+  whatever the global Ad Blocker switch says. It is the escape hatch for a site
+  that breaks with ad blocking on, and it also lets you keep blocking on a few
+  sites with the global switch off.
+- Once an override exists the row says "always on / off for this site" and shows
+  **Use default**, which removes the override so the site follows the global
+  switch again.
+- The page that is already loaded keeps its old filtering; the row says
+  *Reload the page to apply*.
+- The override covers **ad blocking and element-hiding only**. Strip Referrer,
+  Ping/Beacon blocking, WebGL, cookies and the rest stay global in this bubble.
+- It is per **host**, not per registrable domain: `www.example.com` and
+  `example.com` are different entries.
+- The row is hidden on `chrome://`, `file:` and other non-http(s) pages, and in
+  incognito windows.
+
+Overrides are stored in the existing per-domain shields setting
+(`custom.domain_shields`). Hand-written wildcard entries such as `*.example.com`
+are honoured but never edited by the bubble; an entry the bubble creates goes
+first in the list so it wins over them. "Use default" removes only the exact-host
+entry (and that host from the older `custom.ad_block_exceptions` list), so a
+hand-written wildcard that still matches keeps applying.
+
+---
+
 ## Architecture
 
 ```
@@ -65,7 +96,7 @@ PrivacyShieldButton (ToolbarButton subclass)
 │  Destructor closes the bubble if it is still open.
 │
 └─► PrivacyShieldBubble (BubbleDialogDelegateView)
-      360×340 px, TOP_RIGHT anchor, no title bar / close button.
+      360×400 px, TOP_RIGHT anchor, no title bar / close button.
       Hosts views::WebView loading chrome://privacy-shield.
       RegisterWindowClosingCallback → clears button's bubble_ pointer.
 │
@@ -131,6 +162,11 @@ window.cr.sendWithPromise<ShieldStatus>('privacyShieldGetStatus')
 // JS → C++ (fire-and-forget)
 window.chrome.send('privacyShieldSetFeature', [feature: string, enabled: bool])
 
+// JS → C++ (fire-and-forget). Per-site ad blocking for the ACTIVE TAB'S host
+// (the host is read in C++, never taken from JS): true/false sets the
+// override, null clears it.
+window.chrome.send('privacyShieldSetSiteAdBlock', [enabled: boolean | null])
+
 // C++ → JS (pushed whenever any of the 7 prefs changes)
 cr.addWebUIListener('privacyShieldStatusChanged', (status: ShieldStatus) => {})
 
@@ -150,6 +186,10 @@ interface ShieldStatus {
   referrersStrippedCount: number;
   pingsBlockedCount:     number;
   trackersOnPageCount:   number;
+  // Per-site ad blocking for the active tab (v1.11.9)
+  siteHost:            string;   // '' => the row is hidden
+  siteAdBlock:         boolean;  // effective state for siteHost
+  siteAdBlockOverride: 'on' | 'off' | 'inherit';
 }
 ```
 

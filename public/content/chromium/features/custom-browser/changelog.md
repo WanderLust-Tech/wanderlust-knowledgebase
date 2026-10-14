@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.8)
+## Versioned releases (1.7.25 → 1.11.9)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,9 +27,40 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened. 1.11.6, 1.11.7 and 1.11.8 bundle similarly to
+Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8 and 1.11.9 bundle similarly to
 1.9.13: each is a feature commit that landed without its own version bump,
 picked up by the separate bump commit that follows it.
+
+### 1.11.9 — 2026-10-13
+
+The [Privacy Shield](privacy-shield) bubble can now turn ad blocking on or off
+for the site you are on, instead of only for everything at once.
+
+- Before this, a site that broke with the [Ad Blocker](ad-blocker) on meant
+  switching ad blocking off everywhere. The per-domain override machinery
+  already existed behind the scenes (the throttle and the element-hiding
+  filter both consult it) but nothing in the interface could set it.
+- On an http(s) page the bubble now has an "Ad blocking on this site" row at
+  the top, showing the host and a toggle. It works in both directions: switch
+  blocking off for one site, or keep it on for one site while the global switch
+  is off. "Use default" removes the override. The page you already have open
+  keeps its old filtering until you reload it, and the row says so.
+- The override is for the exact host (`www.example.com` and `example.com` are
+  separate), covers ad blocking and element hiding only — Strip Referrer,
+  Ping/Beacon blocking and the other toggles stay global — and the row is not
+  shown on `chrome://` pages or in incognito windows.
+- The per-domain lookup now skips a matching entry that does not set the
+  feature being asked about, instead of stopping at it. Without this, an
+  exact-host entry that only set ad blocking would have hidden a wildcard
+  entry's other settings for that host. Nothing wrote this setting before, so
+  only hand-edited configurations are affected.
+- The bubble is 400 px tall (was 340) to fit the new row, and it now reads the
+  site and the stats from the same, last-active browser window.
+- The JSON editing is a small standalone unit with 12 unit tests
+  (`domain_shields_edit_unittests`): it rejects wildcard hosts, keeps unknown
+  keys, and puts a new exact-host entry ahead of any wildcard entry.
+- No vanilla Chromium files were touched. Compile, unit tests and a React
+  typecheck were done; the bubble itself still needs a look in a running build.
 
 ### 1.11.8 — 2026-10-12
 
