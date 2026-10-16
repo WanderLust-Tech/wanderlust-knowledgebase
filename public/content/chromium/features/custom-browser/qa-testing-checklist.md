@@ -630,6 +630,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Set `enabled = false` — **Expected:** all traffic flows normally regardless of rules.
 - [ ] Visit any `chrome://` or `wanderlust://` page while a broad deny-all rule is active — **Expected:** internal pages are never blocked (always exempt).
 
+- [ ] As of v1.11.11: with a deny rule for the private network enabled, open a public page that redirects (HTTP redirect) to a private address such as http://192.168.1.1 or http://127.0.0.1 — **Expected:** blocked with ERR_BLOCKED_BY_CLIENT, the same as typing that address; an image on a public page whose URL redirects to a private address is not fetched.
 📷 *Screenshot suggestion: the blocked private-IP page showing `ERR_BLOCKED_BY_CLIENT` in the browser chrome.*
 
 ### Referrer Control
@@ -768,6 +769,7 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Disable the master toggle — **Expected:** all requests load normally regardless of rules present.
 - [ ] Add a rule with an invalid/unmatched pattern — **Expected:** default-allow applies (no rule matched → request proceeds).
 
+- [ ] As of v1.11.11: with a rule blocking scripts from one host, load a page whose script URL on an allowed host redirects to the blocked host — **Expected:** the script is blocked; after fully restarting the browser the rules also apply from the first page load without opening Settings.
 📷 *Screenshot suggestion: DevTools Network panel showing a script blocked with "ContentPolicy" as the block reason.*
 
 ### Origin Permission Grants
@@ -950,6 +952,10 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Re-enable Parental Controls with a new PIN after having disabled it with a domain list configured — **Expected:** restriction mode comes back as "Off," not silently re-armed with the old list (disabling resets the mode).
 - [ ] As of v1.9.18: with Website Restrictions in blocklist or allowlist mode (not "Off"), open `chrome://settings/security` and check the Secure DNS setting — **Expected:** Secure DNS is off and shows "This setting is disabled because parental controls are on"; switching restriction mode back to "Off" re-enables the normal Secure DNS controls without restarting the browser.
 
+- [ ] As of v1.11.11: with Website Restrictions on and a site in the blocklist, quit the browser completely, start it again and — before opening Settings — type the blocked site's address — **Expected:** the "is blocked" error page appears straight away (ERR_BLOCKED_BY_CLIENT); restrictions no longer wait for the Parental Controls page to be opened after a restart.
+- [ ] As of v1.11.11: with Website Restrictions on, follow a link or redirect from an allowed site to a blocklisted site (for example a link shortener, or a page that answers with an HTTP redirect) — **Expected:** the error page names the blocklisted host instead of loading it; in allowlist mode a redirect from an allowlisted site to a site that is not on the list is blocked in the same way.
+- [ ] As of v1.11.11: with Website Restrictions on, open an incognito window and visit a blocklisted site, both by typing it and through a redirect from an allowed site — **Expected:** blocked exactly as in a normal window.
+- [ ] As of v1.11.11: with a PIN set, open Settings → Parental Controls from an incognito window — **Expected:** it shows the same enabled/locked state as a normal window and the same PIN unlocks it.
 📷 *Screenshot suggestion: the PIN prompt interrupting a history-delete attempt, next to the Website Restrictions section showing a configured blocklist.*
 
 ---

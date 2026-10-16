@@ -128,6 +128,16 @@ behind being enabled).
 
 ---
 
+### Where Website Restrictions are enforced (v1.11.11)
+
+Restrictions are checked for the page you ask for **and for every HTTP redirect
+it is sent through**: an allowed site that redirects to a blocked site is
+blocked at the redirect, and the error page names the blocked host. They apply
+from the first request after the browser starts (the service is created with the
+profile, not when the Parental Controls page is first opened) and also in
+**incognito and guest windows**, which share the profile's restrictions and PIN
+state. Before 1.11.11 none of the three was true.
+
 ## Secure DNS: forced off while restrictions are active
 
 Added v1.9.18. Chromium already refuses to enable Secure DNS (DNS-over-HTTPS)

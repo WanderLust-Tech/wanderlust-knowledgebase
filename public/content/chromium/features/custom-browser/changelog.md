@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.10)
+## Versioned releases (1.7.25 → 1.11.11)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,9 +27,41 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9 and 1.11.10 bundle similarly to
+Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10 and 1.11.11 bundle similarly to
 1.9.13: each is a feature commit that landed without its own version bump,
 picked up by the separate bump commit that follows it.
+
+### 1.11.11 — 2026-10-15
+
+Closes three ways around [Parental Controls](parental-controls)' Website
+Restrictions, and the same redirect and start-up gaps in
+[Connection Control](security-privacy-features) and the
+[Content Policy Chain](content-policy-chain).
+
+- **Redirects.** These filters checked a request's first URL only. A site on the
+  allow list that answered with an HTTP redirect to a blocklisted site — a link
+  shortener is enough — loaded it anyway, and so did a redirect off the allow list;
+  Connection Control could likewise be steered to a private or loopback address
+  that it blocks when you type it. Redirect targets are now checked like the
+  original address and show the same blocked page, naming the target. Navigating
+  by script or putting the address straight into an iframe was already caught.
+- **After a restart.** The Website Restrictions filter was only installed once
+  something had opened the Parental Controls page, so with restrictions already set
+  a freshly started browser blocked nothing until then. The Parental Controls and
+  Content Policy services now start with the profile.
+- **Incognito.** Website Restrictions did not apply in incognito windows at all.
+  Incognito and guest windows now use the same restrictions, and share the same PIN
+  state, as the rest of the profile.
+- All three were found with a new black-box check, `src/custom/tools/request_filter_check/`:
+  it starts a throwaway copy of the browser, loads pages from a local server that
+  redirects between hostnames, and checks from the server's side whether a blocked
+  host was ever contacted. Before the fix every scenario failed on 1.11.10.
+- Not changed: the Ad Blocker and the privacy tracker block still ignore
+  redirects, and Connection Control's "private network" scope still matches only
+  addresses written as IP numbers, not names that resolve to them.
+- No vanilla Chromium files were touched. The changed code was compiled and the
+  check was run against 1.11.10 to confirm it fails there; run it against this
+  build to confirm it now passes.
 
 ### 1.11.10 — 2026-10-14
 
