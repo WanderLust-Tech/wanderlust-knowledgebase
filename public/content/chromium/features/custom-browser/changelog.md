@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.11)
+## Versioned releases (1.7.25 → 1.11.12)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,9 +27,28 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10 and 1.11.11 bundle similarly to
+Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10, 1.11.11 and 1.11.12 bundle similarly to
 1.9.13: each is a feature commit that landed without its own version bump,
 picked up by the separate bump commit that follows it.
+
+### 1.11.12 — 2026-10-18
+
+Workspaces no longer look empty after a restart.
+
+- **What was wrong.** Workspaces were saved correctly, but the workspace service
+  was only created the first time something *wrote* to it. The Workspaces
+  settings page and the vertical tab bar's menu only *read* from it, so in a
+  freshly started browser the settings list was empty and the "Switch workspace"
+  submenu did not appear (only "New workspace" and "Manage workspaces…" did)
+  until you created or edited a workspace. Nothing was lost — the next write
+  showed the saved workspaces again.
+- **Fix.** The workspace service now starts with the profile, like the Parental
+  Controls and Content Policy services did in 1.11.11. It only reads two
+  preferences when it starts.
+- Found while writing a feature reference for Workspaces, and confirmed in a
+  running build: a profile with two saved workspaces returned an empty list at
+  start-up before the change and both workspaces after it.
+- No vanilla Chromium files were touched.
 
 ### 1.11.11 — 2026-10-15
 

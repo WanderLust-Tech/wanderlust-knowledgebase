@@ -390,6 +390,8 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Right-click the vertical tab bar → "Switch workspace ▸" → pick the second workspace — **Expected:** the first workspace's assigned tab group collapses (or hides) in the tab strip, and the second workspace's tab group opens/expands; this happens in every open browser window of the same profile, not just the active one.
 - [ ] Assign different sidebar panels (e.g. Bookmarks vs. RSS) to two workspaces, then switch between them — **Expected:** the sidebar's active panel switches to match each workspace automatically.
 - [ ] Delete the currently active workspace via Settings — **Expected:** it's removed from the list and there is no longer an active workspace (no crash, no orphaned checkmark in the switch menu).
+- [ ] As of v1.11.12: in `chrome://settings/workspaces` create two workspaces, then fully quit and restart the browser and open `chrome://settings/workspaces` again — **Expected:** both workspaces are listed straight away, without having to create or edit one first.
+- [ ] As of v1.11.12: after that restart, right-click empty vertical-tab-bar space — **Expected:** the "Switch workspace ▸" submenu is present, lists both workspaces, and the one that was active before the restart has the checkmark.
 
 📷 *Screenshot suggestion: `chrome://settings/workspaces` list view plus the "Switch workspace ▸" submenu with two workspaces and a checkmark on the active one.*
 
