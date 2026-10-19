@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.12)
+## Versioned releases (1.7.25 → 1.11.13)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,9 +27,34 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10, 1.11.11 and 1.11.12 bundle similarly to
+Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10, 1.11.11, 1.11.12 and 1.11.13 bundle similarly to
 1.9.13: each is a feature commit that landed without its own version bump,
 picked up by the separate bump commit that follows it.
+
+### 1.11.13 — 2026-10-19
+
+Release builds are now compiled with profile-guided optimisation (PGO). Nothing
+changes in what the browser does; it runs faster and the program file is smaller.
+
+- **Why it was off.** Chromium turns PGO on by default for official Windows builds,
+  but our build settings forced it off — in the `.gn` defaults, in the build script,
+  and by never fetching the profile data — so releases up to 1.11.12 were built
+  without it. The forced-off default is removed; Debug and Component builds are
+  still kept off, since PGO does not apply to them.
+- **Measured** on the same source, same machine, alternating runs on fresh profiles:
+  Speedometer 3 averaged 43.6 against 32.7 (about a third higher), cold start to the
+  New Tab Page about 2.45 s against 2.64 s, and `chrome.dll` 277 MB against 311 MB.
+  Speedometer is a JavaScript benchmark, so gains on ordinary pages are likely
+  smaller. Memory use, power and page-load time on real sites were not measured.
+- **Build impact.** The sync step now downloads Chromium's PGO profile (about 420 MB)
+  and V8's builtins profiles from Google's public storage — on the build machine only;
+  nothing is downloaded or sent by the browser. A PGO release build is a full
+  rebuild (about 2.5 hours on a 32-thread machine). The details, the fetch commands
+  and the failure messages you get without the profiles are in the release-builds
+  notes in the main repo (`docs/build-system/release-builds.md`).
+- No vanilla Chromium source files were changed apart from the `.gn` build file
+  (its patch was regenerated). Not changed: the Chromium profile is generated from
+  upstream code, so our own code gets no profile data.
 
 ### 1.11.12 — 2026-10-18
 
