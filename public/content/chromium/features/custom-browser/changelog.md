@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.13)
+## Versioned releases (1.7.25 → 1.11.14)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -27,9 +27,51 @@ version bump. 1.10.0 and 1.11.0 both follow the 1.8.0/1.9.0 pattern: the
 Chromium sync commit and its own patch-rebase/build-fix commit share one
 version bump — and, like those, each bumps the fork's Chromium-rebase
 counter (the middle field) rather than the trailing patch count, since a
-Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10, 1.11.11, 1.11.12 and 1.11.13 bundle similarly to
+Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10, 1.11.11, 1.11.12, 1.11.13 and 1.11.14 bundle similarly to
 1.9.13: each is a feature commit that landed without its own version bump,
 picked up by the separate bump commit that follows it.
+
+### 1.11.14 — 2026-10-20
+
+The [Ad Blocker](ad-blocker) now blocks the ads a page loads itself, not only ad
+frames and pop-ups.
+
+- **What was wrong.** The blocker was only consulted for navigations — documents,
+  iframes and pop-up windows. A page's own scripts, images, stylesheets and
+  `fetch()`/XHR calls never reached it, so most ad and tracker requests went
+  straight through (the element-hiding CSS still hid some of the boxes). It now
+  checks those too, and follows redirects, using the same global switch and
+  per-site switch as before (the *page's* site decides). Because every block is
+  recorded on the tab, the Privacy Shield "ads blocked" count and the all-time
+  totals, which had been counting almost nothing, now count them.
+- **No more start-up freeze.** The blocker parsed its 3.7 MB rule list on the
+  main (UI) thread — about two seconds on a fast machine — which froze the browser
+  just after launch and again whenever the list was refreshed or loaded from
+  the cache. It is now parsed on a background thread; a request that arrives
+  before it is ready waits instead of being let through. The longest freeze
+  after launch measured at about 0.55 s (the browser's own start-up) instead of
+  about 4.9 s.
+- **A blocked ad no longer looks blocked.** A blocked ad iframe leaves a blank
+  frame instead of Chromium's grey "sad face" error page. A blocked image, script,
+  stylesheet or `fetch()`/XHR call now gets a harmless successful response (a 1×1
+  transparent image, an empty script or stylesheet, `{}` for `fetch`/XHR) rather
+  than an error, so a page's "was this blocked?" checks (`onerror`, a failed
+  fetch) do not fire. Fetch/XHR get `{}` rather than an empty body because an
+  empty body made `nytimes.com` throw an error on every load. This lowers
+  detection; a site with a bait script or bait element can still tell. A hidden
+  setting, `custom.ad_block_neutral_responses` (default on, no settings page),
+  restores plain errors.
+- Checked with a local test page and four news sites (BBC, CNN, The Verge, the New
+  York Times): every page still loaded fully; 13–29 requests per page were blocked
+  before the stand-ins and the uncaught page errors were 0/1/1/0 with them versus
+  0/3/1/0 without. New automated checks are in `src/custom/tools/request_filter_check/`.
+- **Not changed:** Connection Control, Content Policy, Parental Controls
+  (Website Restrictions), referrer control, the user-agent override and ping/beacon
+  blocking use the same navigation-only hook and very probably have the same gap
+  for a page's own subresources. The one that the test harness already exercises
+  (Connection Control on an image redirected to a private address) fails.
+  Subresource blocking needs the Privacy Guard feature; a build without it blocks
+  navigations only.
 
 ### 1.11.13 — 2026-10-19
 

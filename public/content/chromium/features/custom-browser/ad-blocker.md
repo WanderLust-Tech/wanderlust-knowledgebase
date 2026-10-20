@@ -1,5 +1,15 @@
 # Ad blocker
 
+**2026-10-20 (v1.11.14):** the blocker used to see only navigations (documents,
+iframes, pop-ups) and worker scripts — a page's own scripts, images, stylesheets
+and `fetch`/XHR calls never reached it. They are now checked in the Privacy Guard
+proxying URL-loader factory (`ad_block_work.cc`); the engine is parsed on a
+worker thread instead of the UI thread (a ~2 s start-up freeze); blocked ad
+frames are blank instead of showing the grey error page; and blocked
+images/scripts/stylesheets/fetch get a neutral successful response so a page
+cannot tell. See "Subresource blocking (v1.11.14)" below; the Architecture
+diagram describes the *navigation* path.
+
 **2026-07-31:** closed the "full EasyList/EasyPrivacy integration is an
 open TODO" gap flagged by `FEATURE_DEEP_DIVE_ROADMAP.md`. The engine
 itself was never the gap — the vendored Adblock Plus engine already had a
@@ -20,7 +30,7 @@ pass are documented there, unchanged by this update (this pass fixed the
 
 Gated by `BUILDFLAG(ENABLE_AD_BLOCKER)`. Drops requests to known ad and
 tracker hosts before the network fetch starts via a `blink::URLLoaderThrottle`
-attached to every navigable request. Matches go through a vendored
+attached to every *navigation* (documents, iframes, pop-ups); since v1.11.14 a page's own subresources are checked by a second hook in the Privacy Guard proxying factory (see "Subresource blocking"). Matches go through a vendored
 Adblock-Plus filter engine (real EasyList + EasyPrivacy bundled data, see
 2026-07-31 above) with a tiny hardcoded substring list as a
 belt-and-braces fallback if the engine fails to initialize.
@@ -48,8 +58,10 @@ primary-frame commit so the surfacing reflects the page currently shown.
 
 ## Architecture
 
+> The diagram below is the **navigation / worker** path (it is what `CreateURLLoaderThrottles` sees). A page's own subresources take the path in "Subresource blocking (v1.11.14)".
+
 ```
-Network request leaves a frame (image/script/xhr/...)
+Navigation (document / iframe / pop-up) or worker-script fetch
    │
    ▼
 content::ContentBrowserClient::CreateURLLoaderThrottles
@@ -75,8 +87,8 @@ AdBlockThrottle::WillStartRequest
    │     ▼
    │     BlockersWorker (process-wide singleton via base::NoDestructor)
    │     │
-   │     │  First call: parses bundled_filter_rules.cc text under
-   │     │  base::Lock; subsequent calls go straight to matches().
+   │     │  Parsed on a worker thread at start-up (v1.11.14); if it is not
+   │     │  ready the throttle defers the request. Lookups never parse.
    │     ▼
    │     AdBlockClient::matches(url, FilterOption, base_host)
    │       — vendored ABP engine, host-anchored + bloom-filter prefiltering
@@ -96,6 +108,7 @@ AdBlockThrottle::WillStartRequest
          │
          └── delegate_->CancelWithError(net::ERR_BLOCKED_BY_CLIENT,
                                         "wanderlust-adblock")
+              — ERR_ABORTED instead for iframes/frames (v1.11.14: blank frame)
               — DevTools network panel shows "blocked:other" + tooltip
 
 On commit of a primary-frame navigation, AdBlockTabHelper clears
@@ -130,16 +143,17 @@ to empty state).
 
 | File | Purpose |
 |---|---|
+| [`net/blockers/ad_block_work.{cc,h}`](../src/custom/browser/net/blockers/ad_block_work.cc) | v1.11.14. `OnBeforeURLRequest_AdBlockWork` — the subresource check in the proxying factory (see "Subresource blocking"); also picks the neutral stand-in for a blocked request |
 | [`net/blockers/ad_block_throttle.{cc,h}`](../src/custom/browser/net/blockers/ad_block_throttle.cc) | URLLoaderThrottle. Calls the engine first, then the hardcoded fallback. PostTasks block records to UI thread, then `CancelWithError` |
 | [`net/blockers/ad_block_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/ad_block_tab_helper.cc) | `WebContentsUserData<AdBlockTabHelper>` + `WebContentsObserver`. Stores `[{url, destination, time, shim_name}]` for the current page load; resets on primary-main-frame committed navigations. `RecordBlocked()` also injects a compat shim's script (v1.9.19, see below) into the page's main frame when one matched |
 | [`net/blockers/tracker_shims.{cc,h}`](../src/custom/browser/net/blockers/tracker_shims.cc) | v1.9.19. Small hand-curated table (host substring → human-readable name → self-contained IIFE) of SmartBlock-style compat shims — see below |
-| [`net/blockers/blockers_worker.{cc,h}`](../src/custom/browser/net/blockers/blockers_worker.cc) | Bridge between Chromium types (`network::mojom::RequestDestination`) and the engine (`FilterOption`). Process-wide singleton via `BlockersWorker::Get()`. Lazy `parse()` of the bundled rule list under `base::Lock` |
+| [`net/blockers/blockers_worker.{cc,h}`](../src/custom/browser/net/blockers/blockers_worker.cc) | Bridge between Chromium types (`network::mojom::RequestDestination`) and the engine (`FilterOption`). Process-wide singleton via `BlockersWorker::Get()`. Since v1.11.14: `StartInitialization()` / `IsReady()` / `WhenReady()` / non-blocking `ShouldAdBlockUrl()` / `ReloadFromTextAsync()` — parsing happens on a worker thread, never on the caller's |
 | [`net/blockers/bundled_filter_rules.{cc,h}`](../src/custom/browser/net/blockers/bundled_filter_rules.cc) | Compiled-in ABP-format rule list. Generated from the real EasyList + EasyPrivacy feeds via `download_easylist.py` (`npm run update_easylist`) — regenerated 2026-07-31, ~3.7 MB of real filter text |
 | [`net/blockers/cosmetic_filter_tab_helper.{cc,h}`](../src/custom/browser/net/blockers/cosmetic_filter_tab_helper.cc) | `WebContentsUserData` + `WebContentsObserver`. On every committed primary-frame navigation, fetches the engine's element-hiding CSS from `BlockersWorker::GetCosmeticStylesheet()` and injects it via `ExecuteJavaScript` into the page's `<head>` |
 | [`tools/download_easylist.py`](../src/custom/tools/download_easylist.py) | Build-time script, run via `npm run update_easylist`. Downloads `easylist.txt` + `easyprivacy.txt` from easylist.to (or accepts `--easylist-input`/`--easyprivacy-input` for local files), concatenates them, and writes `bundled_filter_rules.cc` as a series of raw-string-literal C++ chunks (≤16 384 bytes each to stay under MSVC limits). Sends a browser-like User-Agent — easylist.to 403s urllib's default UA |
 | [`net/blockers/ad_block_client.{cc,h}`](../src/custom/browser/net/blockers/ad_block_client.cc) | Vendored ABP filter engine (Brian Bondy / Brave origin). Parses ABP text, matches URLs. ~1200 lines. Modified in Phase 5 to restore the half-finished refactor of HashSet (see comments in `add()` and `deserialize()`) |
 | [`net/blockers/{filter,bloom_filter,cosmetic_filter,hash_set,hash_item,hash_fn,bad_fingerprint{s}}.{cc,h}`](../src/custom/browser/net/blockers/) | Engine internals — hash sets, bloom filters, fingerprint tables. ~9000 lines including the 7000-line fingerprint data table |
-| [`net/blockers/ad_block_list_updater.{cc,h}`](../src/custom/browser/net/blockers/ad_block_list_updater.cc) | Background auto-refresh (v1.8.26, see below): fetches EasyList + EasyPrivacy, sanity-checks, hot-swaps via `BlockersWorker::ReloadFromText()`, caches to disk |
+| [`net/blockers/ad_block_list_updater.{cc,h}`](../src/custom/browser/net/blockers/ad_block_list_updater.cc) | Background auto-refresh (v1.8.26, see below): fetches EasyList + EasyPrivacy, sanity-checks, hot-swaps via `BlockersWorker::ReloadFromTextAsync()` (parsed off the UI thread since v1.11.14), caches to disk |
 | [`net/filter_list_update_service.{cc,h}`](../src/custom/browser/net/filter_list_update_service.cc) | Orchestrates scheduling for both `AdBlockListUpdater` and URL Purify's `UrlPurifyRuleUpdater` (see security-privacy-features.md) — two independent `base::OneShotTimer`s |
 
 ### UI layer (omnibox icon + bubble)
@@ -304,6 +318,75 @@ the near-universal real-world pattern for these SDKs) won't be covered.
 Accepted trade-off: good enough for the realistic failure mode at a
 fraction of the engineering cost and risk.
 
+## Subresource blocking (v1.11.14)
+
+`AdBlockThrottle` is a `URLLoaderThrottle` created in
+`CreateURLLoaderThrottles()`. The browser calls that hook for navigation loads,
+prefetches and worker-script fetches only; a page's own subresource requests
+(scripts, images, stylesheets, `fetch`/XHR, media) get their throttles from the
+renderer (upstream's provider, with nothing of ours in it). Until v1.11.14 the
+engine's matcher had exactly one call site, so none of those were checked.
+Found by loading a page whose iframe, image and script all pointed at
+`ads.doubleclick.net` — only the iframe was blocked.
+
+Now a second check lives in the **Privacy Guard proxying URL-loader factory**,
+which sees renderer subresource requests browser-side:
+
+```
+CustomProxyingURLLoaderFactory (UI thread)
+  -> CustomRequestHandler::OnBeforeURLRequest
+       -> OnBeforeURLRequest_AdBlockWork   (ad_block_work.cc, registered first)
+            - skips non-http(s) and navigation destinations (the throttle has those)
+            - on/off: kEnableAdBlock as overridden per site by DomainShieldsManager,
+              for the TAB's host
+            - engine not ready yet -> hold the request, redo the check when ready
+            - engine match (or the hard-coded fallback list) ->
+                ctx->blocked_by = kAdBlocked, record on AdBlockTabHelper
+```
+
+Every redirect hop re-enters the handler, so a subresource that redirects to a
+listed host is blocked. Because it lives in the proxying factory, it exists only
+in builds with the Privacy Guard feature enabled.
+
+### What a blocked request looks like to the page
+
+| Request | Response |
+|---|---|
+| top-level navigation / pop-up | `ERR_BLOCKED_BY_CLIENT` (the user sees why) |
+| iframe / frame | `ERR_ABORTED` — blank frame, no grey error page |
+| image | 1×1 transparent GIF, status 200 (`load` fires) |
+| script | empty script, status 200 |
+| stylesheet | empty stylesheet, status 200 |
+| `fetch()` / XHR / beacon | `{}` as JSON, status 200 |
+| fonts, media, workers, everything else | `ERR_BLOCKED_BY_CLIENT` |
+
+The stand-ins stop a site detecting a block through `onerror` or a failed fetch.
+They do **not** stop a bait script that must define a variable, or bait
+elements collapsed by the cosmetic CSS; the compat shims below cover a few
+known trackers. Fetch/XHR get `{}` and not an empty body because an empty body
+made `nytimes.com` throw "Unexpected end of JSON input" (found by comparing
+uncaught page errors with the stand-ins on and off). Hidden pref
+`custom.ad_block_neutral_responses` (default `true`, no settings UI) turns the
+stand-ins off, leaving plain `ERR_BLOCKED_BY_CLIENT`.
+
+### Engine parsing (off the UI thread)
+
+`BlockersWorker::StartInitialization()` parses the bundled list on a ThreadPool
+worker (called from `FilterListUpdateService::Initialize()` at start-up and
+lazily by `WhenReady()`); `IsReady()` / `WhenReady(callback)` let the throttle
+and the subresource check hold a request until it is done;
+`ShouldAdBlockUrl()` never blocks and never parses. A refreshed or cached list
+is parsed by `ReloadFromTextAsync()` on a worker and swapped in on the UI
+thread; the replaced engine is destroyed on a worker. Measured: the longest
+UI freeze after launch dropped from about 4.9 s to about 0.55 s.
+
+### Tests
+
+`src/custom/tools/request_filter_check/` has scenarios `ab_subresources`,
+`ab_global_off`, `ab_site_off`, `ab_neutral_on` and `ab_neutral_off` (see its
+README). The Connection Control scenario in the same harness has one known
+failing check — see "Known gaps".
+
 ## Threading
 
 The throttle's lifecycle crosses two sequences:
@@ -311,11 +394,13 @@ The throttle's lifecycle crosses two sequences:
 1. **Creation: UI thread.** `CreateURLLoaderThrottles` runs on UI per the upstream contract. We do the pref check here (`Profile::GetPrefs()->GetBoolean(...)`) — no thread hop needed.
 2. **`WillStartRequest`: the loader's sequence.** May be the IO thread or a network-service sequence depending on the loader. We can't synchronously touch the tab helper from here, so block records get `PostTask`ed to the UI thread before `CancelWithError` is invoked — that way the helper has been notified by the time the throttle's destruction tears down the wc_getter.
 
-The engine itself is process-wide. `BlockersWorker::Get()` returns a `base::NoDestructor`-backed singleton; the engine is profile-independent (rules don't depend on user state), so per-profile factories aren't worth the complexity. The lazy `parse()` runs under `base::Lock` to handle concurrent first-callers; after that, `AdBlockClient::matches()` is read-only and thread-safe per the engine's contract.
+The engine itself is process-wide. `BlockersWorker::Get()` returns a `base::NoDestructor`-backed singleton; the engine is profile-independent (rules don't depend on user state), so per-profile factories aren't worth the complexity. Since v1.11.14 the parse runs on a ThreadPool worker (not under the caller's lock/thread); the engine is held as a `shared_ptr` snapshot, and `AdBlockClient::matches()` — which keeps per-call scratch state in the bloom filter — is serialised by a lock.
 
 ## Known gaps / latent issues
 
-- **`base_host` is the request initiator's host, not the top frame's.** Set in `ad_block_throttle.cc:WillStartRequest` from `request->request_initiator->host()`. For cross-frame requests (an iframe loading a sub-resource) this returns the iframe's origin, not the top-level frame's. ABP host-anchored rules (`||example.com^`) don't care about this; rules with `$third-party` / `$domain=...` modifiers will be slightly off for cross-frame initiators. None of the bundled rules use those modifiers, so this is a latent footgun, not an active bug. Reliable fix: synchronously access the WebContents on UI by deferring the request — but the latency cost on every URL is too high.
+- **`base_host` differs by path.** The throttle (navigations) passes the request initiator's host (`request->request_initiator->host()`), so for cross-frame requests it is the iframe's origin, not the top-level frame's. The subresource check (v1.11.14) passes the tab's host. ABP host-anchored rules (`||example.com^`) don't depend on it; `$third-party` / `$domain=` modifiers on the navigation path are slightly approximate.
+
+- **Other filters share the navigation-only scope (not fixed).** Connection Control, Content Policy, Parental Controls (Website Restrictions), referrer control, the user-agent override and ping/beacon blocking are also `URLLoaderThrottle`s created in the same hook, so they very probably do not see a page's own subresources either. The request-filter harness already shows it for Connection Control (an `<img>` redirected to a private address is not stopped); the others were not checked.
 
 - **`kEnableSmartAdBlock` is unused.** Registered in `custom_prefs.cc` alongside `kEnableAdBlock`, but no code reads it. Placeholder slot for a future "engine + heuristics" mode.
 
