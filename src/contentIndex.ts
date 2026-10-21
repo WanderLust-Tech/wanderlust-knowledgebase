@@ -835,6 +835,7 @@ const internalContent: ContentNode[] = [
             { title: "Tab Shapes", path: "features/custom-browser/tab-shapes-feature" },
             { title: "Vertical Tabs", path: "features/custom-browser/vertical-tabs" },
             { title: "Container Tabs", path: "features/custom-browser/container-tabs" },
+            { title: "Workspaces", path: "features/custom-browser/workspaces" },
             { title: "Custom Download Shelf", path: "features/custom-browser/custom-download-shelf" },
             { title: "Enhanced Omnibox", path: "features/custom-browser/enhanced-omnibox" },
             { title: "Split View", path: "architecture/split-view" },

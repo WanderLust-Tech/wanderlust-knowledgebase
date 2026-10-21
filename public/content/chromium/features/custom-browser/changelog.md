@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.14)
+## Versioned releases (1.7.25 → 1.11.15)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -30,6 +30,43 @@ counter (the middle field) rather than the trailing patch count, since a
 Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10, 1.11.11, 1.11.12, 1.11.13 and 1.11.14 bundle similarly to
 1.9.13: each is a feature commit that landed without its own version bump,
 picked up by the separate bump commit that follows it.
+
+### 1.11.15 — 2026-10-21
+
+Several protections now apply to the things a page loads itself, the download
+page can no longer be used to dodge Parental Controls, and the browser no longer
+crashes when it is started with a link.
+
+- **Privacy filters now cover a page's own images, scripts and `fetch()` calls.**
+  [Connection Control](security-privacy-features), [Content Policy](content-policy-chain),
+  ping/beacon blocking, referrer stripping, per-site [UA overrides](ua-overrides),
+  and the feed of the [Tracking Dashboard](tracking-dashboard) were only consulted
+  for page navigations, so they did nothing for the requests a page makes on its own.
+  Measured before the fix: a deny-private-network rule did not stop an `<img>` or
+  `fetch()` to a private address; image and XHR rules in Content Policy were ignored;
+  `navigator.sendBeacon()` went out; every third-party request still carried a
+  `Referer`. They now apply to those requests too (the User-Agent and dashboard
+  parts were only verified after the change). Like the ad blocker's page-request
+  blocking, this is part of the Privacy Guard build.
+- **Content Policy "Frames" rules now block direct visits.** A rule ticking only
+  "Frames" blocked iframes but not typing the site in the address bar. It now
+  blocks both. A rule that ticked only "Other" no longer catches top-level visits.
+- **[Parental Controls](parental-controls): the downloads page needs the PIN.**
+  "Clear all" and "Remove" on `chrome://downloads` deleted download history without
+  asking for the PIN, although the history page asked. They now show the PIN prompt
+  while locked, and run once the right PIN is entered. Discarding a download flagged
+  as dangerous is deliberately left free. Bookmark deletion remains un-gated by design.
+- **The PIN prompt on the history page and the sidebar's History panel now works.**
+  It never got an answer when you typed the PIN, so a locked profile could be
+  refused there but not unlocked from that page.
+- **No more crash when the browser is started with a link.** Starting Wanderlust
+  from a command line, a shortcut or another app's link while it was not running
+  closed it immediately (illegal-instruction crash). The browser's install
+  description was missing its direct-launch scheme; it is now set.
+- **Housekeeping.** The never-used `custom.enable_smart_ad_block` setting is gone.
+  New [Workspaces](workspaces) article. The Google probes on failed page loads
+  (captive-portal and DNS checks) were left as they are, by decision; see
+  [De-Googling](de-googling).
 
 ### 1.11.14 — 2026-10-20
 
