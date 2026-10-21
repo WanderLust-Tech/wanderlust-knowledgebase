@@ -21,6 +21,8 @@ Request (POST to the configured server URL):
     "protocol": "4.0",
     "sessionId": "{UUID}",
     "isMachine": false,
+    "clientVersion": "1.3.0.0",
+    "installId": "{UUID}",
     "os": { "platform": "win", "version": "10.0.22621", "arch": "x64" },
     "apps": [{
       "appId": "{GUID}",
@@ -43,7 +45,8 @@ Response:
         "status": "ok",
         "manifest": {
           "version": "2.0.0.0",
-          "packages": [{ "name": "setup.exe", "hash_sha256": "...", "size": 12345678, "url": "https://dl.../setup.exe" }]
+          "packages": [{ "name": "setup.exe", "hash_sha256": "...", "size": 12345678,
+                         "url": "https://dl.../setup.exe", "signature": "4f48c49ebe6c4c23:1AzW...==" }]
         }
       }
     }]
@@ -54,6 +57,56 @@ Response:
 `status` is `"ok"`, `"noupdate"`, or `"error"`. The server side lives in
 `wanderlust-api` — see its `UPDATE_PROTOCOL.md` for the admin API
 (`POST /api/releases`), DB migration, and version-comparison rules.
+
+`installId` is a random per-install UUID (persisted in
+`update_client_state.json`); the server uses it to bucket the install into a
+staged rollout (`RolloutWeight`) deterministically. `clientVersion` is this
+tool's own version and is only logged. Neither is personal data.
+
+## Release signing (1.3.0.0)
+
+The update server — its database and its admin accounts — is **not trusted
+with code execution** on your machine. The updater runs the installer it is
+pointed at, as SYSTEM for a machine-wide install, so a release is only
+accepted if its manifest carries an **ECDSA P-256 signature made offline**
+with a key the server never holds. The client has the matching *public* key
+built in and refuses anything it cannot verify.
+
+What is signed: the app id, platform, architecture, version, installer
+SHA-256 and installer size (the client's *own* app id/platform/arch go into
+the check, so a validly signed release for something else cannot be replayed).
+The download URL is not signed — the signed hash and size pin the exact file,
+so mirrors stay possible.
+
+What the client does, in order, for every update:
+
+1. The manifest must have a signature, the build must contain a public key,
+   and the manifest must name a hash and a size.
+2. The signature must verify. **This happens before anything is downloaded**:
+   an unsigned or badly signed release is never fetched.
+3. The package name from the manifest must be a plain file name (it used to be
+   joined onto the download folder unchecked; `..\..\x.exe` is now refused).
+4. After the download, the file's size and SHA-256 must equal the signed
+   values; a file that fails is deleted.
+
+Release builds are **fail closed**: they will not even build without a public
+key (`omaha_signing_public_keys`), and there is no command-line switch or
+environment variable to turn the check off or swap the key. Debug builds can
+run unsigned against a local test server (`omaha_require_signature=false`).
+Verification uses Windows CNG; on other platforms a build that requires
+signatures refuses the update rather than skipping the check.
+
+**For the release engineer:** `wanderlust-api/UPDATE_PROTOCOL.md`, section
+"Release signing", has the wire format, key generation (keep the private key
+offline, with a backup key), rotation, how to sign a release
+(`Add-BrowserRelease.ps1 -SigningKeyPath`, or the `/release-sql` skill) and the
+required rollout order (run the `Signature`-column migration *before* deploying
+the API).
+
+**Not covered:** the installer itself is not code-signed with a Windows
+certificate yet, so SmartScreen/Authenticode are unaffected; and the
+downloaded file sits in a user-writable temp folder between verification and
+launch, so a *local* attacker could still swap it. Both are separate steps.
 
 ## CLI commands
 

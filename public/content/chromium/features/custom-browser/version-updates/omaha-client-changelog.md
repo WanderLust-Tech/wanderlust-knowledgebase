@@ -19,6 +19,42 @@ to hang entries off of.
 
 ## Versioned releases
 
+### 1.3.0.0 — 2026-10-21
+
+The updater now **verifies that a release really came from us** before it
+downloads or runs anything.
+
+- **What was wrong.** The client trusted the update server completely: it
+  downloaded whatever installer the server named and ran it (as SYSTEM for a
+  machine-wide install), checking only a SHA-256 that came from the same
+  server response. Anyone who could publish a release or edit the server's
+  database could therefore run code on every install. (The publishing
+  endpoint itself had no admin check at the time — fixed in the server code
+  the same day, pending deployment — but the client should never have
+  depended on that.)
+- **Fix.** Every release carries an ECDSA P-256 signature made offline with a
+  key the server never sees; the client has the public key built in. It
+  verifies the signature **before downloading**, then requires the downloaded
+  file's size and SHA-256 to match the signed values, and deletes a file that
+  does not. Release builds are fail-closed (no key = no build; no run-time
+  override). See [Omaha Update Client](omaha-update-client), "Release
+  signing".
+- **Package-name path traversal.** The package name from the manifest was
+  joined onto the download directory without checking, so a hostile server
+  could have chosen where the file was written (before any hash check ran).
+  Names must now be plain file names.
+- **Needs from you before this reaches users:** generate the release signing
+  key (keep it offline), put its public key in
+  `custom_omaha_signing_public_keys`, run the `Signature` migration on the
+  update server, and sign the release. Releases without a signature are
+  refused by this version.
+- Verified with unit tests (67 checks, including a signature produced by the
+  .NET signer verified by the C++ client, and the exact body the server
+  returns) and an end-to-end test of 12 cases against a local fake server:
+  valid, unsigned, wrong key, tampered version/hash/size, malformed
+  signatures, a served file that differs or is shorter, and path-traversal
+  names. Not tested: a real machine-wide (service) update.
+
 ### 1.2.5.0 — 2026-08-12
 
 Adds a real, branded icon -- every prior build shipped with the generic
