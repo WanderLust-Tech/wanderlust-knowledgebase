@@ -1123,6 +1123,9 @@ As of v1.8.29, `CustomSearchProvider` (the RSS-in-omnibox provider) no longer re
 - [ ] Go to Instagram Settings → Your Activity → Interactions → Likes ("Liked posts"), then find the injected "Sync all my likes" button — **Expected:** Clicking it auto-scrolls the full liked-posts list and bulk-populates heart badges for everything in it, without opening each post individually.
 - [ ] Edge case: uncheck the like-status badge toggle in Settings mid-session — **Expected:** Badges stop appearing and no further grid-mutation work happens (not just hidden — the observer actually stops).
 - [ ] Edge case: view an Instagram Story — **Expected:** No Save button appears; Stories use a different URL/API not covered by this feature.
+- [ ] As of v1.11.16: while logged in to Instagram, open a post or reel directly in a new tab and click Save straight away, before scrolling or interacting — **Expected:** the media downloads; this is the path that asks Instagram's data service for the post, which had stopped working (it answered with a web page instead of data).
+- [ ] As of v1.11.16: open a post you have not opened before while the like-status badge setting is on, then open DevTools → Console on that tab — **Expected:** `[WL-IG] fallback request: POST /graphql/query …` and `[WL-IG] fallback response status: 200` lines appear, and no `Unexpected token '<'` error.
+- [ ] As of v1.11.16: log out of Instagram in that window, open a post and click Save — **Expected:** an alert that says why it failed (for example that you are not logged in, or that Instagram returned a web page instead of data) rather than a raw JSON parse error, and the console shows a `[WL-IG] fallback got a non-JSON response` line with the HTTP status and the start of the reply.
 
 📷 *Screenshot suggestion: An Instagram post with the floating Save button visible, and a profile grid showing at least one thumbnail with the heart "liked" badge.*
 

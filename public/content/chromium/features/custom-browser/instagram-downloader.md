@@ -112,12 +112,14 @@ onButtonClick()
                → saveUrls(shortcode, urls)
 ```
 
-`fetchViaGraphQLFallback` builds the exact request from the original
-proposal (`doc_id=24368985919464652`, `variables` JSON-encoding
-`shortcode` + the three `null` fields Instagram's client always sends),
-with `credentials: 'include'` so the request carries the user's existing
-Instagram session cookies — this matters for private-but-followed
-accounts.
+`fetchViaGraphQLFallback` asks Instagram for the post's data the way its own
+web client does (`POST https://www.instagram.com/graphql/query`, a
+form-encoded `doc_id` + `variables`, with the session's `csrftoken` cookie
+echoed in an `X-CSRFToken` header), using `credentials: 'include'` so the
+request carries the user's existing Instagram session cookies — this
+matters for private-but-followed accounts. The query id is a hard-coded
+constant that Instagram retires every few weeks; see "When the fallback
+breaks" below.
 
 `saveUrls` downloads each URL via `fetch(url).then(blob)` → `URL.
 createObjectURL` → a synthetic `<a download>` click, which forces a real
@@ -126,6 +128,26 @@ fails (the CDN doesn't always send permissive CORS headers for
 cross-origin `fetch`), it falls back to a plain anchor click, which still
 triggers a native download in most cases even without script-level
 control over the response bytes.
+
+## When the fallback breaks
+
+The Save button's fallback and the like-status check (opening a post) both
+use that private query, so they stop working when Instagram changes it;
+saving from what the page already loaded is unaffected. In the 2026-10-29
+case the old request (`GET /graphql/query/?doc_id=…`) started returning a web
+page instead of data, which surfaced as a JSON parse error. The request was
+rewritten to the current form (POST, CSRF header, doc_id `27128499623469141`),
+taken from the maintained open-source client Instaloader — **not yet confirmed
+against Instagram itself**; confirm by clicking Save on a post while logged in.
+
+If it breaks again, open DevTools on the instagram.com tab: the script logs
+`[WL-IG]` lines with the status, content type, final URL and the start of the
+reply, and the alert now says what came back (not logged in / refused /
+web page instead of data / query rejected, id probably retired). To find the
+current values, watch the Network tab for the post's `graphql/query` request
+(`fb_api_req_friendly_name=PolarisPostRootQuery`) and copy its `doc_id` and
+`variables` into `fetchViaGraphQLFallback`. An offline check of the request
+and the error handling is `src/custom/tools/instagram_script_check/check_fallback.js`.
 
 ## Like status badges
 

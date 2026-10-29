@@ -11,7 +11,7 @@ theme and by Chromium rebase, rather than listed one-per-commit.
 For the versioning scheme itself (why it's `MAJOR.MINOR.BUILD.0`, what
 each part counts) see [Custom Browser Build System](../development/custom-browser-build-system).
 
-## Versioned releases (1.7.25 → 1.11.15)
+## Versioned releases (1.7.25 → 1.11.16)
 
 Each release below is one commit — this fork bumps `custom_product_version`
 once per feature/fix commit, so version and commit map 1:1 for this era.
@@ -30,6 +30,35 @@ counter (the middle field) rather than the trailing patch count, since a
 Chromium milestone change happened. 1.11.6, 1.11.7, 1.11.8, 1.11.9, 1.11.10, 1.11.11, 1.11.12, 1.11.13 and 1.11.14 bundle similarly to
 1.9.13: each is a feature commit that landed without its own version bump,
 picked up by the separate bump commit that follows it.
+
+### 1.11.16 — 2026-10-29
+
+The [Instagram Downloader](instagram-downloader)'s Save button and like-status
+check work again when Instagram's own page data didn't already contain the post.
+
+- **What was wrong.** When the post's media had not been picked up from what the
+  page already loaded, the downloader asked Instagram's data service for it. That
+  request had been built from an early proposal (a `GET` to `/graphql/query/` with
+  a query id), and Instagram now answers it with a web page instead of data, so
+  the script failed with a JSON parse error ("Unexpected token '<'") and the Save
+  button reported a failure.
+- **Fix.** The request now has the form the current open-source Instagram clients
+  use: a `POST` to `/graphql/query` with a form-encoded body, the session's
+  `csrftoken` echoed in an `X-CSRFToken` header, and the current single-post query
+  id. The response shape was already understood, so nothing else changed.
+- **Clearer failures.** When Instagram does not return data, the alert now says
+  what came back (not logged in, refused, a web page instead of data, or the query
+  was rejected and its id has probably been retired), and the page console logs the
+  status, content type and the start of the reply under `[WL-IG]`.
+- **Expect this to break again.** The query id is private to Instagram and rotates
+  every few weeks. The article has a new "When the fallback breaks" section on how
+  to read the console lines and find the current id. An offline check of the request
+  and error handling is `src/custom/tools/instagram_script_check/check_fallback.js`
+  (23 checks; it tests our script, not Instagram's acceptance of the request).
+- **Not verified by us:** that Instagram accepts exactly this request — the shape
+  was taken from another client's source, and checking it needs a logged-in Save
+  click on a real post. QA: the three "As of v1.11.16" items under Instagram
+  Downloader.
 
 ### 1.11.15 — 2026-10-21
 
