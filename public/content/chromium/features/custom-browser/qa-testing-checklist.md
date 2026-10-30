@@ -2019,6 +2019,9 @@ automatic fallback, not a setting.
 - [ ] Repeat `--uninstall` for the per-user (Scheduled Task) copy —
   **Expected:** same result, task removed via `schtasks /Query` no longer
   finding `WanderlustUpdateTask`.
+- [ ] As of v1.11.16: on a test machine, from a command prompt run `omaha_client --client-version` — **Expected:** `{"status":"ok","client_version":"1.3.0.0"}`.
+- [ ] As of v1.11.16: on a test machine where a newer, **signed** release is published, run `omaha_client --update --version 1.0.0.0 --download-dir %TEMP%\updtest` and read the log lines it prints — **Expected:** a `Manifest signature verified for <version>` line appears **before** `Downloading …`, then `Hash verified OK`, and the update installs. If instead you see `Refusing update …: the manifest is not signed` or `signature check failed`, the published release row has no valid signature (sign it with `ReleaseSigner.cs` and set `BrowserReleases.Signature`).
+- [ ] As of v1.11.16: after a refused update (unsigned or badly signed release) — **Expected:** nothing was downloaded (no installer file appears in the download folder) and the command reports an error such as `the update is not signed -- refusing to install an unverified update`.
 
 📷 *Screenshot suggestion: `Get-Service OmahaClientSvc` and `schtasks
 /Query /TN WanderlustUpdateTask` output side by side, showing both paths

@@ -34,7 +34,9 @@ picked up by the separate bump commit that follows it.
 ### 1.11.16 — 2026-10-29
 
 The [Instagram Downloader](instagram-downloader)'s Save button and like-status
-check work again when Instagram's own page data didn't already contain the post.
+check work again when Instagram's own page data didn't already contain the post,
+and the browser's updater now checks that an update really came from us before it
+downloads or runs it.
 
 - **What was wrong.** When the post's media had not been picked up from what the
   page already loaded, the downloader asked Instagram's data service for it. That
@@ -55,6 +57,24 @@ check work again when Instagram's own page data didn't already contain the post.
   to read the console lines and find the current id. An offline check of the request
   and error handling is `src/custom/tools/instagram_script_check/check_fallback.js`
   (23 checks; it tests our script, not Instagram's acceptance of the request).
+- **Updater: releases must be signed (`custom-omaha-client` 1.3.0.0).** The updater
+  used to run whatever installer the update server named, checking only a hash that
+  came from the same server response, so anyone able to publish a release or edit
+  the server's database could have run code on every install. Each release now
+  carries a signature made offline with a key the server never holds, and the
+  updater verifies it **before downloading anything**, then requires the downloaded
+  file's size and hash to match the signed values (a file that does not is deleted).
+  A package name from the server is also now required to be a plain file name; it
+  used to be joined onto the download folder unchecked. This release's build
+  configuration holds the release signing public keys (a primary and a backup), the
+  updater is pinned to 1.3.0.0, and a Release build of the updater now refuses to
+  build while the key setting is empty. Release builds are fail-closed and have no
+  run-time switch. Details: [Omaha Update Client](version-updates/omaha-update-client),
+  "Release signing", and the [updater changelog](version-updates/omaha-client-changelog).
+  **A release without a signature is refused by this updater**, so every release has to
+  be signed before it is published, and the `Signature` column migration on the update
+  server has to be applied before the new API version is deployed. Not yet verified:
+  how an already-installed older updater is replaced by this one.
 - **Not verified by us:** that Instagram accepts exactly this request — the shape
   was taken from another client's source, and checking it needs a logged-in Save
   click on a real post. QA: the three "As of v1.11.16" items under Instagram
